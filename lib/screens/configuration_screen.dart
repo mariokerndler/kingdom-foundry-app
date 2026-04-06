@@ -10,13 +10,33 @@ import '../widgets/screens/card_ban_list.dart';
 import '../widgets/screens/expansion_picker.dart';
 import '../widgets/screens/rules_section.dart';
 
+// ── Shared page-transition route ───────────────────────────────────────────
+
+/// Fade + slight slide-up into [ResultsScreen].
+Route<void> _resultsRoute() => PageRouteBuilder<void>(
+      pageBuilder:               (_, __, ___) => const ResultsScreen(),
+      transitionDuration:        const Duration(milliseconds: 340),
+      reverseTransitionDuration: const Duration(milliseconds: 260),
+      transitionsBuilder: (_, animation, __, child) => FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        child: SlideTransition(
+          position: Tween(begin: const Offset(0, 0.04), end: Offset.zero)
+              .animate(
+                  CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+          child: child,
+        ),
+      ),
+    );
+
+// ── Screen ─────────────────────────────────────────────────────────────────
+
 class ConfigurationScreen extends ConsumerWidget {
   const ConfigurationScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final config = ref.watch(configProvider);
-    final status = ref.watch(generationStatusProvider);
+    final config   = ref.watch(configProvider);
+    final status   = ref.watch(generationStatusProvider);
     final isLoading = status == GenerationStatus.loading;
 
     return DefaultTabController(
@@ -24,6 +44,14 @@ class ConfigurationScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const _AppTitle(),
+          actions: [
+            IconButton(
+              icon:    const Icon(Icons.paste_rounded),
+              tooltip: 'Import kingdom from clipboard',
+              onPressed: () => _showImportDialog(context, ref),
+            ),
+            const SizedBox(width: 4),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.library_books_outlined), text: 'Expansions'),
@@ -41,20 +69,20 @@ class ConfigurationScreen extends ConsumerWidget {
           ],
         ),
 
-        // Active rules badge on the FAB label
         floatingActionButton: _GenerateFab(
-          isLoading:      isLoading,
-          ownedCount:     config.ownedExpansions.length,
+          isLoading:       isLoading,
+          ownedCount:      config.ownedExpansions.length,
           activeRuleCount: config.rules.activeRuleDescriptions.length,
-          onGenerate: () => _generate(context, ref),
+          onGenerate:      () => _generate(context, ref),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
     );
   }
 
+  // ── Generate ──────────────────────────────────────────────────────────────
+
   Future<void> _generate(BuildContext context, WidgetRef ref) async {
-    // Quick guard — show snackbar if no expansions selected
     final config = ref.read(configProvider);
     if (config.ownedExpansions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -73,30 +101,37 @@ class ConfigurationScreen extends ConsumerWidget {
     if (!context.mounted) return;
 
     if (success) {
-      Navigator.of(context).push(
-        PageRouteBuilder<void>(
-          pageBuilder: (_, __, ___) => const ResultsScreen(),
-          transitionDuration: const Duration(milliseconds: 340),
-          reverseTransitionDuration: const Duration(milliseconds: 260),
-          transitionsBuilder: (_, animation, __, child) {
-            return FadeTransition(
-              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-              child: SlideTransition(
-                position: Tween(
-                  begin: const Offset(0, 0.04),
-                  end:   Offset.zero,
-                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
-                child: child,
-              ),
-            );
-          },
-        ),
-      );
+      Navigator.of(context).push(_resultsRoute());
     } else {
       final error = ref.read(generationErrorProvider) ?? 'Unknown error.';
       _showErrorDialog(context, error);
     }
   }
+
+  // ── Import ────────────────────────────────────────────────────────────────
+
+  Future<void> _showImportDialog(BuildContext context, WidgetRef ref) async {
+    final text = await showDialog<String>(
+      context: context,
+      builder: (_) => const _ImportDialog(),
+    );
+
+    if (text == null || !context.mounted) return;
+
+    HapticFeedback.mediumImpact();
+    final success = await importKingdom(ref, text);
+
+    if (!context.mounted) return;
+
+    if (success) {
+      Navigator.of(context).push(_resultsRoute());
+    } else {
+      final error = ref.read(generationErrorProvider) ?? 'Unknown error.';
+      _showErrorDialog(context, error);
+    }
+  }
+
+  // ── Error dialog ──────────────────────────────────────────────────────────
 
   void _showErrorDialog(BuildContext context, String message) {
     showDialog<void>(
@@ -125,7 +160,7 @@ class ConfigurationScreen extends ConsumerWidget {
   }
 }
 
-// ── App title with subtitle ────────────────────────────────────────────────
+// ── App title ──────────────────────────────────────────────────────────────
 
 class _AppTitle extends StatelessWidget {
   const _AppTitle();
@@ -155,9 +190,9 @@ class _AppTitle extends StatelessWidget {
 // ── Generate FAB ───────────────────────────────────────────────────────────
 
 class _GenerateFab extends StatelessWidget {
-  final bool     isLoading;
-  final int      ownedCount;
-  final int      activeRuleCount;
+  final bool         isLoading;
+  final int          ownedCount;
+  final int          activeRuleCount;
   final VoidCallback onGenerate;
 
   const _GenerateFab({
@@ -170,7 +205,7 @@ class _GenerateFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton.extended(
-      onPressed:    isLoading ? null : onGenerate,
+      onPressed:       isLoading ? null : onGenerate,
       backgroundColor: isLoading ? AppColors.goldDark : AppColors.gold,
       label: isLoading
           ? const Row(
@@ -184,7 +219,8 @@ class _GenerateFab extends StatelessWidget {
                 ),
                 SizedBox(width: 10),
                 Text('Generating...',
-                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+                    style: TextStyle(
+                        color: Colors.black, fontWeight: FontWeight.w700)),
               ],
             )
           : Row(
@@ -196,7 +232,8 @@ class _GenerateFab extends StatelessWidget {
                 if (activeRuleCount > 0) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color:        Colors.black.withValues(alpha: 0.25),
                       borderRadius: BorderRadius.circular(10),
@@ -209,6 +246,183 @@ class _GenerateFab extends StatelessWidget {
                 ],
               ],
             ),
+    );
+  }
+}
+
+// ── Import dialog ──────────────────────────────────────────────────────────
+
+class _ImportDialog extends StatefulWidget {
+  const _ImportDialog();
+
+  @override
+  State<_ImportDialog> createState() => _ImportDialogState();
+}
+
+class _ImportDialogState extends State<_ImportDialog> {
+  final _ctrl   = TextEditingController();
+  List<String> _parsed = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl.addListener(_onChanged);
+    // Pre-fill if the clipboard already contains a kingdom list.
+    Clipboard.getData('text/plain').then((data) {
+      if (!mounted || data?.text == null) return;
+      final names = parseKingdomText(data!.text!);
+      if (names.length == 10) {
+        _ctrl.text = data.text!;
+      }
+    });
+  }
+
+  void _onChanged() {
+    setState(() => _parsed = parseKingdomText(_ctrl.text));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isValid = _parsed.length == 10;
+
+    return AlertDialog(
+      backgroundColor: AppColors.surface,
+      titlePadding:    const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      contentPadding:  const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      title: const Row(
+        children: [
+          Icon(Icons.paste_rounded, color: AppColors.gold, size: 20),
+          SizedBox(width: 8),
+          Text('Import Kingdom',
+              style: TextStyle(
+                color:      AppColors.parchment,
+                fontSize:   17,
+                fontWeight: FontWeight.w700,
+              )),
+        ],
+      ),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize:       MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Paste a kingdom list shared from another player\'s device.',
+              style: TextStyle(color: AppColors.parchmentDim, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+
+            // Text area
+            TextField(
+              controller: _ctrl,
+              maxLines:   12,
+              minLines:   5,
+              autofocus:  true,
+              style: const TextStyle(
+                  color: AppColors.parchment, fontSize: 12, height: 1.6),
+              decoration: const InputDecoration(
+                hintText: '1. Village (\$3)\n2. Smithy (\$4)\n…',
+                alignLabelWithHint: true,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            // Live validation feedback
+            if (_ctrl.text.trim().isNotEmpty)
+              _ParsePreview(parsed: _parsed, isValid: isValid),
+
+            const SizedBox(height: 4),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel',
+              style: TextStyle(color: AppColors.parchmentDim)),
+        ),
+        TextButton(
+          onPressed: isValid ? () => Navigator.pop(context, _ctrl.text) : null,
+          child: Text(
+            'Import Kingdom',
+            style: TextStyle(
+              color:      isValid ? AppColors.gold : AppColors.divider,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Import live-preview ────────────────────────────────────────────────────
+
+class _ParsePreview extends StatelessWidget {
+  final List<String> parsed;
+  final bool         isValid;
+
+  const _ParsePreview({required this.parsed, required this.isValid});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isValid ? AppColors.successGreen : AppColors.errorRed;
+    final count = parsed.length;
+
+    return AnimatedContainer(
+      duration:    const Duration(milliseconds: 200),
+      padding:     const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration:  BoxDecoration(
+        color:        color.withValues(alpha: 0.08),
+        border:       Border.all(color: color.withValues(alpha: 0.45)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isValid
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.info_outline_rounded,
+                color: color,
+                size:  15,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isValid
+                    ? '$count cards found — ready to import'
+                    : '$count of 10 cards found',
+                style: TextStyle(
+                  color:      color,
+                  fontSize:   12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (parsed.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              parsed.join(' · '),
+              style: TextStyle(
+                color:    color.withValues(alpha: 0.75),
+                fontSize: 11,
+                height:   1.5,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

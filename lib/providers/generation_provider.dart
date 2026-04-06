@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/heuristic_engine.dart';
 import '../controllers/setup_engine.dart';
 import '../controllers/setup_exception.dart';
+import '../models/dominion_card.dart';
 import '../models/setup_result.dart';
 import 'card_data_providers.dart';
 import 'config_provider.dart';
@@ -27,11 +28,13 @@ final generationStatusProvider =
 final generationErrorProvider =
     Provider<String?>((ref) => ref.watch(_generationErrorProvider));
 
-// ── Generation action ─────────────────────────────────────────────────────
+// ── Shared engine singletons ──────────────────────────────────────────────
 
 /// Singletons reused across calls — both are stateless.
-final _setupEngine    = SetupEngine();
+final _setupEngine     = SetupEngine();
 final _heuristicEngine = HeuristicEngine();
+
+// ── Generate action ───────────────────────────────────────────────────────
 
 /// Call this from a button handler to run the full pipeline.
 ///
@@ -42,7 +45,6 @@ Future<bool> generateKingdom(WidgetRef ref) async {
   ref.read(_generationErrorProvider.notifier).state  = null;
 
   try {
-    // Load catalogue (cached after first call)
     final allRaw = await ref.read(allCardsProvider.future);
     final config = ref.read(configProvider);
 
@@ -61,7 +63,7 @@ Future<bool> generateKingdom(WidgetRef ref) async {
 
     final enriched = _heuristicEngine.enrich(result);
 
-    ref.read(setupResultProvider.notifier).state      = enriched;
+    ref.read(setupResultProvider.notifier).state       = enriched;
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
     return true;
   } on SetupException catch (e) {
@@ -76,17 +78,107 @@ Future<bool> generateKingdom(WidgetRef ref) async {
   }
 }
 
-// ── Derived: available card count for the current config ─────────────────
-// Used to warn the user if they have fewer than 10 selectable cards.
+// ── Import action ─────────────────────────────────────────────────────────
 
+/// Parses [rawText] (produced by the "Copy kingdom" action) and loads the
+/// matched cards into [setupResultProvider], then runs heuristic analysis.
+///
+/// Returns `true` on success. On failure, sets [generationErrorProvider] and
+/// returns `false`.
+Future<bool> importKingdom(WidgetRef ref, String rawText) async {
+  ref.read(_generationStatusProvider.notifier).state = GenerationStatus.loading;
+  ref.read(_generationErrorProvider.notifier).state  = null;
+
+  try {
+    final names = parseKingdomText(rawText);
+
+    if (names.length != 10) {
+      ref.read(_generationErrorProvider.notifier).state =
+          'Need exactly 10 cards but found ${names.length}. '
+          'Make sure you paste the complete kingdom list.';
+      ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
+      return false;
+    }
+
+    final allCards = await ref.read(allCardsProvider.future);
+    final kingdom  = <DominionCard>[];
+    final notFound = <String>[];
+
+    for (final name in names) {
+      final card = allCards
+          .where((c) => c.isKingdomCard &&
+              c.name.toLowerCase() == name.toLowerCase())
+          .firstOrNull;
+      if (card != null) {
+        kingdom.add(card);
+      } else {
+        notFound.add(name);
+      }
+    }
+
+    if (notFound.isNotEmpty) {
+      final missing = notFound.join(', ');
+      ref.read(_generationErrorProvider.notifier).state =
+          'Could not find in the card database: $missing.\n\n'
+          'The app may not have data for that expansion yet.';
+      ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
+      return false;
+    }
+
+    final baseResult = SetupResult(
+      kingdomCards: kingdom,
+      archetypes:   [],
+      setupNotes:   [],
+      generatedAt:  DateTime.now(),
+    );
+    final enriched = _heuristicEngine.enrich(baseResult);
+
+    ref.read(setupResultProvider.notifier).state       = enriched;
+    ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
+    return true;
+  } catch (e) {
+    ref.read(_generationErrorProvider.notifier).state  =
+        'Import failed: ${e.toString()}';
+    ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
+    return false;
+  }
+}
+
+// ── Text parsing ──────────────────────────────────────────────────────────
+
+/// Extracts card names from a shared kingdom list.
+///
+/// Expects lines in the format produced by the copy action:
+/// ```
+/// 1. Village ($3)
+/// 2. Smithy ($4)
+/// ```
+/// Extra whitespace and unrecognised lines are silently ignored.
+/// Exported so the import dialog can show a live preview as the user pastes.
+List<String> parseKingdomText(String text) {
+  // Matches: "<number>. <name> (<cost>)"
+  // Cost can contain $, digits, P, D, + — use [^)] to capture anything.
+  final re = RegExp(r'^\d+\.\s+(.+?)\s+\([^)]+\)$');
+  return text
+      .replaceAll('\r\n', '\n')
+      .split('\n')
+      .map((line) => re.firstMatch(line.trim()))
+      .whereType<RegExpMatch>()
+      .map((m) => m.group(1)!)
+      .toList();
+}
+
+// ── Derived: available card count ─────────────────────────────────────────
+
+/// Used to warn the user if they have fewer than 10 selectable cards.
 final availableCardCountProvider = Provider<AsyncValue<int>>((ref) {
   final allAsync = ref.watch(allCardsProvider);
   final config   = ref.watch(configProvider);
 
-  return allAsync.whenData((all) {
-    return all.where((c) =>
-        config.isExpansionOwned(c.expansion) &&
-        c.isKingdomCard &&
-        !config.isCardDisabled(c.id)).length;
-  });
+  return allAsync.whenData((all) => all
+      .where((c) =>
+          config.isExpansionOwned(c.expansion) &&
+          c.isKingdomCard &&
+          !config.isCardDisabled(c.id))
+      .length);
 });
