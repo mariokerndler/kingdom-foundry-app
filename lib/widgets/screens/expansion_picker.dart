@@ -8,11 +8,22 @@ import '../../providers/generation_provider.dart';
 import '../../utils/app_theme.dart';
 import '../common/section_header.dart';
 
-class ExpansionPickerTab extends ConsumerWidget {
+class ExpansionPickerTab extends ConsumerStatefulWidget {
   const ExpansionPickerTab({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ExpansionPickerTab> createState() => _ExpansionPickerTabState();
+}
+
+class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+
     final availableAsync = ref.watch(availableExpansionsProvider);
     final config         = ref.watch(configProvider);
     final countAsync     = ref.watch(availableCardCountProvider);
@@ -21,10 +32,8 @@ class ExpansionPickerTab extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error:   (e, _) => Center(child: Text('Error loading expansions: $e')),
       data: (available) {
-        // Group expansions into base + editions rows so the UI doesn't
-        // show phantom expansions we have no card data for.
-        final owned     = config.ownedExpansions;
-        final allOwned  = owned.length == available.length;
+        final owned    = config.ownedExpansions;
+        final allOwned = owned.length == available.length;
 
         return ListView(
           padding: const EdgeInsets.only(bottom: 100),
@@ -58,7 +67,7 @@ class ExpansionPickerTab extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Wrap(
-                spacing:  8,
+                spacing:    8,
                 runSpacing: 8,
                 children: available
                     .toList()
@@ -114,8 +123,8 @@ class _CountBar extends StatelessWidget {
                 ? '$count kingdom cards available'
                 : '$count kingdom cards — need at least 10',
             style: TextStyle(
-              color:    enough ? AppColors.successGreen : AppColors.errorRed,
-              fontSize: 13,
+              color:      enough ? AppColors.successGreen : AppColors.errorRed,
+              fontSize:   13,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -128,8 +137,8 @@ class _CountBar extends StatelessWidget {
 // ── Individual chip ────────────────────────────────────────────────────────
 
 class _ExpansionChip extends StatelessWidget {
-  final Expansion expansion;
-  final bool      selected;
+  final Expansion    expansion;
+  final bool         selected;
   final VoidCallback onTap;
 
   const _ExpansionChip({
@@ -160,7 +169,6 @@ class _ExpansionChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Colour dot
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               width:  8,

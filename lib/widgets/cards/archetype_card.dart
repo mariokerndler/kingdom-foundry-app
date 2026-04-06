@@ -18,7 +18,19 @@ class ArchetypeCard extends StatefulWidget {
 }
 
 class _ArchetypeCardState extends State<ArchetypeCard> {
-  bool _tipsExpanded = false;
+  bool   _tipsExpanded      = false;
+  double _animatedStrength  = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Defer so AnimatedContainer actually animates from 0 → final value.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() => _animatedStrength = widget.archetype.strength);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,16 +120,16 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
             ),
           ),
 
-          // ── Strength bar ──────────────────────────────────────────────────
+          // ── Strength bar (animates from 0 on first render) ─────────────
           LayoutBuilder(
             builder: (_, constraints) => Stack(
               children: [
                 Container(height: 3, color: AppColors.divider),
                 AnimatedContainer(
-                  duration: const Duration(milliseconds: 600),
+                  duration: const Duration(milliseconds: 700),
                   curve:    Curves.easeOut,
                   height:   3,
-                  width:    constraints.maxWidth * widget.archetype.strength,
+                  width:    constraints.maxWidth * _animatedStrength,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [

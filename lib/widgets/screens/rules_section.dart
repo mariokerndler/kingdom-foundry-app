@@ -5,11 +5,22 @@ import '../../providers/config_provider.dart';
 import '../../utils/app_theme.dart';
 import '../common/section_header.dart';
 
-class RulesTab extends ConsumerWidget {
+class RulesTab extends ConsumerStatefulWidget {
   const RulesTab({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RulesTab> createState() => _RulesTabState();
+}
+
+class _RulesTabState extends ConsumerState<RulesTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+
     final rules    = ref.watch(configProvider).rules;
     final notifier = ref.read(configProvider.notifier);
     final hasRules = rules.hasActiveRules;
@@ -167,7 +178,7 @@ class _RuleTile extends StatelessWidget {
 // ── Max cost slider row ────────────────────────────────────────────────────
 
 class _MaxCostRow extends StatelessWidget {
-  final int?             currentMax;
+  final int?               currentMax;
   final ValueChanged<int?> onChange;
 
   const _MaxCostRow({required this.currentMax, required this.onChange});
@@ -215,21 +226,21 @@ class _MaxCostRow extends StatelessWidget {
             if (active) ...[
               SliderTheme(
                 data: SliderThemeData(
-                  activeTrackColor:   AppColors.gold,
-                  inactiveTrackColor: AppColors.divider,
-                  thumbColor:         AppColors.gold,
-                  overlayColor:       AppColors.gold.withValues(alpha: 0.12),
+                  activeTrackColor:    AppColors.gold,
+                  inactiveTrackColor:  AppColors.divider,
+                  thumbColor:          AppColors.gold,
+                  overlayColor:        AppColors.gold.withValues(alpha: 0.12),
                   valueIndicatorColor: AppColors.cardSurface,
                   valueIndicatorTextStyle:
                       const TextStyle(color: AppColors.parchment),
                 ),
                 child: Slider(
-                  min:        2,
-                  max:        8,
-                  divisions:  6,
-                  value:      currentMax!.toDouble(),
-                  label:      '\$$currentMax',
-                  onChanged:  (v) => onChange(v.round()),
+                  min:       2,
+                  max:       8,
+                  divisions: 6,
+                  value:     currentMax!.toDouble(),
+                  label:     '\$$currentMax',
+                  onChanged: (v) => onChange(v.round()),
                 ),
               ),
               Padding(

@@ -16,7 +16,10 @@ class CardBanListTab extends ConsumerStatefulWidget {
   ConsumerState<CardBanListTab> createState() => _CardBanListTabState();
 }
 
-class _CardBanListTabState extends ConsumerState<CardBanListTab> {
+class _CardBanListTabState extends ConsumerState<CardBanListTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   final _searchCtrl = TextEditingController();
   String _query = '';
 
@@ -36,6 +39,7 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final cardsByExpAsync = ref.watch(cardsByExpansionProvider);
     final config          = ref.watch(configProvider);
     final disabledCount   = config.disabledCardIds.length;

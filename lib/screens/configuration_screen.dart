@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/config_provider.dart';
@@ -66,13 +67,30 @@ class ConfigurationScreen extends ConsumerWidget {
       return;
     }
 
+    HapticFeedback.mediumImpact();
     final success = await generateKingdom(ref);
 
     if (!context.mounted) return;
 
     if (success) {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const ResultsScreen()),
+        PageRouteBuilder<void>(
+          pageBuilder: (_, __, ___) => const ResultsScreen(),
+          transitionDuration: const Duration(milliseconds: 340),
+          reverseTransitionDuration: const Duration(milliseconds: 260),
+          transitionsBuilder: (_, animation, __, child) {
+            return FadeTransition(
+              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              child: SlideTransition(
+                position: Tween(
+                  begin: const Offset(0, 0.04),
+                  end:   Offset.zero,
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+                child: child,
+              ),
+            );
+          },
+        ),
       );
     } else {
       final error = ref.read(generationErrorProvider) ?? 'Unknown error.';

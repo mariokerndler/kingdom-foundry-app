@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/card_tag.dart';
@@ -15,8 +16,8 @@ class ResultsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final result = ref.watch(setupResultProvider);
-    final status = ref.watch(generationStatusProvider);
+    final result        = ref.watch(setupResultProvider);
+    final status        = ref.watch(generationStatusProvider);
     final isRegenerating = status == GenerationStatus.loading;
 
     if (result == null) {
@@ -31,6 +32,7 @@ class ResultsScreen extends ConsumerWidget {
         result:          result,
         isRegenerating:  isRegenerating,
         onRegenerate: () => _regenerate(context, ref),
+        onCopy:       () => _copyKingdom(context, result),
       ),
       body: isRegenerating
           ? const _RegeneratingOverlay()
@@ -39,6 +41,7 @@ class ResultsScreen extends ConsumerWidget {
   }
 
   Future<void> _regenerate(BuildContext context, WidgetRef ref) async {
+    HapticFeedback.lightImpact();
     final success = await generateKingdom(ref);
     if (!success && context.mounted) {
       final error = ref.read(generationErrorProvider) ?? 'Unknown error.';
@@ -51,6 +54,22 @@ class ResultsScreen extends ConsumerWidget {
       );
     }
   }
+
+  void _copyKingdom(BuildContext context, SetupResult result) {
+    final lines = result.kingdomCards
+        .asMap()
+        .entries
+        .map((e) => '${e.key + 1}. ${e.value.name} (${e.value.costString})')
+        .join('\n');
+    Clipboard.setData(ClipboardData(text: lines));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content:  Text('Kingdom copied to clipboard'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
 }
 
 // ── App bar ────────────────────────────────────────────────────────────────
@@ -59,11 +78,13 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final SetupResult  result;
   final bool         isRegenerating;
   final VoidCallback onRegenerate;
+  final VoidCallback onCopy;
 
   const _ResultsAppBar({
     required this.result,
     required this.isRegenerating,
     required this.onRegenerate,
+    required this.onCopy,
   });
 
   @override
@@ -97,6 +118,13 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
+        // Copy kingdom list
+        IconButton(
+          tooltip:  'Copy kingdom list',
+          onPressed: isRegenerating ? null : onCopy,
+          icon: const Icon(Icons.copy_rounded, color: AppColors.parchmentDim),
+        ),
+        // Regenerate
         IconButton(
           tooltip:  'Regenerate kingdom',
           onPressed: isRegenerating ? null : onRegenerate,
@@ -147,6 +175,9 @@ class _ResultsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Key includes generatedAt so cards re-animate on each regeneration.
+    final genKey = result.generatedAt.millisecondsSinceEpoch;
+
     return CustomScrollView(
       slivers: [
         // ── Archetype summary banner ──────────────────────────────────────
@@ -163,22 +194,26 @@ class _ResultsBody extends StatelessWidget {
           ),
         ),
 
-        // ── 10-card grid ──────────────────────────────────────────────────
+        // ── 10-card grid (staggered entrance) ────────────────────────────
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           sliver: SliverGrid(
             delegate: SliverChildBuilderDelegate(
-              (_, i) => KingdomCardWidget(
-                card:  result.kingdomCards[i],
-                index: i + 1,
+              (_, i) => _StaggeredEntry(
+                key:   ValueKey('${genKey}_$i'),
+                index: i,
+                child: KingdomCardWidget(
+                  card:  result.kingdomCards[i],
+                  index: i + 1,
+                ),
               ),
               childCount: result.kingdomCards.length,
             ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount:     2,
-              mainAxisExtent:     168,
-              crossAxisSpacing:   8,
-              mainAxisSpacing:    8,
+              crossAxisCount:   2,
+              mainAxisExtent:   168,
+              crossAxisSpacing: 8,
+              mainAxisSpacing:  8,
             ),
           ),
         ),
@@ -208,9 +243,65 @@ class _ResultsBody extends StatelessWidget {
           ),
         ],
 
-        // Bottom padding for FAB / home indicator
+        // Bottom padding for home indicator
         const SliverToBoxAdapter(child: SizedBox(height: 40)),
       ],
+    );
+  }
+}
+
+// ── Staggered entrance animation ──────────────────────────────────────────
+
+class _StaggeredEntry extends StatefulWidget {
+  final int    index;
+  final Widget child;
+
+  const _StaggeredEntry({
+    super.key,
+    required this.index,
+    required this.child,
+  });
+
+  @override
+  State<_StaggeredEntry> createState() => _StaggeredEntryState();
+}
+
+class _StaggeredEntryState extends State<_StaggeredEntry>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _opacity;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 380),
+    );
+    _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween(
+      begin: const Offset(0, 0.07),
+      end:   Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+
+    // Stagger: each card starts 50 ms after the previous one.
+    Future.delayed(Duration(milliseconds: widget.index * 50), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: SlideTransition(position: _slide, child: widget.child),
     );
   }
 }
@@ -297,10 +388,7 @@ class _ArchetypeBanner extends StatelessWidget {
                       Icon(_archetypeIcon(a.kind), color: c, size: 11),
                       const SizedBox(width: 4),
                       Text(a.headline,
-                          style: TextStyle(
-                            color:    c,
-                            fontSize: 11,
-                          )),
+                          style: TextStyle(color: c, fontSize: 11)),
                     ],
                   ),
                 );
@@ -341,7 +429,7 @@ class _ArchetypeBanner extends StatelessWidget {
   }
 }
 
-// ── Stat strip (attacks / trashing / duration) ─────────────────────────────
+// ── Stat strip (attacks / trashing / duration / alt-vp) ───────────────────
 
 class _StatStrip extends StatelessWidget {
   final SetupResult result;
@@ -390,6 +478,7 @@ class _Stat extends StatelessWidget {
   final String   label;
   final int      value;
   final Color    color;
+
   const _Stat({
     required this.icon,
     required this.label,
@@ -472,9 +561,9 @@ class _SetupNotesSection extends StatelessWidget {
                             child: Text(
                               entry.value,
                               style: const TextStyle(
-                                color:   AppColors.parchmentDim,
+                                color:    AppColors.parchmentDim,
                                 fontSize: 13,
-                                height:  1.45,
+                                height:   1.45,
                               ),
                             ),
                           ),
