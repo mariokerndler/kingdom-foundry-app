@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Dominion Setup Assistant — automated kingdom generation for the board game Dominion.">
+  <meta name="theme-color" content="#0F0F1A">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Dominion Setup">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Dominion Setup</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: #0F0F1A;  /* AppColors.background — no white flash */
+    }
+
+    /* Splash shown while the Flutter engine boots */
+    #splash {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #0F0F1A;
+      gap: 20px;
+    }
+
+    #splash h1 {
+      color: #FFD700;            /* AppColors.gold */
+      font-family: sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin: 0;
+    }
+
+    #splash p {
+      color: #8A7A6A;            /* AppColors.parchmentDim */
+      font-family: sans-serif;
+      font-size: 13px;
+      margin: 0;
+    }
+
+    /* Gold spinner */
+    #splash .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #2A2A45;
+      border-top-color: #FFD700;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="splash">
+    <div class="spinner"></div>
+    <h1>Dominion Setup</h1>
+    <p>Loading kingdom…</p>
+  </div>
+
+  <script src="flutter_bootstrap.js" async></script>
+  <script>
+    // Hide the splash once Flutter renders its first frame
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('splash');
+      if (splash) splash.style.display = 'none';
+    });
+  </script>
+</body>
+</html>

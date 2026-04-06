@@ -1,0 +1,607 @@
+[
+  {
+    "id": "artisan",
+    "name": "Artisan",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "gainCard"],
+    "cost": 6,
+    "text": "+1 Card. Gain a card to your hand costing up to $5. Put a card from your hand onto your deck."
+  },
+  {
+    "id": "bandit",
+    "name": "Bandit",
+    "expansion": "baseSecondEdition",
+    "types": ["action", "attack"],
+    "tags": ["attack", "goldGain", "gainTreasure", "trashCards"],
+    "cost": 5,
+    "text": "Gain a Gold. Each other player reveals the top 2 cards of their deck, trashes one of them that is a Treasure other than Copper, and discards the rest."
+  },
+  {
+    "id": "bureaucrat",
+    "name": "Bureaucrat",
+    "expansion": "baseSecondEdition",
+    "types": ["action", "attack"],
+    "tags": ["attack", "silverGain", "topdeck"],
+    "cost": 4,
+    "text": "Gain a Silver onto your deck. Each other player reveals a Victory card from their hand and puts it onto their deck (or reveals a hand with no Victory cards)."
+  },
+  {
+    "id": "cellar",
+    "name": "Cellar",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusAction", "sifting"],
+    "cost": 2,
+    "text": "+1 Action. Discard any number of cards, then draw that many."
+  },
+  {
+    "id": "chapel",
+    "name": "Chapel",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["trashCards", "trashForBenefit"],
+    "cost": 2,
+    "text": "Trash up to 4 cards from your hand."
+  },
+  {
+    "id": "councilRoom",
+    "name": "Council Room",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusBuy"],
+    "cost": 5,
+    "text": "+4 Cards. +1 Buy. Each other player draws a card."
+  },
+  {
+    "id": "festival",
+    "name": "Festival",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusTwoActions", "villageEffect", "plusBuy", "plusCoin"],
+    "cost": 5,
+    "text": "+2 Actions. +1 Buy. +$2."
+  },
+  {
+    "id": "gardens",
+    "name": "Gardens",
+    "expansion": "baseSecondEdition",
+    "types": ["victory"],
+    "tags": ["altVictory"],
+    "cost": 4,
+    "text": "Worth 1VP per 10 cards you have (rounded down)."
+  },
+  {
+    "id": "harbinger",
+    "name": "Harbinger",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusAction", "topdeck", "sifting"],
+    "cost": 3,
+    "text": "+1 Card. +1 Action. Look through your discard pile. You may put a card from it onto your deck."
+  },
+  {
+    "id": "laboratory",
+    "name": "Laboratory",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusAction"],
+    "cost": 5,
+    "text": "+2 Cards. +1 Action."
+  },
+  {
+    "id": "library",
+    "name": "Library",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["drawToX", "sifting"],
+    "cost": 5,
+    "text": "Draw until you have 7 cards in hand, skipping any Action cards you choose to; set those aside, discarding them afterwards."
+  },
+  {
+    "id": "market",
+    "name": "Market",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusAction", "plusBuy", "plusCoin"],
+    "cost": 5,
+    "text": "+1 Card. +1 Action. +1 Buy. +$1."
+  },
+  {
+    "id": "merchant",
+    "name": "Merchant",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusAction", "plusCoin"],
+    "cost": 3,
+    "text": "+1 Card. +1 Action. The first time you play a Silver this turn, +$1."
+  },
+  {
+    "id": "militia",
+    "name": "Militia",
+    "expansion": "baseSecondEdition",
+    "types": ["action", "attack"],
+    "tags": ["attack", "discard", "plusCoin"],
+    "cost": 4,
+    "text": "+$2. Each other player discards down to 3 cards in hand."
+  },
+  {
+    "id": "mine",
+    "name": "Mine",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["trashCards", "gainTreasure"],
+    "cost": 5,
+    "text": "You may trash a Treasure from your hand. Gain a Treasure to your hand costing up to $3 more than it."
+  },
+  {
+    "id": "moat",
+    "name": "Moat",
+    "expansion": "baseSecondEdition",
+    "types": ["action", "reaction"],
+    "tags": ["plusCard", "reaction", "blockAttack"],
+    "cost": 2,
+    "text": "+2 Cards. When another player plays an Attack card, you may first reveal this from your hand, to be unaffected by it."
+  },
+  {
+    "id": "moneylender",
+    "name": "Moneylender",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["trashCards", "plusCoin"],
+    "cost": 4,
+    "text": "You may trash a Copper from your hand for +$3."
+  },
+  {
+    "id": "poacher",
+    "name": "Poacher",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusAction", "plusCoin", "discard"],
+    "cost": 4,
+    "text": "+1 Card. +1 Action. +$1. Discard a card per empty Supply pile."
+  },
+  {
+    "id": "remodel",
+    "name": "Remodel",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["trashCards", "gainCard", "remodel"],
+    "cost": 4,
+    "text": "Trash a card from your hand. Gain a card costing up to $2 more than it."
+  },
+  {
+    "id": "sentry",
+    "name": "Sentry",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusAction", "trashCards", "lookAtCards", "sifting"],
+    "cost": 5,
+    "text": "+1 Card. +1 Action. Look at the top 2 cards of your deck. Trash and/or discard any number of them. Put the rest back in any order."
+  },
+  {
+    "id": "smithy",
+    "name": "Smithy",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard"],
+    "cost": 4,
+    "text": "+3 Cards."
+  },
+  {
+    "id": "throneRoom",
+    "name": "Throne Room",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusAction"],
+    "cost": 4,
+    "text": "You may play an Action card from your hand twice."
+  },
+  {
+    "id": "vassal",
+    "name": "Vassal",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCoin"],
+    "cost": 3,
+    "text": "+$2. Discard the top card of your deck. If it's an Action card, you may play it."
+  },
+  {
+    "id": "village",
+    "name": "Village",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusTwoActions", "villageEffect"],
+    "cost": 3,
+    "text": "+1 Card. +2 Actions."
+  },
+  {
+    "id": "witch",
+    "name": "Witch",
+    "expansion": "baseSecondEdition",
+    "types": ["action", "attack"],
+    "tags": ["plusCard", "attack", "curse", "junking"],
+    "cost": 5,
+    "text": "+2 Cards. Each other player gains a Curse."
+  },
+  {
+    "id": "workshop",
+    "name": "Workshop",
+    "expansion": "baseSecondEdition",
+    "types": ["action"],
+    "tags": ["gainCard", "gainCheaply"],
+    "cost": 3,
+    "text": "Gain a card costing up to $4."
+  },
+
+  {
+    "id": "baron",
+    "name": "Baron",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusBuy", "plusCoin", "gainCard"],
+    "cost": 4,
+    "text": "+1 Buy. You may discard an Estate for +$4. If you don't, gain an Estate."
+  },
+  {
+    "id": "bridge",
+    "name": "Bridge",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusBuy", "plusCoin"],
+    "cost": 4,
+    "text": "This turn, cards cost $1 less (but not less than $0). +1 Buy. +$1."
+  },
+  {
+    "id": "conspirator",
+    "name": "Conspirator",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCoin", "plusCard", "plusAction"],
+    "cost": 4,
+    "text": "+$2. If you've played 3 or more Actions this turn (counting this): +1 Card, +1 Action."
+  },
+  {
+    "id": "courtier",
+    "name": "Courtier",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusAction", "plusBuy", "plusCoin", "goldGain", "gainTreasure"],
+    "cost": 5,
+    "text": "Reveal a card from your hand. For each type it has, choose one (must be different): +1 Action; +1 Buy; +$3; gain a Gold."
+  },
+  {
+    "id": "courtyard",
+    "name": "Courtyard",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "topdeck"],
+    "cost": 2,
+    "text": "+3 Cards. Put a card from your hand onto your deck."
+  },
+  {
+    "id": "diplomat",
+    "name": "Diplomat",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action", "reaction"],
+    "tags": ["plusCard", "plusAction", "reaction", "blockAttack"],
+    "cost": 4,
+    "text": "+2 Cards. If you have 5 or fewer cards in hand (after drawing): +2 Actions. When another player plays an Attack, you may reveal this (if you have ≥5 cards in hand) to draw 2 cards then discard 3."
+  },
+  {
+    "id": "duke",
+    "name": "Duke",
+    "expansion": "intrigueSecondEdition",
+    "types": ["victory"],
+    "tags": ["altVictory"],
+    "cost": 5,
+    "text": "Worth 1VP per Duchy you have."
+  },
+  {
+    "id": "harem",
+    "name": "Harem",
+    "expansion": "intrigueSecondEdition",
+    "types": ["treasure", "victory"],
+    "tags": ["plusCoin", "altVictory"],
+    "cost": 6,
+    "text": "$2. 2VP."
+  },
+  {
+    "id": "ironworks",
+    "name": "Ironworks",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["gainCard", "gainCheaply", "plusCard", "plusAction", "plusCoin"],
+    "cost": 4,
+    "text": "Gain a card costing up to $4. If the gained card is an Action: +1 Action. Treasure: +$1. Victory: +1 Card."
+  },
+  {
+    "id": "lurker",
+    "name": "Lurker",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusAction", "trashCards", "gainCard"],
+    "cost": 2,
+    "text": "+1 Action. Choose one: Trash an Action card from the Supply; or gain an Action card from the Trash."
+  },
+  {
+    "id": "masquerade",
+    "name": "Masquerade",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "trashCards"],
+    "cost": 3,
+    "text": "+2 Cards. Each player with any cards in hand passes one to the next player to their left, at once. Then you may trash a card from your hand."
+  },
+  {
+    "id": "mill",
+    "name": "Mill",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action", "victory"],
+    "tags": ["plusCard", "plusAction", "sifting", "plusCoin"],
+    "cost": 4,
+    "text": "+1 Card. +1 Action. You may discard 2 cards for +$2. (1VP)"
+  },
+  {
+    "id": "miningVillage",
+    "name": "Mining Village",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusTwoActions", "villageEffect", "trashCards", "plusCoin"],
+    "cost": 4,
+    "text": "+1 Card. +2 Actions. You may trash this card immediately for +$2."
+  },
+  {
+    "id": "minion",
+    "name": "Minion",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action", "attack"],
+    "tags": ["plusAction", "plusCoin", "attack", "discard", "sifting"],
+    "cost": 5,
+    "text": "+1 Action. Choose one: +$2; or discard your hand, +4 Cards, and each other player with 5+ cards in hand discards their hand and draws 4 cards."
+  },
+  {
+    "id": "nobles",
+    "name": "Nobles",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action", "victory"],
+    "tags": ["plusCard", "plusTwoActions", "villageEffect"],
+    "cost": 6,
+    "text": "Choose one: +3 Cards; or +2 Actions. (2VP)"
+  },
+  {
+    "id": "patrol",
+    "name": "Patrol",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "lookAtCards", "sifting"],
+    "cost": 5,
+    "text": "+3 Cards. Reveal the top 4 cards of your deck. Put the Victory cards and Curses into your hand. Put the rest back in any order."
+  },
+  {
+    "id": "pawn",
+    "name": "Pawn",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusAction", "plusBuy", "plusCoin"],
+    "cost": 2,
+    "text": "Choose two different options: +1 Card; +1 Action; +1 Buy; +$1."
+  },
+  {
+    "id": "replace",
+    "name": "Replace",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action", "attack"],
+    "tags": ["trashCards", "gainCard", "remodel", "attack", "curse"],
+    "cost": 5,
+    "text": "Trash a card from your hand. Gain a card costing up to $2 more. If the gained card is an Action or Treasure, put it on your deck. If it's a Victory card, each other player gains a Curse."
+  },
+  {
+    "id": "secretPassage",
+    "name": "Secret Passage",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusAction", "topdeck"],
+    "cost": 4,
+    "text": "+2 Cards. +1 Action. Take a card from your hand and put it anywhere in your deck."
+  },
+  {
+    "id": "shantyTown",
+    "name": "Shanty Town",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusTwoActions", "villageEffect", "plusCard"],
+    "cost": 3,
+    "text": "+2 Actions. Reveal your hand. If you have no Action cards in hand, +2 Cards."
+  },
+  {
+    "id": "steward",
+    "name": "Steward",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusCoin", "trashCards"],
+    "cost": 3,
+    "text": "Choose one: +2 Cards; or +$2; or trash 2 cards from your hand."
+  },
+  {
+    "id": "swindler",
+    "name": "Swindler",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action", "attack"],
+    "tags": ["attack", "plusCoin", "junking"],
+    "cost": 3,
+    "text": "+$2. Each other player trashes the top card of their deck and gains a card of the same cost that you choose."
+  },
+  {
+    "id": "torturer",
+    "name": "Torturer",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action", "attack"],
+    "tags": ["plusCard", "attack", "discard", "curse"],
+    "cost": 5,
+    "text": "+3 Cards. Each other player either discards 2 cards or gains a Curse to their hand, their choice."
+  },
+  {
+    "id": "tradingPost",
+    "name": "Trading Post",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["trashCards", "gainTreasure", "silverGain"],
+    "cost": 5,
+    "text": "Trash 2 cards from your hand. If you did, gain a Silver to your hand."
+  },
+  {
+    "id": "upgrade",
+    "name": "Upgrade",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusAction", "trashCards", "gainCard", "remodel"],
+    "cost": 5,
+    "text": "+1 Card. +1 Action. Trash a card from your hand. Gain a card costing exactly $1 more than it."
+  },
+  {
+    "id": "wishingWell",
+    "name": "Wishing Well",
+    "expansion": "intrigueSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusAction", "tutoring"],
+    "cost": 3,
+    "text": "+1 Card. +1 Action. Name a card, then reveal the top card of your deck. If it's the named card, put it into your hand."
+  },
+
+  {
+    "id": "bazaar",
+    "name": "Bazaar",
+    "expansion": "seasideSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusTwoActions", "villageEffect", "plusCoin"],
+    "cost": 5,
+    "text": "+1 Card. +2 Actions. +$1."
+  },
+  {
+    "id": "caravan",
+    "name": "Caravan",
+    "expansion": "seasideSecondEdition",
+    "types": ["action", "duration"],
+    "tags": ["plusCard", "plusAction", "duration", "nextTurn"],
+    "cost": 4,
+    "text": "+1 Card. +1 Action. At the start of your next turn, +1 Card."
+  },
+  {
+    "id": "cutpurse",
+    "name": "Cutpurse",
+    "expansion": "seasideSecondEdition",
+    "types": ["action", "attack"],
+    "tags": ["attack", "plusCoin", "discard"],
+    "cost": 4,
+    "text": "+$2. Each other player discards a Copper from their hand (or reveals a hand with no Copper)."
+  },
+  {
+    "id": "fishingVillage",
+    "name": "Fishing Village",
+    "expansion": "seasideSecondEdition",
+    "types": ["action", "duration"],
+    "tags": ["plusTwoActions", "villageEffect", "plusCoin", "duration", "nextTurn"],
+    "cost": 3,
+    "text": "+2 Actions. +$1. At the start of your next turn: +1 Action, +$1."
+  },
+  {
+    "id": "ghostShip",
+    "name": "Ghost Ship",
+    "expansion": "seasideSecondEdition",
+    "types": ["action", "attack"],
+    "tags": ["plusCard", "attack", "topdeck"],
+    "cost": 5,
+    "text": "+2 Cards. Each other player with 4 or more cards in hand puts cards from their hand onto their deck until they have 3 cards in hand."
+  },
+  {
+    "id": "haven",
+    "name": "Haven",
+    "expansion": "seasideSecondEdition",
+    "types": ["action", "duration"],
+    "tags": ["plusCard", "plusAction", "duration", "nextTurn"],
+    "cost": 2,
+    "text": "+1 Card. +1 Action. Set aside a card from your hand face down. At the start of your next turn, put it into your hand."
+  },
+  {
+    "id": "island",
+    "name": "Island",
+    "expansion": "seasideSecondEdition",
+    "types": ["action", "victory"],
+    "tags": ["altVictory"],
+    "cost": 4,
+    "text": "Set aside this and a card from your hand. Return them to your deck at end of game. (2VP)"
+  },
+  {
+    "id": "lighthouse",
+    "name": "Lighthouse",
+    "expansion": "seasideSecondEdition",
+    "types": ["action", "duration"],
+    "tags": ["plusAction", "plusCoin", "duration", "nextTurn", "blockAttack"],
+    "cost": 2,
+    "text": "+1 Action. +$1. At the start of your next turn, +$1. While this is in play, when another player plays an Attack, it doesn't affect you."
+  },
+  {
+    "id": "merchantShip",
+    "name": "Merchant Ship",
+    "expansion": "seasideSecondEdition",
+    "types": ["action", "duration"],
+    "tags": ["plusCoin", "duration", "nextTurn"],
+    "cost": 5,
+    "text": "+$2. At the start of your next turn, +$2."
+  },
+  {
+    "id": "salvager",
+    "name": "Salvager",
+    "expansion": "seasideSecondEdition",
+    "types": ["action"],
+    "tags": ["plusBuy", "trashCards", "plusCoin"],
+    "cost": 4,
+    "text": "+1 Buy. Trash a card from your hand. +$ equal to its cost."
+  },
+  {
+    "id": "seaHag",
+    "name": "Sea Hag",
+    "expansion": "seasideSecondEdition",
+    "types": ["action", "attack"],
+    "tags": ["attack", "curse", "junking"],
+    "cost": 4,
+    "text": "Each other player discards the top card of their deck, then gains a Curse, putting it on top of their deck."
+  },
+  {
+    "id": "smugglers",
+    "name": "Smugglers",
+    "expansion": "seasideSecondEdition",
+    "types": ["action"],
+    "tags": ["gainCard"],
+    "cost": 3,
+    "text": "Gain a copy of a card costing up to $6 that the player to your right gained on their last turn."
+  },
+  {
+    "id": "tactician",
+    "name": "Tactician",
+    "expansion": "seasideSecondEdition",
+    "types": ["action", "duration"],
+    "tags": ["plusCard", "plusAction", "plusBuy", "duration", "nextTurn"],
+    "cost": 5,
+    "text": "Discard your hand. If you discarded any cards, then at the start of your next turn: +5 Cards, +1 Action, +1 Buy."
+  },
+  {
+    "id": "warehouse",
+    "name": "Warehouse",
+    "expansion": "seasideSecondEdition",
+    "types": ["action"],
+    "tags": ["plusCard", "plusAction", "sifting"],
+    "cost": 3,
+    "text": "+3 Cards. +1 Action. Discard 3 cards."
+  },
+  {
+    "id": "wharf",
+    "name": "Wharf",
+    "expansion": "seasideSecondEdition",
+    "types": ["action", "duration"],
+    "tags": ["plusCard", "plusBuy", "duration", "nextTurn"],
+    "cost": 5,
+    "text": "+2 Cards. +1 Buy. At the start of your next turn: +2 Cards, +1 Buy."
+  }
+]
