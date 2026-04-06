@@ -19,7 +19,9 @@ enum GenerationStatus { idle, loading, error }
 final _generationStatusProvider =
     StateProvider<GenerationStatus>((ref) => GenerationStatus.idle);
 
-final _generationErrorProvider = StateProvider<String?>((ref) => null);
+final _generationErrorProvider  = StateProvider<String?>((ref) => null);
+final _generationReasonProvider =
+    StateProvider<SetupFailureReason?>((ref) => null);
 
 // Convenience read-only providers for the UI
 final generationStatusProvider =
@@ -27,6 +29,10 @@ final generationStatusProvider =
 
 final generationErrorProvider =
     Provider<String?>((ref) => ref.watch(_generationErrorProvider));
+
+/// The typed [SetupFailureReason] for the last error, if any.
+final generationFailureReasonProvider =
+    Provider<SetupFailureReason?>((ref) => ref.watch(_generationReasonProvider));
 
 // ── Shared engine singletons ──────────────────────────────────────────────
 
@@ -43,6 +49,7 @@ final _heuristicEngine = HeuristicEngine();
 Future<bool> generateKingdom(WidgetRef ref) async {
   ref.read(_generationStatusProvider.notifier).state = GenerationStatus.loading;
   ref.read(_generationErrorProvider.notifier).state  = null;
+  ref.read(_generationReasonProvider.notifier).state = null;
 
   try {
     final allRaw = await ref.read(allCardsProvider.future);
@@ -68,6 +75,7 @@ Future<bool> generateKingdom(WidgetRef ref) async {
     return true;
   } on SetupException catch (e) {
     ref.read(_generationErrorProvider.notifier).state  = e.message;
+    ref.read(_generationReasonProvider.notifier).state = e.reason;
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
     return false;
   } catch (e) {
@@ -88,6 +96,7 @@ Future<bool> generateKingdom(WidgetRef ref) async {
 Future<bool> importKingdom(WidgetRef ref, String rawText) async {
   ref.read(_generationStatusProvider.notifier).state = GenerationStatus.loading;
   ref.read(_generationErrorProvider.notifier).state  = null;
+  ref.read(_generationReasonProvider.notifier).state = null;
 
   try {
     final names = parseKingdomText(rawText);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../controllers/setup_exception.dart';
 import '../providers/config_provider.dart';
 import '../providers/generation_provider.dart';
 import '../screens/results_screen.dart';
@@ -103,8 +104,9 @@ class ConfigurationScreen extends ConsumerWidget {
     if (success) {
       Navigator.of(context).push(_resultsRoute());
     } else {
-      final error = ref.read(generationErrorProvider) ?? 'Unknown error.';
-      _showErrorDialog(context, error);
+      final error  = ref.read(generationErrorProvider) ?? 'Unknown error.';
+      final reason = ref.read(generationFailureReasonProvider);
+      _showErrorDialog(context, error, reason);
     }
   }
 
@@ -126,36 +128,22 @@ class ConfigurationScreen extends ConsumerWidget {
     if (success) {
       Navigator.of(context).push(_resultsRoute());
     } else {
-      final error = ref.read(generationErrorProvider) ?? 'Unknown error.';
-      _showErrorDialog(context, error);
+      final error  = ref.read(generationErrorProvider) ?? 'Unknown error.';
+      final reason = ref.read(generationFailureReasonProvider);
+      _showErrorDialog(context, error, reason);
     }
   }
 
   // ── Error dialog ──────────────────────────────────────────────────────────
 
-  void _showErrorDialog(BuildContext context, String message) {
+  void _showErrorDialog(
+    BuildContext context,
+    String message,
+    SetupFailureReason? reason,
+  ) {
     showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: AppColors.errorRed),
-            SizedBox(width: 8),
-            Text('Cannot Generate Kingdom',
-                style: TextStyle(color: AppColors.parchment, fontSize: 16)),
-          ],
-        ),
-        content: Text(message,
-            style: const TextStyle(color: AppColors.parchmentDim)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK',
-                style: TextStyle(color: AppColors.gold)),
-          ),
-        ],
-      ),
+      builder: (_) => _SetupErrorDialog(message: message, reason: reason),
     );
   }
 }
@@ -424,5 +412,111 @@ class _ParsePreview extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ── Contextual error dialog ────────────────────────────────────────────────
+
+class _SetupErrorDialog extends StatelessWidget {
+  final String              message;
+  final SetupFailureReason? reason;
+
+  const _SetupErrorDialog({required this.message, required this.reason});
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, title, suggestion) = _content(reason);
+
+    return AlertDialog(
+      backgroundColor: AppColors.surface,
+      titlePadding:    const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      contentPadding:  const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      title: Row(
+        children: [
+          Icon(icon, color: AppColors.errorRed, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                color:      AppColors.parchment,
+                fontSize:   16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize:       MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          Text(message,
+              style: const TextStyle(
+                  color: AppColors.parchmentDim, fontSize: 13, height: 1.5)),
+          const SizedBox(height: 12),
+          Container(
+            padding:    const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            decoration: BoxDecoration(
+              color:        AppColors.gold.withValues(alpha: 0.07),
+              border:       Border.all(color: AppColors.goldDark.withValues(alpha: 0.4)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.lightbulb_outline_rounded,
+                    color: AppColors.gold, size: 15),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    suggestion,
+                    style: const TextStyle(
+                        color: AppColors.parchmentDim, fontSize: 12, height: 1.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('OK', style: TextStyle(color: AppColors.gold)),
+        ),
+      ],
+    );
+  }
+
+  static (IconData, String, String) _content(SetupFailureReason? reason) {
+    switch (reason) {
+      case SetupFailureReason.poolTooSmall:
+        return (
+          Icons.inventory_2_outlined,
+          'Not Enough Cards',
+          'Enable more expansions or turn off active rules (No Attacks, Max Cost, etc.) to increase the card pool.',
+        );
+      case SetupFailureReason.requirementImpossible:
+        return (
+          Icons.rule_folder_outlined,
+          'Rule Cannot Be Satisfied',
+          'A requirement rule (Village / Trashing / +Buy) has no matching cards after your other filters. Disable a conflicting rule or enable more expansions.',
+        );
+      case SetupFailureReason.varietyImpossible:
+        return (
+          Icons.library_books_outlined,
+          'Not Enough Expansions',
+          'The expansion variety requirement exceeds the number of selected expansions. Enable more sets or lower the variety setting.',
+        );
+      case null:
+        return (
+          Icons.warning_amber_rounded,
+          'Cannot Generate Kingdom',
+          'Check your expansion selection and active rules, then try again.',
+        );
+    }
   }
 }
