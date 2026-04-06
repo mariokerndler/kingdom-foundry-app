@@ -35,10 +35,11 @@ class HeuristicEngine {
   /// [SetupEngine] and returns a new result with everything populated.
   SetupResult enrich(SetupResult result) {
     return SetupResult(
-      kingdomCards: result.kingdomCards,
-      archetypes:   analyze(result.kingdomCards),
-      setupNotes:   result.setupNotes,
-      generatedAt:  result.generatedAt,
+      kingdomCards:   result.kingdomCards,
+      landscapeCards: result.landscapeCards,
+      archetypes:     analyze(result.kingdomCards),
+      setupNotes:     result.setupNotes,
+      generatedAt:    result.generatedAt,
     );
   }
 
@@ -253,8 +254,12 @@ class HeuristicEngine {
 
     // Terminal draw synergy
     if (p.terminalDrawCount > 0) {
-      final terminal = p.kingdom
-          .firstWhere((c) => c.hasTag(CardTag.plusCard) && !c.hasTag(CardTag.plusAction));
+      // Find the best draw card — may have drawToX (Library) rather than plusCard
+      final terminal = p.kingdom.firstWhere(
+        (c) => (c.hasTag(CardTag.plusCard) || c.hasTag(CardTag.drawToX)) &&
+               !c.hasTag(CardTag.plusAction) && !c.hasTag(CardTag.villageEffect),
+        orElse: () => p.kingdom.first,
+      );
       tips.add('${terminal.name} is your terminal draw engine. Buy 1–2 copies '
                'maximum — too many collide and strand your turns without Actions.');
     }
@@ -370,7 +375,8 @@ class HeuristicEngine {
              'when played before opponents have stabilised their decks.');
 
     if (p.curseAttackCount > 0) {
-      final curser = p.attackCards.firstWhere((c) => c.hasTag(CardTag.curse));
+      final curser = p.attackCards.firstWhere(
+        (c) => c.hasTag(CardTag.curse), orElse: () => p.attackCards.first);
       tips.add('${curser.name} hands out Curses — watch the Curse pile. '
                'If it empties, the game often ends on three-pile; plan around it.');
       tips.add('Distribute Curses as fast as possible before opponents can '
@@ -379,13 +385,15 @@ class HeuristicEngine {
     }
 
     if (p.discardAttackCount > 0) {
-      final discarder = p.attackCards.firstWhere((c) => c.hasTag(CardTag.discard));
+      final discarder = p.attackCards.firstWhere(
+        (c) => c.hasTag(CardTag.discard), orElse: () => p.attackCards.first);
       tips.add('${discarder.name} disrupts hand size. Chain it with Actions '
                'that benefit from opponents having fewer cards (e.g., reaction-less kingdoms).');
     }
 
     if (p.reactionCount > 0) {
-      final reactor = p.kingdom.firstWhere((c) => c.hasTag(CardTag.reaction));
+      final reactor = p.kingdom.firstWhere(
+        (c) => c.hasTag(CardTag.reaction), orElse: () => p.kingdom.first);
       tips.add('${reactor.name} blocks attacks. In a mirror-match, buying '
                'one copy is often correct; buying two is usually excessive.');
     }

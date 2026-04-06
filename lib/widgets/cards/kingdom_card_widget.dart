@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/card_tag.dart';
 import '../../models/card_type.dart';
 import '../../models/dominion_card.dart';
+import '../../providers/card_data_providers.dart';
 import '../../utils/app_theme.dart';
 import '../common/expansion_badge.dart';
 
@@ -117,6 +119,7 @@ class KingdomCardWidget extends StatelessWidget {
   // ── Type → accent colour ──────────────────────────────────────────────────
   // Priority matches Dominion's visual hierarchy: curse > attack > reaction >
   // duration > treasure > victory > night > action (default).
+  // Internal-accessible so _ChainStep can reuse it for upgrade card sheets.
   static Color _accentColor(List<CardType> types) {
     if (types.contains(CardType.curse))    return const Color(0xFF9C27B0);
     if (types.contains(CardType.attack))   return const Color(0xFFCF3C3C);
@@ -307,6 +310,31 @@ class _CardDetailSheet extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
+                  // Traveller upgrade chain
+                  if (card.travellerChain.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    const Text(
+                      'TRAVELLER CHAIN',
+                      style: TextStyle(
+                        color:         AppColors.gold,
+                        fontSize:      10,
+                        fontWeight:    FontWeight.w700,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Set these cards aside before play.',
+                      style: TextStyle(
+                          color: AppColors.parchmentDim, fontSize: 12),
+                    ),
+                    const SizedBox(height: 10),
+                    _TravellerChain(
+                      base:  card,
+                      chain: card.travellerChain,
+                    ),
+                  ],
+
                   // Tags section
                   if (card.tags.isNotEmpty) ...[
                     const Text(
@@ -351,4 +379,182 @@ class _CardDetailSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Traveller upgrade chain ────────────────────────────────────────────────
+
+/// Displays the full traveller chain for [base], each step tappable to reveal
+/// the upgrade card's rules text. Uses [allCardsProvider] to look up text for
+/// the intermediate upgrade cards (Treasure Hunter, Warrior, etc.).
+class _TravellerChain extends ConsumerWidget {
+  final DominionCard base;
+  final List<String> chain;
+
+  const _TravellerChain({required this.base, required this.chain});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final allAsync = ref.watch(allCardsProvider);
+
+    // Build lookup map: lowercase name → card.
+    final cardByName = allAsync.whenData((all) {
+      return {for (final c in all) c.name.toLowerCase(): c};
+    });
+
+    // Full step list: [base, ...upgrades]
+    final names = [base.name, ...chain];
+
+    return Column(
+      children: [
+        for (var i = 0; i < names.length; i++) ...[
+          _ChainStep(
+            name:     names[i],
+            // Resolve the card object so we can show its text.
+            card:     i == 0
+                ? base
+                : cardByName.whenOrNull(
+                    data: (m) => m[names[i].toLowerCase()],
+                  ),
+            isBase:   i == 0,
+            isFinal:  i == names.length - 1,
+            accent:   _accentColor(i, names.length),
+          ),
+          if (i < names.length - 1)
+            Padding(
+              padding: const EdgeInsets.only(left: 14),
+              child: Row(
+                children: [
+                  Container(width: 2, height: 12, color: AppColors.divider),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_downward_rounded,
+                      size: 11, color: AppColors.parchmentDim),
+                ],
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+
+  static Color _accentColor(int index, int total) {
+    if (index == 0)          return const Color(0xFF26C6DA); // teal – base
+    if (index == total - 1)  return AppColors.gold;          // gold – top
+    return AppColors.parchmentDim;                           // dim – middle
+  }
+}
+
+class _ChainStep extends StatelessWidget {
+  final String        name;
+  final DominionCard? card;   // null while allCardsProvider is loading
+  final bool          isBase;
+  final bool          isFinal;
+  final Color         accent;
+
+  const _ChainStep({
+    required this.name,
+    required this.card,
+    required this.isBase,
+    required this.isFinal,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: card != null ? '$name: ${card!.text}' : name,
+      button: card != null,
+      child: GestureDetector(
+        onTap: card != null ? () => _showUpgradeDetail(context) : null,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color:        accent.withValues(alpha: isBase || isFinal ? 0.08 : 0.04),
+            border:       Border.all(color: accent.withValues(alpha: 0.3)),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isFinal
+                    ? Icons.star_rounded
+                    : isBase
+                        ? Icons.person_rounded
+                        : Icons.upgrade_rounded,
+                size:  14,
+                color: accent,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        color:      accent,
+                        fontSize:   13,
+                        fontWeight: isBase || isFinal
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                    ),
+                    if (card != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        card!.text,
+                        style: TextStyle(
+                          color:    accent.withValues(alpha: 0.65),
+                          fontSize: 10,
+                          height:   1.35,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              if (isBase)
+                _Badge(label: 'start', color: accent)
+              else if (isFinal)
+                _Badge(label: 'top', color: accent)
+              else if (card != null)
+                Icon(Icons.open_in_full_rounded,
+                    size: 11, color: accent.withValues(alpha: 0.5)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showUpgradeDetail(BuildContext context) {
+    if (card == null) return;
+    showModalBottomSheet<void>(
+      context:            context,
+      isScrollControlled: true,
+      backgroundColor:    Colors.transparent,
+      builder: (_) => _CardDetailSheet(
+        card:   card!,
+        accent: KingdomCardWidget._accentColor(card!.types),
+      ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final String label;
+  final Color  color;
+  const _Badge({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+    decoration: BoxDecoration(
+      color:        color.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(4),
+    ),
+    child: Text(label, style: TextStyle(color: color, fontSize: 9)),
+  );
 }

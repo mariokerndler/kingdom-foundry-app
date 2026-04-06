@@ -11,11 +11,13 @@ class ConfigState {
   final Set<Expansion> ownedExpansions;
   final SetupRules     rules;
   final Set<String>    disabledCardIds;
+  final int            playerCount; // 2–6
 
   const ConfigState({
     required this.ownedExpansions,
     required this.rules,
     required this.disabledCardIds,
+    this.playerCount = 2,
   });
 
   bool isExpansionOwned(Expansion e) => ownedExpansions.contains(e);
@@ -25,11 +27,13 @@ class ConfigState {
     Set<Expansion>? ownedExpansions,
     SetupRules?     rules,
     Set<String>?    disabledCardIds,
+    int?            playerCount,
   }) {
     return ConfigState(
       ownedExpansions: ownedExpansions ?? this.ownedExpansions,
       rules:           rules           ?? this.rules,
       disabledCardIds: disabledCardIds ?? this.disabledCardIds,
+      playerCount:     playerCount     ?? this.playerCount,
     );
   }
 }
@@ -41,7 +45,6 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
 
   ConfigNotifier(this._persistence) : super(_persistence.load());
 
-  // Auto-save on every state change
   @override
   set state(ConfigState value) {
     super.state = value;
@@ -60,13 +63,11 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
     state = state.copyWith(ownedExpansions: current);
   }
 
-  void selectAllExpansions(Set<Expansion> available) {
-    state = state.copyWith(ownedExpansions: Set.from(available));
-  }
+  void selectAllExpansions(Set<Expansion> available) =>
+      state = state.copyWith(ownedExpansions: Set.from(available));
 
-  void clearExpansions() {
-    state = state.copyWith(ownedExpansions: {});
-  }
+  void clearExpansions() =>
+      state = state.copyWith(ownedExpansions: {});
 
   // ── Rules ─────────────────────────────────────────────────────────────────
 
@@ -97,9 +98,15 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
     );
   }
 
-  void resetRules() {
-    state = state.copyWith(rules: const SetupRules());
-  }
+  void setIncludeLandscape(bool v) =>
+      state = state.copyWith(rules: state.rules.copyWith(includeLandscape: v));
+
+  void resetRules() => state = state.copyWith(rules: const SetupRules());
+
+  // ── Player count ──────────────────────────────────────────────────────────
+
+  void setPlayerCount(int count) =>
+      state = state.copyWith(playerCount: count.clamp(2, 6));
 
   // ── Card ban list ─────────────────────────────────────────────────────────
 
@@ -113,14 +120,12 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
     state = state.copyWith(disabledCardIds: current);
   }
 
-  void enableAllCards() {
-    state = state.copyWith(disabledCardIds: {});
-  }
+  void enableAllCards() =>
+      state = state.copyWith(disabledCardIds: {});
 }
 
 // ── Providers ─────────────────────────────────────────────────────────────
 
-/// Override this in main() with the real SharedPreferences instance.
 final sharedPreferencesProvider = Provider<SharedPreferences>(
   (_) => throw UnimplementedError('sharedPreferencesProvider not initialized'),
 );
@@ -129,7 +134,11 @@ final configPersistenceProvider = Provider<ConfigPersistenceService>(
   (ref) => ConfigPersistenceService(ref.watch(sharedPreferencesProvider)),
 );
 
-final configProvider =
-    StateNotifierProvider<ConfigNotifier, ConfigState>(
+final configProvider = StateNotifierProvider<ConfigNotifier, ConfigState>(
   (ref) => ConfigNotifier(ref.watch(configPersistenceProvider)),
+);
+
+// Convenience: player count extracted so widgets don't rebuild on other changes.
+final playerCountProvider = Provider<int>(
+  (ref) => ref.watch(configProvider).playerCount,
 );

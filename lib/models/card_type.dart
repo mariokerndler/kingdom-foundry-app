@@ -44,12 +44,16 @@ extension CardTypeExtension on CardType {
   }
 
   bool get isKingdomCard {
-    // Events, Landmarks, Projects, Ways, Allies are non-kingdom supply cards
+    // Cards whose ONLY type is one of these are not kingdom supply cards.
+    // Note: pure "traveller" (upgrade cards like Treasure Hunter) are also
+    // excluded — but base travellers like Page have ["action","traveller"] so
+    // action.isKingdomCard keeps them in the supply.
     return this != CardType.event &&
            this != CardType.landmark &&
            this != CardType.project &&
            this != CardType.way &&
            this != CardType.ally &&
+           this != CardType.traveller &&
            this != CardType.artifact &&
            this != CardType.state;
   }

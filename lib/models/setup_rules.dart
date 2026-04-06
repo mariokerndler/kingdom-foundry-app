@@ -28,6 +28,10 @@ class SetupRules {
   /// Minimum number of distinct expansions the 10 cards must span (1 = any).
   final int minExpansionVariety;
 
+  /// When false, no landscape cards (Events/Landmarks/Projects/Ways/Allies)
+  /// will be drawn even if the owned expansions contain them.
+  final bool includeLandscape;
+
   const SetupRules({
     this.noAttacks            = false,
     this.noDuration           = false,
@@ -38,6 +42,7 @@ class SetupRules {
     this.requireVillage       = false,
     this.maxCost,
     this.minExpansionVariety  = 1,
+    this.includeLandscape     = true,
   });
 
   SetupRules copyWith({
@@ -50,6 +55,7 @@ class SetupRules {
     bool? requireVillage,
     int? maxCost,
     int? minExpansionVariety,
+    bool? includeLandscape,
     bool clearMaxCost = false,
   }) {
     return SetupRules(
@@ -62,6 +68,7 @@ class SetupRules {
       requireVillage:      requireVillage      ?? this.requireVillage,
       maxCost:             clearMaxCost ? null : (maxCost ?? this.maxCost),
       minExpansionVariety: minExpansionVariety ?? this.minExpansionVariety,
+      includeLandscape:    includeLandscape    ?? this.includeLandscape,
     );
   }
 
@@ -79,6 +86,7 @@ class SetupRules {
     if (minExpansionVariety > 1) {
       rules.add('At least $minExpansionVariety expansions');
     }
+    if (!includeLandscape)   rules.add('No landscape cards');
     return rules;
   }
 

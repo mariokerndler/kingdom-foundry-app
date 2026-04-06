@@ -7,6 +7,7 @@ import '../models/dominion_card.dart';
 import '../models/setup_result.dart';
 import 'card_data_providers.dart';
 import 'config_provider.dart';
+import 'history_provider.dart';
 
 // ── Last generated result (null until first run) ──────────────────────────
 
@@ -72,6 +73,7 @@ Future<bool> generateKingdom(WidgetRef ref) async {
 
     ref.read(setupResultProvider.notifier).state       = enriched;
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
+    ref.read(historyProvider.notifier).push(enriched); // fire-and-forget
     return true;
   } on SetupException catch (e) {
     ref.read(_generationErrorProvider.notifier).state  = e.message;

@@ -7,27 +7,13 @@ import '../providers/config_provider.dart';
 import '../providers/generation_provider.dart';
 import '../screens/results_screen.dart';
 import '../utils/app_theme.dart';
+import '../widgets/common/history_sheet.dart';
+import '../widgets/common/player_count_bar.dart';
 import '../widgets/screens/card_ban_list.dart';
 import '../widgets/screens/expansion_picker.dart';
 import '../widgets/screens/rules_section.dart';
 
-// ── Shared page-transition route ───────────────────────────────────────────
-
-/// Fade + slight slide-up into [ResultsScreen].
-Route<void> _resultsRoute() => PageRouteBuilder<void>(
-      pageBuilder:               (_, __, ___) => const ResultsScreen(),
-      transitionDuration:        const Duration(milliseconds: 340),
-      reverseTransitionDuration: const Duration(milliseconds: 260),
-      transitionsBuilder: (_, animation, __, child) => FadeTransition(
-        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-        child: SlideTransition(
-          position: Tween(begin: const Offset(0, 0.04), end: Offset.zero)
-              .animate(
-                  CurvedAnimation(parent: animation, curve: Curves.easeOut)),
-          child: child,
-        ),
-      ),
-    );
+// ── Shared page-transition route defined in results_screen.dart ────────────
 
 // ── Screen ─────────────────────────────────────────────────────────────────
 
@@ -47,6 +33,11 @@ class ConfigurationScreen extends ConsumerWidget {
           title: const _AppTitle(),
           actions: [
             IconButton(
+              icon:    const Icon(Icons.history_rounded),
+              tooltip: 'Kingdom history',
+              onPressed: () => showHistorySheet(context, ref),
+            ),
+            IconButton(
               icon:    const Icon(Icons.paste_rounded),
               tooltip: 'Import kingdom from clipboard',
               onPressed: () => _showImportDialog(context, ref),
@@ -62,11 +53,18 @@ class ConfigurationScreen extends ConsumerWidget {
           ),
         ),
 
-        body: const TabBarView(
+        body: const Column(
           children: [
-            ExpansionPickerTab(),
-            RulesTab(),
-            CardBanListTab(),
+            PlayerCountBar(),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  ExpansionPickerTab(),
+                  RulesTab(),
+                  CardBanListTab(),
+                ],
+              ),
+            ),
           ],
         ),
 
@@ -102,7 +100,7 @@ class ConfigurationScreen extends ConsumerWidget {
     if (!context.mounted) return;
 
     if (success) {
-      Navigator.of(context).push(_resultsRoute());
+      Navigator.of(context).push(buildResultsRoute());
     } else {
       final error  = ref.read(generationErrorProvider) ?? 'Unknown error.';
       final reason = ref.read(generationFailureReasonProvider);
@@ -126,7 +124,7 @@ class ConfigurationScreen extends ConsumerWidget {
     if (!context.mounted) return;
 
     if (success) {
-      Navigator.of(context).push(_resultsRoute());
+      Navigator.of(context).push(buildResultsRoute());
     } else {
       final error  = ref.read(generationErrorProvider) ?? 'Unknown error.';
       final reason = ref.read(generationFailureReasonProvider);

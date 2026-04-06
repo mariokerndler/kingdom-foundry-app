@@ -73,6 +73,20 @@ class _RulesTabState extends ConsumerState<RulesTab>
 
         const _Divider(),
         const SectionHeader(
+          title:    'Landscape Cards',
+          subtitle: 'Events, Landmarks, Projects, Ways and Allies.',
+        ),
+
+        _RuleTile(
+          icon:     Icons.map_outlined,
+          label:    'Include landscape cards',
+          detail:   'Draw Events, Projects, etc. from owned expansions.',
+          value:    rules.includeLandscape,
+          onChange: notifier.setIncludeLandscape,
+        ),
+
+        const _Divider(),
+        const SectionHeader(
           title:    'Requirements',
           subtitle: 'Guarantee certain card types appear.',
         ),

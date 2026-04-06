@@ -1,23 +1,43 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/card_tag.dart';
+import '../models/dominion_card.dart';
 import '../models/setup_result.dart';
 import '../models/strategy_archetype.dart';
+import '../providers/config_provider.dart';
 import '../providers/generation_provider.dart';
 import '../utils/app_theme.dart';
 import '../widgets/cards/archetype_card.dart';
 import '../widgets/cards/kingdom_card_widget.dart';
 import '../widgets/common/section_header.dart';
 
+/// Public route builder — shared by ConfigurationScreen and HistorySheet.
+Route<void> buildResultsRoute() => PageRouteBuilder<void>(
+      pageBuilder:               (_, __, ___) => const ResultsScreen(),
+      transitionDuration:        const Duration(milliseconds: 340),
+      reverseTransitionDuration: const Duration(milliseconds: 260),
+      transitionsBuilder: (_, animation, __, child) => FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        child: SlideTransition(
+          position: Tween(begin: const Offset(0, 0.04), end: Offset.zero)
+              .animate(
+                  CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+          child: child,
+        ),
+      ),
+    );
+
 class ResultsScreen extends ConsumerWidget {
   const ResultsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final result        = ref.watch(setupResultProvider);
-    final status        = ref.watch(generationStatusProvider);
+    final result         = ref.watch(setupResultProvider);
+    final status         = ref.watch(generationStatusProvider);
     final isRegenerating = status == GenerationStatus.loading;
 
     if (result == null) {
@@ -29,10 +49,10 @@ class ResultsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: _ResultsAppBar(
-        result:          result,
-        isRegenerating:  isRegenerating,
-        onRegenerate: () => _regenerate(context, ref),
-        onCopy:       () => _copyKingdom(context, result),
+        result:         result,
+        isRegenerating: isRegenerating,
+        onRegenerate:   () => _regenerate(context, ref),
+        onCopy:         () => _copyKingdom(context, result),
       ),
       body: isRegenerating
           ? const _RegeneratingOverlay()
@@ -92,15 +112,13 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final expansionCount = result.kingdomCards
-        .map((c) => c.expansion)
-        .toSet()
-        .length;
+    final expansionCount =
+        result.kingdomCards.map((c) => c.expansion).toSet().length;
 
     return AppBar(
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize:       MainAxisSize.min,
         children: [
           const Text('Kingdom Board',
               style: TextStyle(
@@ -118,22 +136,20 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        // Copy kingdom list
         IconButton(
-          tooltip:  'Copy kingdom list',
+          tooltip:   'Copy kingdom list',
           onPressed: isRegenerating ? null : onCopy,
           icon: const Icon(Icons.copy_rounded, color: AppColors.parchmentDim),
         ),
-        // Regenerate
         IconButton(
-          tooltip:  'Regenerate kingdom',
+          tooltip:   'Regenerate kingdom',
           onPressed: isRegenerating ? null : onRegenerate,
           icon: isRegenerating
               ? const SizedBox(
                   width: 18, height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(AppColors.gold),
+                    valueColor:  AlwaysStoppedAnimation(AppColors.gold),
                   ),
                 )
               : const Icon(Icons.casino_rounded, color: AppColors.gold),
@@ -150,41 +166,36 @@ class _RegeneratingOverlay extends StatelessWidget {
   const _RegeneratingOverlay();
 
   @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation(AppColors.gold),
-          ),
-          SizedBox(height: 20),
-          Text('Drawing a new kingdom…',
-              style: TextStyle(color: AppColors.parchmentDim)),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation(AppColors.gold)),
+        SizedBox(height: 20),
+        Text('Drawing a new kingdom…',
+            style: TextStyle(color: AppColors.parchmentDim)),
+      ],
+    ),
+  );
 }
 
 // ── Main scrollable body ───────────────────────────────────────────────────
 
-class _ResultsBody extends StatelessWidget {
+class _ResultsBody extends ConsumerWidget {
   final SetupResult result;
   const _ResultsBody({required this.result});
 
   @override
-  Widget build(BuildContext context) {
-    // Key includes generatedAt so cards re-animate on each regeneration.
-    final genKey = result.generatedAt.millisecondsSinceEpoch;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playerCount = ref.watch(playerCountProvider);
+    final genKey      = result.generatedAt.millisecondsSinceEpoch;
 
     return CustomScrollView(
       slivers: [
         // ── Archetype summary banner ──────────────────────────────────────
         if (result.archetypes.isNotEmpty)
-          SliverToBoxAdapter(
-            child: _ArchetypeBanner(result: result),
-          ),
+          SliverToBoxAdapter(child: _ArchetypeBanner(result: result)),
 
         // ── Kingdom board header ──────────────────────────────────────────
         const SliverToBoxAdapter(
@@ -218,11 +229,22 @@ class _ResultsBody extends StatelessWidget {
           ),
         ),
 
+        // ── Landscape cards (Events / Landmarks / Projects / Ways / Allies)
+        if (result.landscapeCards.isNotEmpty)
+          SliverToBoxAdapter(
+            child: _LandscapeSection(cards: result.landscapeCards),
+          ),
+
         // ── Setup notes ───────────────────────────────────────────────────
         if (result.setupNotes.isNotEmpty)
           SliverToBoxAdapter(
             child: _SetupNotesSection(notes: result.setupNotes),
           ),
+
+        // ── Random first player ───────────────────────────────────────────
+        SliverToBoxAdapter(
+          child: _RandomFirstPlayer(playerCount: playerCount),
+        ),
 
         // ── Strategy guide ────────────────────────────────────────────────
         if (result.archetypes.isNotEmpty) ...[
@@ -243,24 +265,18 @@ class _ResultsBody extends StatelessWidget {
           ),
         ],
 
-        // Bottom padding for home indicator
         const SliverToBoxAdapter(child: SizedBox(height: 40)),
       ],
     );
   }
 }
 
-// ── Staggered entrance animation ──────────────────────────────────────────
+// ── Staggered entrance ─────────────────────────────────────────────────────
 
 class _StaggeredEntry extends StatefulWidget {
   final int    index;
   final Widget child;
-
-  const _StaggeredEntry({
-    super.key,
-    required this.index,
-    required this.child,
-  });
+  const _StaggeredEntry({super.key, required this.index, required this.child});
 
   @override
   State<_StaggeredEntry> createState() => _StaggeredEntryState();
@@ -276,32 +292,277 @@ class _StaggeredEntryState extends State<_StaggeredEntry>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 380),
-    );
+        vsync: this, duration: const Duration(milliseconds: 380));
     _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slide = Tween(
-      begin: const Offset(0, 0.07),
-      end:   Offset.zero,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-
-    // Stagger: each card starts 50 ms after the previous one.
+    _slide   = Tween(begin: const Offset(0, 0.07), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     Future.delayed(Duration(milliseconds: widget.index * 50), () {
       if (mounted) _ctrl.forward();
     });
   }
 
   @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+    opacity: _opacity,
+    child:   SlideTransition(position: _slide, child: widget.child),
+  );
+}
+
+// ── Landscape section ──────────────────────────────────────────────────────
+
+class _LandscapeSection extends StatelessWidget {
+  final List<DominionCard> cards;
+  const _LandscapeSection({required this.cards});
+
+  @override
+  Widget build(BuildContext context) {
+    // Group by type label for display
+    final groups = <String, List<DominionCard>>{};
+    for (final c in cards) {
+      final label = _landscapeLabel(c);
+      (groups[label] ??= []).add(c);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            header: true,
+            child: const Text(
+              'LANDSCAPE CARDS',
+              style: TextStyle(
+                color:         AppColors.gold,
+                fontSize:      10,
+                fontWeight:    FontWeight.w700,
+                letterSpacing: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Place these above the kingdom supply.',
+            style: TextStyle(color: AppColors.parchmentDim, fontSize: 12),
+          ),
+          const SizedBox(height: 10),
+          ...groups.entries.map((entry) => _LandscapeGroup(
+                label: entry.key,
+                cards: entry.value,
+              )),
+        ],
+      ),
+    );
+  }
+
+  static String _landscapeLabel(DominionCard c) {
+    if (c.isEvent)    return 'Events';
+    if (c.isLandmark) return 'Landmarks';
+    if (c.isProject)  return 'Projects';
+    if (c.isWay)      return 'Ways';
+    if (c.isAlly)     return 'Allies';
+    return 'Landscape';
+  }
+}
+
+class _LandscapeGroup extends StatelessWidget {
+  final String             label;
+  final List<DominionCard> cards;
+  const _LandscapeGroup({required this.label, required this.cards});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color:      AppColors.parchmentDim,
+              fontSize:   11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        ...cards.map((c) => Semantics(
+          label: '${c.name}: ${c.text}',
+          child: Container(
+            margin:     const EdgeInsets.only(bottom: 6),
+            padding:    const EdgeInsets.fromLTRB(14, 10, 14, 10),
+            decoration: BoxDecoration(
+              color:        AppColors.cardSurface,
+              border:       Border.all(color: AppColors.divider),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 4,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color:        const Color(0xFF7E57C2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(c.name,
+                          style: const TextStyle(
+                            color:      AppColors.parchment,
+                            fontSize:   13,
+                            fontWeight: FontWeight.w600,
+                          )),
+                      const SizedBox(height: 3),
+                      Text(c.text,
+                          style: const TextStyle(
+                            color:    AppColors.parchmentDim,
+                            fontSize: 11,
+                            height:   1.4,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+// ── Random first player ────────────────────────────────────────────────────
+
+class _RandomFirstPlayer extends StatefulWidget {
+  final int playerCount;
+  const _RandomFirstPlayer({required this.playerCount});
+
+  @override
+  State<_RandomFirstPlayer> createState() => _RandomFirstPlayerState();
+}
+
+class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
+  int?  _picked;
+  bool  _rolling = false;
+
+  Future<void> _roll() async {
+    HapticFeedback.mediumImpact();
+    setState(() { _rolling = true; _picked = null; });
+
+    // Quick slot-machine flicker: cycle through values 4×
+    for (var i = 0; i < widget.playerCount * 4; i++) {
+      await Future.delayed(const Duration(milliseconds: 60));
+      if (!mounted) return;
+      setState(() => _picked = (i % widget.playerCount) + 1);
+    }
+
+    // Final pick
+    final result = Random().nextInt(widget.playerCount) + 1;
+    await Future.delayed(const Duration(milliseconds: 80));
+    if (!mounted) return;
+    setState(() { _picked = result; _rolling = false; });
+    HapticFeedback.heavyImpact();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _opacity,
-      child: SlideTransition(position: _slide, child: widget.child),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+      child: Container(
+        padding:    const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        decoration: BoxDecoration(
+          color:        AppColors.cardSurface,
+          border:       Border.all(color: AppColors.divider),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            // Result display
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'FIRST PLAYER',
+                    style: TextStyle(
+                      color:         AppColors.gold,
+                      fontSize:      10,
+                      fontWeight:    FontWeight.w700,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 80),
+                    child: _picked == null
+                        ? Text(
+                            'Tap to pick randomly from ${widget.playerCount} players',
+                            key: const ValueKey('prompt'),
+                            style: const TextStyle(
+                              color:    AppColors.parchmentDim,
+                              fontSize: 13,
+                            ),
+                          )
+                        : Text(
+                            'Player $_picked goes first!',
+                            key: ValueKey(_picked),
+                            style: TextStyle(
+                              color:      _rolling
+                                  ? AppColors.parchmentDim
+                                  : AppColors.parchment,
+                              fontSize:   15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Roll button
+            Semantics(
+              label:  'Pick random first player',
+              button: true,
+              child: GestureDetector(
+                onTap: _rolling ? null : _roll,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 44, height: 44,
+                  decoration: BoxDecoration(
+                    color:        _rolling
+                        ? AppColors.goldDark
+                        : AppColors.gold,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: _rolling
+                      ? const SizedBox(
+                          width: 20, height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:  AlwaysStoppedAnimation(Colors.black),
+                          ),
+                        )
+                      : const Icon(Icons.casino_rounded,
+                          color: Colors.black, size: 22),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -314,94 +575,95 @@ class _ArchetypeBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary    = result.archetypes.first;
+    final primary     = result.archetypes.first;
     final secondaries = result.archetypes.skip(1).toList();
 
-    return Container(
-      margin:  const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end:   Alignment.bottomRight,
-          colors: [
-            AppColors.cardSurface,
-            _archetypeColor(primary.kind).withValues(alpha: 0.12),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _archetypeColor(primary.kind).withValues(alpha: 0.4),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Primary
-          Row(
-            children: [
-              Icon(
-                _archetypeIcon(primary.kind),
-                color: _archetypeColor(primary.kind),
-                size:  16,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                primary.headline,
-                style: TextStyle(
-                  color:      _archetypeColor(primary.kind),
-                  fontSize:   13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const Spacer(),
-              const Text(
-                'PRIMARY',
-                style: TextStyle(
-                  color:         AppColors.parchmentDim,
-                  fontSize:      9,
-                  fontWeight:    FontWeight.w600,
-                  letterSpacing: 1.2,
-                ),
-              ),
+    return Semantics(
+      label: 'Primary strategy: ${primary.headline}. '
+             '${secondaries.isNotEmpty ? 'Also: ${secondaries.map((a) => a.headline).join(', ')}.' : ''}',
+      child: Container(
+        margin:  const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin:  Alignment.topLeft,
+            end:    Alignment.bottomRight,
+            colors: [
+              AppColors.cardSurface,
+              _archetypeColor(primary.kind).withValues(alpha: 0.12),
             ],
           ),
-
-          // Secondary archetypes
-          if (secondaries.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing:    6,
-              runSpacing: 6,
-              children: secondaries.map((a) {
-                final c = _archetypeColor(a.kind);
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color:        c.withValues(alpha: 0.1),
-                    border:       Border.all(color: c.withValues(alpha: 0.3)),
-                    borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+              color: _archetypeColor(primary.kind).withValues(alpha: 0.4)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                ExcludeSemantics(
+                  child: Icon(_archetypeIcon(primary.kind),
+                      color: _archetypeColor(primary.kind), size: 16),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  primary.headline,
+                  style: TextStyle(
+                    color:      _archetypeColor(primary.kind),
+                    fontSize:   13,
+                    fontWeight: FontWeight.w700,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(_archetypeIcon(a.kind), color: c, size: 11),
-                      const SizedBox(width: 4),
-                      Text(a.headline,
-                          style: TextStyle(color: c, fontSize: 11)),
-                    ],
+                ),
+                const Spacer(),
+                const Text(
+                  'PRIMARY',
+                  style: TextStyle(
+                    color:         AppColors.parchmentDim,
+                    fontSize:      9,
+                    fontWeight:    FontWeight.w600,
+                    letterSpacing: 1.2,
                   ),
-                );
-              }).toList(),
+                ),
+              ],
             ),
+            if (secondaries.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing:    6,
+                runSpacing: 6,
+                children: secondaries.map((a) {
+                  final c = _archetypeColor(a.kind);
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color:        c.withValues(alpha: 0.1),
+                      border:       Border.all(color: c.withValues(alpha: 0.3)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ExcludeSemantics(
+                          child: Icon(_archetypeIcon(a.kind),
+                              color: c, size: 11),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(a.headline,
+                            style: TextStyle(color: c, fontSize: 11)),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            _StatStrip(result: result),
           ],
-
-          // Stat strip
-          const SizedBox(height: 12),
-          const Divider(height: 1),
-          const SizedBox(height: 10),
-          _StatStrip(result: result),
-        ],
+        ),
       ),
     );
   }
@@ -429,7 +691,7 @@ class _ArchetypeBanner extends StatelessWidget {
   }
 }
 
-// ── Stat strip (attacks / trashing / duration / alt-vp) ───────────────────
+// ── Stat strip ─────────────────────────────────────────────────────────────
 
 class _StatStrip extends StatelessWidget {
   final SetupResult result;
@@ -478,7 +740,6 @@ class _Stat extends StatelessWidget {
   final String   label;
   final int      value;
   final Color    color;
-
   const _Stat({
     required this.icon,
     required this.label,
@@ -489,27 +750,29 @@ class _Stat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = value > 0;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: active ? color : AppColors.divider, size: 18),
-        const SizedBox(height: 2),
-        Text(
-          '$value',
-          style: TextStyle(
-            color:      active ? color : AppColors.parchmentDim,
-            fontSize:   16,
-            fontWeight: FontWeight.w700,
+    return Semantics(
+      label: '$value $label',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ExcludeSemantics(
+            child: Icon(icon,
+                color: active ? color : AppColors.divider, size: 18),
           ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            color:    AppColors.parchmentDim,
-            fontSize: 10,
+          const SizedBox(height: 2),
+          Text(
+            '$value',
+            style: TextStyle(
+              color:      active ? color : AppColors.parchmentDim,
+              fontSize:   16,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-      ],
+          Text(label,
+              style: const TextStyle(
+                  color: AppColors.parchmentDim, fontSize: 10)),
+        ],
+      ),
     );
   }
 }
@@ -527,13 +790,16 @@ class _SetupNotesSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'SETUP NOTES',
-            style: TextStyle(
-              color:         AppColors.gold,
-              fontSize:      10,
-              fontWeight:    FontWeight.w700,
-              letterSpacing: 1.4,
+          Semantics(
+            header: true,
+            child: const Text(
+              'SETUP NOTES',
+              style: TextStyle(
+                color:         AppColors.gold,
+                fontSize:      10,
+                fontWeight:    FontWeight.w700,
+                letterSpacing: 1.4,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -549,28 +815,34 @@ class _SetupNotesSection extends StatelessWidget {
                 final isLast = entry.key == notes.length - 1;
                 return Column(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.info_outline_rounded,
-                              color: AppColors.gold, size: 15),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              entry.value,
-                              style: const TextStyle(
-                                color:    AppColors.parchmentDim,
-                                fontSize: 13,
-                                height:   1.45,
+                    Semantics(
+                      label: entry.value,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const ExcludeSemantics(
+                              child: Icon(Icons.info_outline_rounded,
+                                  color: AppColors.gold, size: 15),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                entry.value,
+                                style: const TextStyle(
+                                  color:    AppColors.parchmentDim,
+                                  fontSize: 13,
+                                  height:   1.45,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                    if (!isLast) const Divider(height: 1, indent: 14, endIndent: 14),
+                    if (!isLast)
+                      const Divider(height: 1, indent: 14, endIndent: 14),
                   ],
                 );
               }).toList(),

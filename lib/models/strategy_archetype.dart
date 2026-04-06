@@ -59,4 +59,25 @@ class StrategyArchetype {
     required this.keyCardNames,
     required this.strength,
   });
+
+  Map<String, dynamic> toJson() => {
+    'kind':         kind.name,
+    'headline':     headline,
+    'description':  description,
+    'tips':         tips,
+    'keyCardNames': keyCardNames,
+    'strength':     strength,
+  };
+
+  factory StrategyArchetype.fromJson(Map<String, dynamic> json) =>
+      StrategyArchetype(
+        kind:         ArchetypeKind.values.firstWhere(
+                        (e) => e.name == json['kind'],
+                        orElse: () => ArchetypeKind.bigMoney),
+        headline:     json['headline']    as String,
+        description:  json['description'] as String,
+        tips:         (json['tips'] as List).cast<String>(),
+        keyCardNames: (json['keyCardNames'] as List).cast<String>(),
+        strength:     (json['strength'] as num).toDouble(),
+      );
 }

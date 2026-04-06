@@ -35,7 +35,8 @@ class SetupEngine {
     required SetupRules rules,
   }) {
     // ── Step A ── Expansion filter ──────────────────────────────────────────
-    final pool = _stepAExpansionFilter(allCards, ownedExpansions);
+    final pool      = _stepAKingdomPool(allCards, ownedExpansions);
+    final landscape = _stepALandscapePool(allCards, ownedExpansions);
 
     // ── Step B ── Manual exclusions ─────────────────────────────────────────
     _stepBRemoveDisabled(pool);
@@ -43,11 +44,13 @@ class SetupEngine {
     // ── Step C ── Global rule modifiers ─────────────────────────────────────
     _stepCApplyRules(pool, rules);
 
-    // Validate before selection — give a clear message.
-    if (pool.length < 10) {
+    // Validate pool size. Split piles are collapsed to one representative card
+    // per pile, so effective pool = unique pile slots.
+    final effectiveSize = _effectivePoolSize(pool);
+    if (effectiveSize < 10) {
       throw SetupException(
-        'Only ${pool.length} card${pool.length == 1 ? '' : 's'} remain after '
-        'filtering — need at least 10. Try enabling more expansions or '
+        'Only $effectiveSize card slot${effectiveSize == 1 ? '' : 's'} remain '
+        'after filtering — need at least 10. Try enabling more expansions or '
         'relaxing the active rules.',
         SetupFailureReason.poolTooSmall,
       );
@@ -56,30 +59,46 @@ class SetupEngine {
     // ── Step D ── Selection algorithm ────────────────────────────────────────
     final (kingdom, lockedCount) = _stepDSelect(pool, rules);
 
+    // ── Step E ── Landscape cards ────────────────────────────────────────────
+    final landscapeResult = rules.includeLandscape
+        ? _stepESelectLandscape(landscape, ownedExpansions)
+        : const <DominionCard>[];
+
     // ── Supplement ── Setup notes ────────────────────────────────────────────
-    final notes = _generateSetupNotes(kingdom, ownedExpansions);
+    final notes = _generateSetupNotes(kingdom, landscapeResult, ownedExpansions);
 
     return SetupResult(
-      kingdomCards: kingdom,
-      archetypes:   const [],   // populated later by HeuristicEngine
-      setupNotes:   notes,
-      generatedAt:  DateTime.now(),
+      kingdomCards:   kingdom,
+      landscapeCards: landscapeResult,
+      archetypes:     const [],   // populated later by HeuristicEngine
+      setupNotes:     notes,
+      generatedAt:    DateTime.now(),
     );
   }
 
   // ===========================================================================
-  // Step A — Expansion filter
+  // Step A — Pools
   // ===========================================================================
 
-  /// Returns a mutable list of kingdom cards from the owned expansions.
-  List<DominionCard> _stepAExpansionFilter(
+  /// Kingdom pool: owned, isKingdomCard. For split piles, one card per pile id
+  /// (the lower-cost half) acts as the pile representative; the other is kept
+  /// alongside so both are added to the kingdom when the pile is selected.
+  List<DominionCard> _stepAKingdomPool(
     List<DominionCard> all,
     Set<Expansion> owned,
-  ) {
-    return all
-        .where((c) => owned.contains(c.expansion) && c.isKingdomCard)
-        .toList();
-  }
+  ) =>
+      all
+          .where((c) => owned.contains(c.expansion) && c.isKingdomCard)
+          .toList();
+
+  /// Landscape pool: owned, non-kingdom (Events, Landmarks, Projects, Ways, Allies).
+  List<DominionCard> _stepALandscapePool(
+    List<DominionCard> all,
+    Set<Expansion> owned,
+  ) =>
+      all
+          .where((c) => owned.contains(c.expansion) && !c.isKingdomCard)
+          .toList();
 
   // ===========================================================================
   // Step B — Manual exclusions
@@ -95,45 +114,48 @@ class SetupEngine {
 
   void _stepCApplyRules(List<DominionCard> pool, SetupRules rules) {
     pool.removeWhere((c) {
-      if (rules.noAttacks  && c.isAttack)           return true;
-      if (rules.noDuration && c.isDuration)          return true;
-      if (rules.noPotions  && c.potionCost)          return true;
-      if (rules.noDebt     && c.debtCost != null)    return true;
+      if (rules.noAttacks  && c.isAttack)        return true;
+      if (rules.noDuration && c.isDuration)       return true;
+      if (rules.noPotions  && c.potionCost)       return true;
+      if (rules.noDebt     && c.debtCost != null) return true;
       if (rules.maxCost != null && c.cost > rules.maxCost!) return true;
       return false;
     });
   }
 
   // ===========================================================================
-  // Step D — Weighted selection algorithm
-  //
-  // Design: two-phase approach.
-  //
-  // Phase 1 — Slot reservation (hard requirements).
-  //   Each "require" rule claims one slot by picking a random qualifying card
-  //   from the shuffled pool and locking it into the kingdom. Locked cards
-  //   cannot be displaced in the variety-enforcement pass.
-  //
-  // Phase 2 — Random fill.
-  //   The remaining (10 − locked) slots are filled from the shuffled pool,
-  //   which is already random — no additional weighting needed here.
-  //
-  // Phase 3 — Expansion variety enforcement (optional).
-  //   If minExpansionVariety > 1, swap non-locked cards with cards from
-  //   under-represented expansions until the constraint is met.
-  //
-  // Returns the 10 selected cards and the number of locked (required) cards.
+  // Step D — Selection (split-pile aware)
   // ===========================================================================
 
   (List<DominionCard>, int) _stepDSelect(
     List<DominionCard> pool,
     SetupRules rules,
   ) {
-    // Shuffle once — used for both phase 1 candidate picking and phase 2 fill.
-    final shuffled = [...pool]..shuffle(_rng);
+    // Collapse split piles: group by splitPileId.
+    // Each unique pile id becomes one "slot". Within a slot, all member cards
+    // are always selected together.
+    final splitGroups = <String, List<DominionCard>>{};
+    final singles     = <DominionCard>[];
 
-    final kingdom = <DominionCard>[];   // final selection
-    final locked  = <DominionCard>[];   // required-slot cards (cannot be swapped)
+    for (final c in pool) {
+      if (c.splitPileId != null) {
+        (splitGroups[c.splitPileId!] ??= []).add(c);
+      } else {
+        singles.add(c);
+      }
+    }
+
+    // Build a list of "pile representatives" for shuffling.
+    // Each representative is the lowest-cost card in the group.
+    final pileReps = <DominionCard>[
+      ...singles,
+      ...splitGroups.values.map(
+        (g) => g.reduce((a, b) => a.cost <= b.cost ? a : b),
+      ),
+    ]..shuffle(_rng);
+
+    final kingdom = <DominionCard>[];
+    final locked  = <DominionCard>[];
 
     // ── Phase 1: required slots ─────────────────────────────────────────────
 
@@ -143,19 +165,18 @@ class SetupEngine {
       String ruleName,
     ) {
       if (!condition) return;
-      final candidates = shuffled.where(matcher).toList();
+      final candidates = pileReps.where(matcher).toList();
       if (candidates.isEmpty) {
         throw SetupException(
           'Cannot satisfy "$ruleName": no matching cards remain after '
-          'filtering. Try enabling more expansions or disabling conflicting '
-          'rules.',
+          'filtering. Try enabling more expansions or disabling conflicting rules.',
           SetupFailureReason.requirementImpossible,
         );
       }
       final pick = candidates[_rng.nextInt(candidates.length)];
-      locked.add(pick);
-      kingdom.add(pick);
-      shuffled.remove(pick);
+      _addPile(pick, splitGroups, kingdom);
+      locked.addAll(_allCardsForRep(pick, splitGroups));
+      pileReps.remove(pick);
     }
 
     reserveSlot(
@@ -163,13 +184,11 @@ class SetupEngine {
       (c) => c.hasTag(CardTag.villageEffect) || c.hasTag(CardTag.plusTwoActions),
       'Require Village',
     );
-
     reserveSlot(
       rules.requireTrashing,
       (c) => c.hasTag(CardTag.trashCards) || c.hasTag(CardTag.trashForBenefit),
       'Require Trashing',
     );
-
     reserveSlot(
       rules.requirePlusBuy,
       (c) => c.hasTag(CardTag.plusBuy),
@@ -178,14 +197,12 @@ class SetupEngine {
 
     // ── Phase 2: random fill ────────────────────────────────────────────────
 
-    for (final card in shuffled) {
+    for (final rep in pileReps) {
       if (kingdom.length >= 10) break;
-      kingdom.add(card);
+      _addPile(rep, splitGroups, kingdom);
     }
 
     if (kingdom.length < 10) {
-      // Shouldn't reach here because we validated pool.length >= 10 earlier,
-      // but guard for safety.
       throw SetupException(
         'Pool exhausted before 10 cards could be selected '
         '(${kingdom.length}/10). This is likely a bug.',
@@ -196,22 +213,91 @@ class SetupEngine {
     // ── Phase 3: expansion variety ──────────────────────────────────────────
 
     if (rules.minExpansionVariety > 1) {
+      final ownedCount = pool.map((c) => c.expansion).toSet().length;
       _enforceExpansionVariety(
-        kingdom:     kingdom,
-        locked:      locked,
-        remainder:   shuffled.skip(10 - locked.length).toList(), // unused cards
-        minVariety:  rules.minExpansionVariety,
-        ownedCount:  pool.map((c) => c.expansion).toSet().length,
+        kingdom:    kingdom,
+        locked:     locked,
+        remainder:  pileReps.skip(10 - locked.length).toList(),
+        splitGroups: splitGroups,
+        minVariety: rules.minExpansionVariety,
+        ownedCount: ownedCount,
       );
     }
 
-    // Sort by cost (ascending) for a natural display order.
+    // Sort by cost (ascending) for natural display order.
     kingdom.sort((a, b) {
-      final costCmp = a.cost.compareTo(b.cost);
-      return costCmp != 0 ? costCmp : a.name.compareTo(b.name);
+      final cmp = a.cost.compareTo(b.cost);
+      return cmp != 0 ? cmp : a.name.compareTo(b.name);
     });
 
     return (kingdom, locked.length);
+  }
+
+  /// Adds a pile representative (and all its split-pile partners) to [kingdom].
+  void _addPile(
+    DominionCard rep,
+    Map<String, List<DominionCard>> splitGroups,
+    List<DominionCard> kingdom,
+  ) {
+    kingdom.addAll(_allCardsForRep(rep, splitGroups));
+  }
+
+  /// Returns all cards that belong to the same pile as [rep].
+  List<DominionCard> _allCardsForRep(
+    DominionCard rep,
+    Map<String, List<DominionCard>> splitGroups,
+  ) {
+    if (rep.splitPileId != null) {
+      return splitGroups[rep.splitPileId!] ?? [rep];
+    }
+    return [rep];
+  }
+
+  /// Effective pool size = number of kingdom slots (each split pile = 1 slot).
+  int _effectivePoolSize(List<DominionCard> pool) {
+    final splitIds = pool
+        .where((c) => c.splitPileId != null)
+        .map((c) => c.splitPileId!)
+        .toSet();
+    final singleCount = pool.where((c) => c.splitPileId == null).length;
+    return singleCount + splitIds.length;
+  }
+
+  // ===========================================================================
+  // Step E — Landscape cards
+  // ===========================================================================
+
+  /// Draws the correct number of landscape cards per expansion rules.
+  List<DominionCard> _stepESelectLandscape(
+    List<DominionCard> pool,
+    Set<Expansion> owned,
+  ) {
+    if (pool.isEmpty) return const [];
+
+    final result    = <DominionCard>[];
+    final shuffled  = [...pool]..shuffle(_rng);
+
+    void draw(bool Function(DominionCard) filter, int count) {
+      final candidates = shuffled.where(filter).toList();
+      result.addAll(candidates.take(count.clamp(0, candidates.length)));
+    }
+
+    // Adventures / Empires: 2 Events (if any available)
+    draw((c) => c.isEvent, 2);
+
+    // Empires: 1 Landmark
+    draw((c) => c.isLandmark, 1);
+
+    // Renaissance: 2 Projects
+    draw((c) => c.isProject, 2);
+
+    // Allies: 1 Ally
+    draw((c) => c.isAlly, 1);
+
+    // Ways (Menagerie) — 1 Way; optional in real rules but we include 1
+    draw((c) => c.isWay, 1);
+
+    return result;
   }
 
   // ===========================================================================
@@ -222,10 +308,10 @@ class SetupEngine {
     required List<DominionCard> kingdom,
     required List<DominionCard> locked,
     required List<DominionCard> remainder,
+    required Map<String, List<DominionCard>> splitGroups,
     required int minVariety,
     required int ownedCount,
   }) {
-    // If the user owns fewer expansions than the min, it's impossible.
     if (ownedCount < minVariety) {
       throw SetupException(
         'Cannot reach $minVariety expansion variety — only $ownedCount '
@@ -234,32 +320,23 @@ class SetupEngine {
       );
     }
 
-    // Swappable = non-locked cards in the kingdom.
     final swappable = kingdom.where((c) => !locked.contains(c)).toList();
     remainder.shuffle(_rng);
 
-    int attempts = 0;
+    for (var attempts = 0; attempts < 30; attempts++) {
+      final present = kingdom.map((c) => c.expansion).toSet();
+      if (present.length >= minVariety) break;
 
-    while (attempts < 30) {
-      final presentExpansions = kingdom.map((c) => c.expansion).toSet();
-      if (presentExpansions.length >= minVariety) break;
-
-      // Find a candidate from a new expansion.
       final candidate = remainder.cast<DominionCard?>().firstWhere(
-        (c) => !presentExpansions.contains(c!.expansion),
+        (c) => !present.contains(c!.expansion),
         orElse: () => null,
       );
-      if (candidate == null) break; // no card from a new expansion exists
+      if (candidate == null) break;
 
-      // Find a swappable card to evict (pick randomly among same expansion as
-      // the most-represented one to reduce bias).
-      final overExpansion = _mostRepresentedExpansion(kingdom, locked);
-      final evictCandidates = swappable
-          .where((c) => c.expansion == overExpansion)
-          .toList();
-
-      final evict = evictCandidates.isNotEmpty
-          ? evictCandidates[_rng.nextInt(evictCandidates.length)]
+      final overExp    = _mostRepresentedExpansion(kingdom, locked);
+      final evictPool  = swappable.where((c) => c.expansion == overExp).toList();
+      final evict      = evictPool.isNotEmpty
+          ? evictPool[_rng.nextInt(evictPool.length)]
           : swappable[_rng.nextInt(swappable.length)];
 
       kingdom.remove(evict);
@@ -269,12 +346,9 @@ class SetupEngine {
       remainder.remove(candidate);
       remainder.add(evict);
       remainder.shuffle(_rng);
-
-      attempts++;
     }
   }
 
-  /// Returns the expansion that has the most non-locked cards in [kingdom].
   Expansion _mostRepresentedExpansion(
     List<DominionCard> kingdom,
     List<DominionCard> locked,
@@ -294,15 +368,16 @@ class SetupEngine {
 
   List<String> _generateSetupNotes(
     List<DominionCard> kingdom,
+    List<DominionCard> landscape,
     Set<Expansion> owned,
   ) {
-    final notes = <String>[];
-    final kingdomExpansions = kingdom.map((c) => c.expansion).toSet();
+    final notes            = <String>[];
+    final kingdomExp       = kingdom.map((c) => c.expansion).toSet();
+    final allPresent       = {...kingdomExp, ...landscape.map((c) => c.expansion)};
 
     // Prosperity: optional Platinum & Colony
-    final hasProsperity = kingdomExpansions.any((e) =>
-        e == Expansion.prosperity || e == Expansion.prosperitySecondEdition);
-    if (hasProsperity) {
+    if (allPresent.any((e) =>
+        e == Expansion.prosperity || e == Expansion.prosperitySecondEdition)) {
       notes.add(
         'Prosperity cards present: you may replace Gold→Platinum and '
         'Province→Colony for a higher-powered game.',
@@ -314,7 +389,7 @@ class SetupEngine {
       notes.add('Potion-cost cards present: add the Potion supply pile (\$4).');
     }
 
-    // Empires / Allies debt cards
+    // Empires / debt cards
     if (kingdom.any((c) => c.debtCost != null)) {
       notes.add(
         'Debt cards present: prepare the Debt token supply '
@@ -322,38 +397,59 @@ class SetupEngine {
       );
     }
 
-    // Dark Ages: Shelters starting option
-    if (kingdomExpansions.contains(Expansion.darkAges)) {
+    // Dark Ages: Shelters
+    if (kingdomExp.contains(Expansion.darkAges)) {
       notes.add(
         'Dark Ages present: optionally start with Shelters '
         '(Hovel, Necropolis, Overgrown Estate) instead of starting Estates.',
       );
     }
 
-    // Nocturne: Heirloom swaps
-    if (kingdomExpansions.contains(Expansion.nocturne)) {
+    // Nocturne: Heirlooms
+    if (kingdomExp.contains(Expansion.nocturne)) {
       notes.add(
         'Nocturne cards present: check whether any kingdom card replaces '
         'a starting Copper with its paired Heirloom.',
       );
     }
 
+    // Traveller chains
+    for (final c in kingdom.where((c) => c.isTraveller)) {
+      final chain = c.travellerChain.join(' → ');
+      notes.add(
+        '${c.name} is a Traveller: have the full upgrade chain available '
+        '($chain) and set those cards aside before play.',
+      );
+    }
+
+    // Split piles — remind players to set both halves out
+    final splitIds = kingdom
+        .where((c) => c.isSplitPile)
+        .map((c) => c.splitPileId!)
+        .toSet();
+    for (final id in splitIds) {
+      final pair = kingdom.where((c) => c.splitPileId == id).toList()
+        ..sort((a, b) => a.cost.compareTo(b.cost));
+      if (pair.length >= 2) {
+        notes.add(
+          'Split pile: ${pair.map((c) => c.name).join(' / ')} — place both '
+          'halves in a single supply pile, lower-cost (${pair.first.name}) on top.',
+        );
+      }
+    }
+
     // Attacks with no Reactions
-    final hasAttack   = kingdom.any((c) => c.isAttack);
-    final hasReaction = kingdom.any((c) => c.isReaction);
-    if (hasAttack && !hasReaction) {
+    if (kingdom.any((c) => c.isAttack) && !kingdom.any((c) => c.isReaction)) {
       notes.add(
         'Attacks present with no Reaction cards — all players are equally '
-        'exposed. Prioritise Attack mitigation (e.g., Moat from Base if '
-        'available) or race to attack first.',
+        'exposed. Race to attack first or watch for Moat in the base supply.',
       );
     }
 
     // Curses with no trashing
-    final hasCurseAttack = kingdom.any((c) => c.hasTag(CardTag.curse));
-    final hasTrashing    = kingdom.any((c) =>
-        c.hasTag(CardTag.trashCards) || c.hasTag(CardTag.trashForBenefit));
-    if (hasCurseAttack && !hasTrashing) {
+    if (kingdom.any((c) => c.hasTag(CardTag.curse)) &&
+        !kingdom.any((c) =>
+            c.hasTag(CardTag.trashCards) || c.hasTag(CardTag.trashForBenefit))) {
       notes.add(
         'Curse-giving Attacks present with no Trashing — consider prioritising '
         'Province timing to end the game before Curses pile up.',
