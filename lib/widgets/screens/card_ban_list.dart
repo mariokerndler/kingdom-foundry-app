@@ -46,7 +46,10 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
 
     return cardsByExpAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error:   (e, _) => Center(child: Text('Error: $e')),
+      error:   (e, _) => _ErrorState(
+        message: 'Could not load card list.',
+        onRetry: () => ref.invalidate(cardsByExpansionProvider),
+      ),
       data: (cardsByExp) {
         // Filter to only owned expansions
         final owned = Map.fromEntries(
@@ -250,7 +253,12 @@ class _CardRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedOpacity(
+    return Semantics(
+      label:  '${card.name}, ${isDisabled ? "banned" : "available"}',
+      hint:   'Double tap to ${isDisabled ? "enable" : "ban"}',
+      button: true,
+      excludeSemantics: true,
+      child: AnimatedOpacity(
       duration: const Duration(milliseconds: 200),
       opacity:  isDisabled ? 0.45 : 1.0,
       child: InkWell(
@@ -311,6 +319,7 @@ class _CardRow extends StatelessWidget {
           ),
         ),
       ),
+      ),  // Semantics
     );
   }
 }
@@ -382,7 +391,38 @@ class _NoResults extends StatelessWidget {
               size: 40, color: AppColors.parchmentDim),
           const SizedBox(height: 12),
           Text('No cards match "$query"',
-              style: const TextStyle(color: AppColors.parchmentDim)),
+              style: Theme.of(context).textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Error state ──────────────────────────────────────────────────────────────
+
+class _ErrorState extends ConsumerWidget {
+  final String       message;
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline_rounded,
+              size: 48, color: AppColors.errorRed),
+          const SizedBox(height: 16),
+          Text(message, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon:  const Icon(Icons.refresh_rounded, size: 16),
+            label: const Text('Retry'),
+            style: TextButton.styleFrom(foregroundColor: AppColors.gold),
+          ),
         ],
       ),
     );

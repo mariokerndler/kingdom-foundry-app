@@ -7,10 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/card_tag.dart';
 import '../models/dominion_card.dart';
 import '../models/setup_result.dart';
-import '../models/strategy_archetype.dart';
 import '../providers/config_provider.dart';
 import '../providers/generation_provider.dart';
 import '../utils/app_theme.dart';
+import '../utils/archetype_utils.dart';
 import '../widgets/cards/archetype_card.dart';
 import '../widgets/cards/kingdom_card_widget.dart';
 import '../widgets/common/section_header.dart';
@@ -108,29 +108,25 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 18);
 
   @override
   Widget build(BuildContext context) {
     final expansionCount =
         result.kingdomCards.map((c) => c.expansion).toSet().length;
+    final tt = Theme.of(context).textTheme;
 
     return AppBar(
       title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize:       MainAxisSize.min,
         children: [
-          const Text('Kingdom Board',
-              style: TextStyle(
-                color:      AppColors.parchment,
-                fontSize:   17,
-                fontWeight: FontWeight.w700,
-              )),
+          Text('Kingdom Board', style: tt.titleLarge),
+          const SizedBox(height: 2),
           Text(
             '10 cards · $expansionCount expansion${expansionCount == 1 ? '' : 's'}',
-            style: TextStyle(
-              color:    AppColors.gold.withValues(alpha: 0.8),
-              fontSize: 11,
+            style: tt.labelSmall?.copyWith(
+              color: AppColors.gold.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -166,15 +162,15 @@ class _RegeneratingOverlay extends StatelessWidget {
   const _RegeneratingOverlay();
 
   @override
-  Widget build(BuildContext context) => const Center(
+  Widget build(BuildContext context) => Center(
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        CircularProgressIndicator(
+        const CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation(AppColors.gold)),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         Text('Drawing a new kingdom…',
-            style: TextStyle(color: AppColors.parchmentDim)),
+            style: Theme.of(context).textTheme.bodyMedium),
       ],
     ),
   );
@@ -222,7 +218,7 @@ class _ResultsBody extends ConsumerWidget {
             ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount:   2,
-              mainAxisExtent:   168,
+              mainAxisExtent:   180,
               crossAxisSpacing: 8,
               mainAxisSpacing:  8,
             ),
@@ -333,20 +329,15 @@ class _LandscapeSection extends StatelessWidget {
         children: [
           Semantics(
             header: true,
-            child: const Text(
+            child: Text(
               'LANDSCAPE CARDS',
-              style: TextStyle(
-                color:         AppColors.gold,
-                fontSize:      10,
-                fontWeight:    FontWeight.w700,
-                letterSpacing: 1.4,
-              ),
+              style: Theme.of(context).textTheme.labelMedium,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Place these above the kingdom supply.',
-            style: TextStyle(color: AppColors.parchmentDim, fontSize: 12),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 10),
           ...groups.entries.map((entry) => _LandscapeGroup(
@@ -382,9 +373,7 @@ class _LandscapeGroup extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 6),
           child: Text(
             label,
-            style: const TextStyle(
-              color:      AppColors.parchmentDim,
-              fontSize:   11,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -406,7 +395,7 @@ class _LandscapeGroup extends StatelessWidget {
                   width: 4,
                   height: 40,
                   decoration: BoxDecoration(
-                    color:        const Color(0xFF7E57C2),
+                    color:        AppColors.landscapeAccent,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -416,17 +405,14 @@ class _LandscapeGroup extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(c.name,
-                          style: const TextStyle(
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color:      AppColors.parchment,
-                            fontSize:   13,
                             fontWeight: FontWeight.w600,
                           )),
                       const SizedBox(height: 3),
                       Text(c.text,
-                          style: const TextStyle(
-                            color:    AppColors.parchmentDim,
-                            fontSize: 11,
-                            height:   1.4,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            height: 1.4,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis),
@@ -494,14 +480,9 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'FIRST PLAYER',
-                    style: TextStyle(
-                      color:         AppColors.gold,
-                      fontSize:      10,
-                      fontWeight:    FontWeight.w700,
-                      letterSpacing: 1.4,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium,
                   ),
                   const SizedBox(height: 6),
                   AnimatedSwitcher(
@@ -510,19 +491,15 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
                         ? Text(
                             'Tap to pick randomly from ${widget.playerCount} players',
                             key: const ValueKey('prompt'),
-                            style: const TextStyle(
-                              color:    AppColors.parchmentDim,
-                              fontSize: 13,
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium,
                           )
                         : Text(
                             'Player $_picked goes first!',
                             key: ValueKey(_picked),
-                            style: TextStyle(
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               color:      _rolling
                                   ? AppColors.parchmentDim
                                   : AppColors.parchment,
-                              fontSize:   15,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -535,28 +512,34 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
             Semantics(
               label:  'Pick random first player',
               button: true,
-              child: GestureDetector(
-                onTap: _rolling ? null : _roll,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: 44, height: 44,
-                  decoration: BoxDecoration(
-                    color:        _rolling
-                        ? AppColors.goldDark
-                        : AppColors.gold,
-                    borderRadius: BorderRadius.circular(10),
+              child: Material(
+                color:        Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+                child: InkWell(
+                  onTap:        _rolling ? null : _roll,
+                  borderRadius: BorderRadius.circular(10),
+                  splashColor:  Colors.black26,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: 48, height: 48,
+                    decoration: BoxDecoration(
+                      color:        _rolling
+                          ? AppColors.goldDark
+                          : AppColors.gold,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: _rolling
+                        ? const SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:  AlwaysStoppedAnimation(Colors.black),
+                            ),
+                          )
+                        : const Icon(Icons.casino_rounded,
+                            color: Colors.black, size: 22),
                   ),
-                  alignment: Alignment.center,
-                  child: _rolling
-                      ? const SizedBox(
-                          width: 20, height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:  AlwaysStoppedAnimation(Colors.black),
-                          ),
-                        )
-                      : const Icon(Icons.casino_rounded,
-                          color: Colors.black, size: 22),
                 ),
               ),
             ),
@@ -590,12 +573,12 @@ class _ArchetypeBanner extends StatelessWidget {
             end:    Alignment.bottomRight,
             colors: [
               AppColors.cardSurface,
-              _archetypeColor(primary.kind).withValues(alpha: 0.12),
+              ArchetypeUtils.color(primary.kind).withValues(alpha: 0.12),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: _archetypeColor(primary.kind).withValues(alpha: 0.4)),
+              color: ArchetypeUtils.color(primary.kind).withValues(alpha: 0.4)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -603,25 +586,23 @@ class _ArchetypeBanner extends StatelessWidget {
             Row(
               children: [
                 ExcludeSemantics(
-                  child: Icon(_archetypeIcon(primary.kind),
-                      color: _archetypeColor(primary.kind), size: 16),
+                  child: Icon(ArchetypeUtils.icon(primary.kind),
+                      color: ArchetypeUtils.color(primary.kind), size: 16),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   primary.headline,
                   style: TextStyle(
-                    color:      _archetypeColor(primary.kind),
+                    color:      ArchetypeUtils.color(primary.kind),
                     fontSize:   13,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const Spacer(),
-                const Text(
+                Text(
                   'PRIMARY',
-                  style: TextStyle(
-                    color:         AppColors.parchmentDim,
-                    fontSize:      9,
-                    fontWeight:    FontWeight.w600,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -633,7 +614,7 @@ class _ArchetypeBanner extends StatelessWidget {
                 spacing:    6,
                 runSpacing: 6,
                 children: secondaries.map((a) {
-                  final c = _archetypeColor(a.kind);
+                  final c = ArchetypeUtils.color(a.kind);
                   return Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 3),
@@ -646,12 +627,12 @@ class _ArchetypeBanner extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ExcludeSemantics(
-                          child: Icon(_archetypeIcon(a.kind),
-                              color: c, size: 11),
+                          child: Icon(ArchetypeUtils.icon(a.kind),
+                              color: c, size: 12),
                         ),
                         const SizedBox(width: 4),
                         Text(a.headline,
-                            style: TextStyle(color: c, fontSize: 11)),
+                            style: TextStyle(color: c, fontSize: 12)),
                       ],
                     ),
                   );
@@ -668,27 +649,6 @@ class _ArchetypeBanner extends StatelessWidget {
     );
   }
 
-  static Color _archetypeColor(ArchetypeKind kind) {
-    switch (kind) {
-      case ArchetypeKind.engineBuilding:    return const Color(0xFF42A5F5);
-      case ArchetypeKind.bigMoney:          return const Color(0xFFFFD54F);
-      case ArchetypeKind.aggressiveControl: return const Color(0xFFEF5350);
-      case ArchetypeKind.trashToVictory:    return const Color(0xFFAB47BC);
-      case ArchetypeKind.altVictory:        return const Color(0xFF66BB6A);
-      case ArchetypeKind.mirrorMatch:       return const Color(0xFF26C6DA);
-    }
-  }
-
-  static IconData _archetypeIcon(ArchetypeKind kind) {
-    switch (kind) {
-      case ArchetypeKind.engineBuilding:    return Icons.hub_rounded;
-      case ArchetypeKind.bigMoney:          return Icons.monetization_on_outlined;
-      case ArchetypeKind.aggressiveControl: return Icons.local_fire_department_rounded;
-      case ArchetypeKind.trashToVictory:    return Icons.delete_sweep_rounded;
-      case ArchetypeKind.altVictory:        return Icons.emoji_events_rounded;
-      case ArchetypeKind.mirrorMatch:       return Icons.compare_arrows_rounded;
-    }
-  }
 }
 
 // ── Stat strip ─────────────────────────────────────────────────────────────
@@ -706,7 +666,7 @@ class _StatStrip extends StatelessWidget {
           icon:  Icons.local_fire_department_rounded,
           label: 'Attacks',
           value: result.kingdomCards.where((c) => c.isAttack).length,
-          color: const Color(0xFFEF5350),
+          color: AppColors.statAttack,
         ),
         _Stat(
           icon:  Icons.delete_sweep_rounded,
@@ -716,19 +676,19 @@ class _StatStrip extends StatelessWidget {
                   c.hasTag(CardTag.trashCards) ||
                   c.hasTag(CardTag.trashForBenefit))
               .length,
-          color: const Color(0xFFAB47BC),
+          color: AppColors.statTrasher,
         ),
         _Stat(
           icon:  Icons.hourglass_empty_rounded,
           label: 'Duration',
           value: result.kingdomCards.where((c) => c.isDuration).length,
-          color: const Color(0xFFFFB74D),
+          color: AppColors.statDuration,
         ),
         _Stat(
           icon:  Icons.emoji_events_rounded,
           label: 'Alt-VP',
           value: result.victoryCount,
-          color: const Color(0xFF66BB6A),
+          color: AppColors.statAltVP,
         ),
       ],
     );
@@ -769,8 +729,7 @@ class _Stat extends StatelessWidget {
             ),
           ),
           Text(label,
-              style: const TextStyle(
-                  color: AppColors.parchmentDim, fontSize: 10)),
+              style: Theme.of(context).textTheme.labelSmall),
         ],
       ),
     );
@@ -792,14 +751,9 @@ class _SetupNotesSection extends StatelessWidget {
         children: [
           Semantics(
             header: true,
-            child: const Text(
+            child: Text(
               'SETUP NOTES',
-              style: TextStyle(
-                color:         AppColors.gold,
-                fontSize:      10,
-                fontWeight:    FontWeight.w700,
-                letterSpacing: 1.4,
-              ),
+              style: Theme.of(context).textTheme.labelMedium,
             ),
           ),
           const SizedBox(height: 8),

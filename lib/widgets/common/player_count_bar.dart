@@ -21,12 +21,9 @@ class PlayerCountBar extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
         child: Row(
           children: [
-            const Text(
+            Text(
               'Players',
-              style: TextStyle(
-                color:    AppColors.parchmentDim,
-                fontSize: 12,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(width: 12),
             ...List.generate(5, (i) {
@@ -34,34 +31,43 @@ class PlayerCountBar extends ConsumerWidget {
               final selected = n == count;
               return Padding(
                 padding: const EdgeInsets.only(right: 6),
-                child: Semantics(
-                  label:   '$n players',
-                  selected: selected,
-                  button:  true,
-                  child: GestureDetector(
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      notifier.setPlayerCount(n);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      width: 34, height: 34,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: selected
-                            ? AppColors.gold
-                            : AppColors.cardSurface,
-                        border: Border.all(
-                          color: selected ? AppColors.gold : AppColors.divider,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '$n',
-                        style: TextStyle(
-                          color:      selected ? Colors.black : AppColors.parchmentDim,
-                          fontSize:   13,
-                          fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                child: Tooltip(
+                  message: '$n players',
+                  child: Semantics(
+                    label:    '$n players',
+                    selected: selected,
+                    button:   true,
+                    excludeSemantics: true,
+                    child: Material(
+                      color:        Colors.transparent,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          notifier.setPlayerCount(n);
+                        },
+                        customBorder: const CircleBorder(),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          width: 44, height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: selected
+                                ? AppColors.gold
+                                : AppColors.cardSurface,
+                            border: Border.all(
+                              color: selected ? AppColors.gold : AppColors.divider,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '$n',
+                            style: TextStyle(
+                              color:      selected ? Colors.black : AppColors.parchmentDim,
+                              fontSize:   13,
+                              fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                            ),
+                          ),
                         ),
                       ),
                     ),

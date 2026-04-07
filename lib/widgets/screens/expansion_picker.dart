@@ -30,7 +30,10 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
 
     return availableAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error:   (e, _) => Center(child: Text('Error loading expansions: $e')),
+      error:   (e, _) => _ErrorState(
+        message: 'Could not load expansions.',
+        onRetry: () => ref.invalidate(availableExpansionsProvider),
+      ),
       data: (available) {
         final owned    = config.ownedExpansions;
         final allOwned = owned.length == available.length;
@@ -151,44 +154,87 @@ class _ExpansionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final badgeColor = Color(expansion.badgeColorValue);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color:        selected
-              ? badgeColor.withValues(alpha: 0.22)
-              : AppColors.cardSurface,
-          border:       Border.all(
-            color: selected ? badgeColor : AppColors.divider,
-            width: selected ? 1.5 : 1,
-          ),
+    return Semantics(
+      label:    expansion.displayName,
+      selected: selected,
+      button:   true,
+      excludeSemantics: true,
+      child: Material(
+        color:        Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap:        onTap,
           borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              width:  8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: selected ? badgeColor : AppColors.parchmentDim,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color:        selected
+                  ? badgeColor.withValues(alpha: 0.22)
+                  : AppColors.cardSurface,
+              border:       Border.all(
+                color: selected ? badgeColor : AppColors.divider,
+                width: selected ? 1.5 : 1,
               ),
+              borderRadius: BorderRadius.circular(10),
             ),
-            const SizedBox(width: 8),
-            Text(
-              expansion.displayName,
-              style: TextStyle(
-                color:      selected ? AppColors.parchment : AppColors.parchmentDim,
-                fontSize:   13,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width:  8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected ? badgeColor : AppColors.parchmentDim,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  expansion.displayName,
+                  style: TextStyle(
+                    color:      selected ? AppColors.parchment : AppColors.parchmentDim,
+                    fontSize:   13,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Error state ────────────────────────────────────────────────────────────
+
+class _ErrorState extends StatelessWidget {
+  final String       message;
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline_rounded,
+              size: 48, color: AppColors.errorRed),
+          const SizedBox(height: 16),
+          Text(message,
+              style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon:  const Icon(Icons.refresh_rounded, size: 16),
+            label: const Text('Retry'),
+            style: TextButton.styleFrom(foregroundColor: AppColors.gold),
+          ),
+        ],
       ),
     );
   }

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../utils/app_theme.dart';
-
 class SectionHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -27,12 +25,7 @@ class SectionHeader extends StatelessWidget {
               children: [
                 Text(
                   title.toUpperCase(),
-                  style: const TextStyle(
-                    color:          AppColors.gold,
-                    fontSize:       11,
-                    fontWeight:     FontWeight.w700,
-                    letterSpacing:  1.4,
-                  ),
+                  style: Theme.of(context).textTheme.labelMedium,
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),

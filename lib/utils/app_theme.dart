@@ -11,6 +11,15 @@ abstract class AppColors {
   static const parchmentDim = Color(0xFF8A7A6A);
   static const errorRed     = Color(0xFFCF3C3C);
   static const successGreen = Color(0xFF4CAF50);
+
+  // Stat strip / archetype accent colours — single source of truth.
+  static const statAttack   = Color(0xFFEF5350);
+  static const statTrasher  = Color(0xFFAB47BC);
+  static const statDuration = Color(0xFFFFB74D);
+  static const statAltVP    = Color(0xFF66BB6A);
+
+  // Landscape card left-accent strip.
+  static const landscapeAccent = Color(0xFF7E57C2);
 }
 
 ThemeData buildAppTheme() {
@@ -31,7 +40,7 @@ ThemeData buildAppTheme() {
     appBarTheme: const AppBarTheme(
       backgroundColor:  AppColors.surface,
       foregroundColor:  AppColors.parchment,
-      centerTitle:      false,
+      centerTitle:      true,
       elevation:        0,
       scrolledUnderElevation: 2,
     ),
@@ -92,16 +101,24 @@ ThemeData buildAppTheme() {
       space:     1,
     ),
     listTileTheme: const ListTileThemeData(
-      tileColor:        Colors.transparent,
-      textColor:        AppColors.parchment,
-      iconColor:        AppColors.parchmentDim,
-      contentPadding:   EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+      tileColor:      Colors.transparent,
+      textColor:      AppColors.parchment,
+      iconColor:      AppColors.parchmentDim,
+      // Increased from vertical: 2 to meet touch target requirements.
+      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     ),
     textTheme: const TextTheme(
-      titleLarge:  TextStyle(color: AppColors.parchment,    fontWeight: FontWeight.w600, fontSize: 18),
-      titleMedium: TextStyle(color: AppColors.parchment,    fontWeight: FontWeight.w500, fontSize: 16),
+      titleLarge:  TextStyle(color: AppColors.parchment,    fontWeight: FontWeight.w700, fontSize: 17),
+      titleMedium: TextStyle(color: AppColors.parchment,    fontWeight: FontWeight.w600, fontSize: 15),
       bodyLarge:   TextStyle(color: AppColors.parchment,    fontSize: 15),
       bodyMedium:  TextStyle(color: AppColors.parchmentDim, fontSize: 13),
+      // Section-header label: gold, uppercase, tracked — used via textTheme.labelMedium.
+      labelMedium: TextStyle(
+        color:         AppColors.gold,
+        fontSize:      11,
+        fontWeight:    FontWeight.w700,
+        letterSpacing: 1.4,
+      ),
       labelSmall:  TextStyle(color: AppColors.parchmentDim, fontSize: 11),
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(

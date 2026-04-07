@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/strategy_archetype.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/archetype_utils.dart';
 
 class ArchetypeCard extends StatefulWidget {
   final StrategyArchetype archetype;
@@ -34,8 +35,8 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
 
   @override
   Widget build(BuildContext context) {
-    final color = _kindColor(widget.archetype.kind);
-    final icon  = _kindIcon(widget.archetype.kind);
+    final color = ArchetypeUtils.color(widget.archetype.kind);
+    final icon  = ArchetypeUtils.icon(widget.archetype.kind);
     final pct   = (widget.archetype.strength * 100).round();
 
     return Container(
@@ -82,17 +83,16 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                           'PRIMARY STRATEGY',
                           style: TextStyle(
                             color:         color,
-                            fontSize:      9,
+                            fontSize:      11,
                             fontWeight:    FontWeight.w700,
                             letterSpacing: 1.2,
                           ),
                         ),
                       Text(
                         widget.archetype.headline,
-                        style: TextStyle(
-                          color:      AppColors.parchment,
-                          fontSize:   widget.isPrimary ? 17 : 15,
-                          fontWeight: FontWeight.w700,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: AppColors.parchment,
+                          fontSize: widget.isPrimary ? 17 : 15,
                         ),
                       ),
                     ],
@@ -162,14 +162,9 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                 // Key cards
                 if (widget.archetype.keyCardNames.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'KEY CARDS',
-                    style: TextStyle(
-                      color:         AppColors.gold,
-                      fontSize:      9,
-                      fontWeight:    FontWeight.w700,
-                      letterSpacing: 1.2,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium,
                   ),
                   const SizedBox(height: 6),
                   Wrap(
@@ -201,22 +196,20 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                 // Tips (collapsible)
                 if (widget.archetype.tips.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  InkWell(
+                  Semantics(
+                    label: _tipsExpanded ? 'Collapse tips' : 'Expand tips',
+                    button: true,
+                    child: InkWell(
                     onTap: () =>
                         setState(() => _tipsExpanded = !_tipsExpanded),
                     borderRadius: BorderRadius.circular(6),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Row(
                         children: [
-                          const Text(
+                          Text(
                             'TIPS',
-                            style: TextStyle(
-                              color:         AppColors.gold,
-                              fontSize:      9,
-                              fontWeight:    FontWeight.w700,
-                              letterSpacing: 1.2,
-                            ),
+                            style: Theme.of(context).textTheme.labelMedium,
                           ),
                           const SizedBox(width: 6),
                           AnimatedRotation(
@@ -232,6 +225,7 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                       ),
                     ),
                   ),
+                  ),  // Semantics
                   AnimatedCrossFade(
                     duration:     const Duration(milliseconds: 250),
                     crossFadeState: _tipsExpanded
@@ -262,29 +256,6 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
     );
   }
 
-  // ── Static helpers ─────────────────────────────────────────────────────────
-
-  static Color _kindColor(ArchetypeKind kind) {
-    switch (kind) {
-      case ArchetypeKind.engineBuilding:    return const Color(0xFF42A5F5);
-      case ArchetypeKind.bigMoney:          return const Color(0xFFFFD54F);
-      case ArchetypeKind.aggressiveControl: return const Color(0xFFEF5350);
-      case ArchetypeKind.trashToVictory:    return const Color(0xFFAB47BC);
-      case ArchetypeKind.altVictory:        return const Color(0xFF66BB6A);
-      case ArchetypeKind.mirrorMatch:       return const Color(0xFF26C6DA);
-    }
-  }
-
-  static IconData _kindIcon(ArchetypeKind kind) {
-    switch (kind) {
-      case ArchetypeKind.engineBuilding:    return Icons.hub_rounded;
-      case ArchetypeKind.bigMoney:          return Icons.monetization_on_outlined;
-      case ArchetypeKind.aggressiveControl: return Icons.local_fire_department_rounded;
-      case ArchetypeKind.trashToVictory:    return Icons.delete_sweep_rounded;
-      case ArchetypeKind.altVictory:        return Icons.emoji_events_rounded;
-      case ArchetypeKind.mirrorMatch:       return Icons.compare_arrows_rounded;
-    }
-  }
 }
 
 // ── Numbered tip row ───────────────────────────────────────────────────────
@@ -320,7 +291,7 @@ class _TipRow extends StatelessWidget {
               '$number',
               style: TextStyle(
                 color:      color,
-                fontSize:   10,
+                fontSize:   11,
                 fontWeight: FontWeight.w700,
               ),
             ),

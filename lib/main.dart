@@ -36,6 +36,8 @@ class DominionApp extends StatelessWidget {
       title:        'Dominion Setup',
       debugShowCheckedModeBanner: false,
       theme:        buildAppTheme(),
+      darkTheme:    buildAppTheme(),
+      themeMode:    ThemeMode.dark,
       home:         const ConfigurationScreen(),
     );
   }

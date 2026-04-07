@@ -22,9 +22,17 @@ class KingdomCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = _accentColor(card.types);
 
-    return GestureDetector(
-      onTap: () => _showDetail(context, accent),
-      child: ClipRRect(
+    return Semantics(
+      label:  '${card.name}, ${card.typeString}. Cost: ${card.costString}. Tap for details.',
+      button: true,
+      excludeSemantics: true,
+      child: Material(
+      color:        AppColors.cardSurface,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap:        () => _showDetail(context, accent),
+        borderRadius: BorderRadius.circular(10),
+        child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
         child: Container(
           decoration: BoxDecoration(
@@ -77,7 +85,7 @@ class KingdomCardWidget extends StatelessWidget {
                   card.text,
                   style: const TextStyle(
                     color:    AppColors.parchmentDim,
-                    fontSize: 11,
+                    fontSize: 12,
                     height:   1.35,
                   ),
                   maxLines: 3,
@@ -90,7 +98,7 @@ class KingdomCardWidget extends StatelessWidget {
               // Footer: expansion + tap hint
               Row(
                 children: [
-                  ExpansionBadge(expansion: card.expansion, fontSize: 9),
+                  ExpansionBadge(expansion: card.expansion, fontSize: 11),
                   const Spacer(),
                   const Icon(Icons.open_in_full_rounded,
                       size: 11, color: AppColors.parchmentDim),
@@ -104,7 +112,9 @@ class KingdomCardWidget extends StatelessWidget {
   ),               // Row
 ),                 // Container
 ),                 // ClipRRect
-);                 // GestureDetector
+),                 // InkWell
+),                 // Material
+);                 // Semantics
   }
 
   void _showDetail(BuildContext context, Color accent) {
@@ -177,7 +187,7 @@ class _TypePills extends StatelessWidget {
           .map((t) {
             final color = _typeColor(t);
             return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
               decoration: BoxDecoration(
                 color:        color.withValues(alpha: 0.15),
                 border:       Border.all(color: color.withValues(alpha: 0.5)),
@@ -187,7 +197,7 @@ class _TypePills extends StatelessWidget {
                 t.displayName,
                 style: TextStyle(
                   color:      color,
-                  fontSize:   9,
+                  fontSize:   11,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -463,8 +473,12 @@ class _ChainStep extends StatelessWidget {
     return Semantics(
       label: card != null ? '$name: ${card!.text}' : name,
       button: card != null,
-      child: GestureDetector(
-        onTap: card != null ? () => _showUpgradeDetail(context) : null,
+      child: Material(
+        color:        Colors.transparent,
+        borderRadius: BorderRadius.circular(7),
+        child: InkWell(
+        onTap:        card != null ? () => _showUpgradeDetail(context) : null,
+        borderRadius: BorderRadius.circular(7),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
@@ -504,7 +518,7 @@ class _ChainStep extends StatelessWidget {
                         card!.text,
                         style: TextStyle(
                           color:    accent.withValues(alpha: 0.65),
-                          fontSize: 10,
+                          fontSize: 11,
                           height:   1.35,
                         ),
                         maxLines: 2,
@@ -525,7 +539,8 @@ class _ChainStep extends StatelessWidget {
             ],
           ),
         ),
-      ),
+        ),  // InkWell
+      ),    // Material
     );
   }
 
@@ -555,6 +570,6 @@ class _Badge extends StatelessWidget {
       color:        color.withValues(alpha: 0.15),
       borderRadius: BorderRadius.circular(4),
     ),
-    child: Text(label, style: TextStyle(color: color, fontSize: 9)),
+    child: Text(label, style: TextStyle(color: color, fontSize: 11)),
   );
 }

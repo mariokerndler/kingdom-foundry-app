@@ -59,13 +59,9 @@ class _HistorySheet extends ConsumerWidget {
                   const Icon(Icons.history_rounded,
                       color: AppColors.gold, size: 18),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Kingdom History',
-                    style: TextStyle(
-                      color:      AppColors.parchment,
-                      fontSize:   17,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const Spacer(),
                   if (history.isNotEmpty)
@@ -73,10 +69,11 @@ class _HistorySheet extends ConsumerWidget {
                       onPressed: () {
                         ref.read(historyProvider.notifier).clear();
                       },
-                      child: const Text(
+                      child: Text(
                         'Clear',
-                        style: TextStyle(
-                            color: AppColors.errorRed, fontSize: 13),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.errorRed,
+                        ),
                       ),
                     ),
                   IconButton(
@@ -107,11 +104,10 @@ class _HistorySheet extends ConsumerWidget {
                     onTap:  () {
                       ref.read(setupResultProvider.notifier).state =
                           history[i];
-                      Navigator.pop(context);
-                      // Navigate to results screen after sheet closes
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        Navigator.of(context).push(buildResultsRoute());
-                      });
+                      // Capture navigator before pop to avoid stale context.
+                      final navigator = Navigator.of(context);
+                      navigator.pop();
+                      navigator.push(buildResultsRoute());
                     },
                   ),
                 ),
@@ -197,7 +193,7 @@ class _HistoryTile extends StatelessWidget {
                               .take(4)
                               .map((e) => ExpansionBadge(
                                     expansion: e,
-                                    fontSize:  9,
+                                    fontSize:  11,
                                   ))
                               .toList(),
                         ),
