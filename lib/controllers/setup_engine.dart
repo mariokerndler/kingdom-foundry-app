@@ -57,11 +57,16 @@ class SetupEngine {
     }
 
     // ── Step D ── Selection algorithm ────────────────────────────────────────
-    final (kingdom, lockedCount) = _stepDSelect(pool, rules);
+    final (kingdom, locked) = _stepDSelect(pool, rules);
+
+    // ── Step F ── Auto-reaction swap ─────────────────────────────────────────
+    if (rules.requireReactionIfAttacks) {
+      _stepFAutoReaction(kingdom, locked, pool);
+    }
 
     // ── Step E ── Landscape cards ────────────────────────────────────────────
     final landscapeResult = rules.includeLandscape
-        ? _stepESelectLandscape(landscape, ownedExpansions)
+        ? _stepESelectLandscape(landscape, ownedExpansions, rules)
         : const <DominionCard>[];
 
     // ── Supplement ── Setup notes ────────────────────────────────────────────
@@ -114,10 +119,12 @@ class SetupEngine {
 
   void _stepCApplyRules(List<DominionCard> pool, SetupRules rules) {
     pool.removeWhere((c) {
-      if (rules.noAttacks  && c.isAttack)        return true;
-      if (rules.noDuration && c.isDuration)       return true;
-      if (rules.noPotions  && c.potionCost)       return true;
-      if (rules.noDebt     && c.debtCost != null) return true;
+      if (rules.noAttacks    && c.isAttack)           return true;
+      if (rules.noDuration   && c.isDuration)          return true;
+      if (rules.noPotions    && c.potionCost)          return true;
+      if (rules.noDebt       && c.debtCost != null)    return true;
+      if (rules.noCursers    && c.hasTag(CardTag.curse)) return true;
+      if (rules.noTravellers && c.isTraveller)         return true;
       if (rules.maxCost != null && c.cost > rules.maxCost!) return true;
       return false;
     });
@@ -127,7 +134,7 @@ class SetupEngine {
   // Step D — Selection (split-pile aware)
   // ===========================================================================
 
-  (List<DominionCard>, int) _stepDSelect(
+  (List<DominionCard>, List<DominionCard>) _stepDSelect(
     List<DominionCard> pool,
     SetupRules rules,
   ) {
@@ -194,12 +201,27 @@ class SetupEngine {
       (c) => c.hasTag(CardTag.plusBuy),
       'Require +Buy',
     );
+    reserveSlot(
+      rules.requireDraw,
+      (c) => c.hasTag(CardTag.plusCard) || c.hasTag(CardTag.drawToX),
+      'Require Draw',
+    );
 
     // ── Phase 2: random fill ────────────────────────────────────────────────
 
+    int attacksInKingdom = kingdom.where((c) => c.isAttack).length;
+
     for (final rep in pileReps) {
       if (kingdom.length >= 10) break;
+      final pileCards    = _allCardsForRep(rep, splitGroups);
+      final pileIsAttack = pileCards.any((c) => c.isAttack);
+      if (rules.maxAttacks != null &&
+          pileIsAttack &&
+          attacksInKingdom >= rules.maxAttacks!) {
+        continue;
+      }
       _addPile(rep, splitGroups, kingdom);
+      if (pileIsAttack) attacksInKingdom++;
     }
 
     if (kingdom.length < 10) {
@@ -230,7 +252,7 @@ class SetupEngine {
       return cmp != 0 ? cmp : a.name.compareTo(b.name);
     });
 
-    return (kingdom, locked.length);
+    return (kingdom, locked);
   }
 
   /// Adds a pile representative (and all its split-pile partners) to [kingdom].
@@ -264,38 +286,65 @@ class SetupEngine {
   }
 
   // ===========================================================================
+  // Step F — Auto-reaction swap
+  // ===========================================================================
+
+  /// If the kingdom has Attacks but no Reactions, swaps one non-locked,
+  /// non-Attack card for a random Reaction from the filtered pool.
+  void _stepFAutoReaction(
+    List<DominionCard> kingdom,
+    List<DominionCard> locked,
+    List<DominionCard> filteredPool,
+  ) {
+    if (!kingdom.any((c) => c.isAttack)) return;
+    if (kingdom.any((c) => c.isReaction)) return;
+
+    final kingdomIds = kingdom.map((c) => c.id).toSet();
+    final reactions  = filteredPool
+        .where((c) => c.isReaction && !kingdomIds.contains(c.id))
+        .toList()
+      ..shuffle(_rng);
+
+    if (reactions.isEmpty) return;
+
+    final lockedIds  = locked.map((c) => c.id).toSet();
+    final swappable  = kingdom
+        .where((c) => !lockedIds.contains(c.id) && !c.isAttack)
+        .toList()
+      ..shuffle(_rng);
+
+    if (swappable.isEmpty) return;
+
+    kingdom.remove(swappable.first);
+    kingdom.add(reactions.first);
+  }
+
+  // ===========================================================================
   // Step E — Landscape cards
   // ===========================================================================
 
-  /// Draws the correct number of landscape cards per expansion rules.
+  /// Draws landscape cards according to per-type counts in [rules].
   List<DominionCard> _stepESelectLandscape(
     List<DominionCard> pool,
     Set<Expansion> owned,
+    SetupRules rules,
   ) {
     if (pool.isEmpty) return const [];
 
-    final result    = <DominionCard>[];
-    final shuffled  = [...pool]..shuffle(_rng);
+    final result   = <DominionCard>[];
+    final shuffled = [...pool]..shuffle(_rng);
 
     void draw(bool Function(DominionCard) filter, int count) {
+      if (count <= 0) return;
       final candidates = shuffled.where(filter).toList();
       result.addAll(candidates.take(count.clamp(0, candidates.length)));
     }
 
-    // Adventures / Empires: 2 Events (if any available)
-    draw((c) => c.isEvent, 2);
-
-    // Empires: 1 Landmark
-    draw((c) => c.isLandmark, 1);
-
-    // Renaissance: 2 Projects
-    draw((c) => c.isProject, 2);
-
-    // Allies: 1 Ally
-    draw((c) => c.isAlly, 1);
-
-    // Ways (Menagerie) — 1 Way; optional in real rules but we include 1
-    draw((c) => c.isWay, 1);
+    draw((c) => c.isEvent,    rules.landscapeEvents);
+    draw((c) => c.isLandmark, rules.landscapeLandmarks);
+    draw((c) => c.isProject,  rules.landscapeProjects);
+    draw((c) => c.isAlly,     rules.landscapeAllies);
+    draw((c) => c.isWay,      rules.landscapeWays);
 
     return result;
   }

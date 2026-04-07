@@ -70,6 +70,20 @@ class _RulesTabState extends ConsumerState<RulesTab>
           value:    rules.noDebt,
           onChange: notifier.setNoDebt,
         ),
+        _RuleTile(
+          icon:     Icons.sentiment_very_dissatisfied_outlined,
+          label:    'No Curse-givers',
+          detail:   'Removes cards that hand out Curse cards (e.g. Witch).',
+          value:    rules.noCursers,
+          onChange: notifier.setNoCursers,
+        ),
+        _RuleTile(
+          icon:     Icons.swap_horiz_rounded,
+          label:    'No Travellers',
+          detail:   'Removes Page and Peasant to skip their upgrade chains.',
+          value:    rules.noTravellers,
+          onChange: notifier.setNoTravellers,
+        ),
 
         const _Divider(),
         const SectionHeader(
@@ -84,6 +98,44 @@ class _RulesTabState extends ConsumerState<RulesTab>
           value:    rules.includeLandscape,
           onChange: notifier.setIncludeLandscape,
         ),
+
+        if (rules.includeLandscape) ...[
+          _LandscapeCountTile(
+            icon:     Icons.bolt_outlined,
+            label:    'Events',
+            value:    rules.landscapeEvents,
+            max:      4,
+            onChange: notifier.setLandscapeEvents,
+          ),
+          _LandscapeCountTile(
+            icon:     Icons.account_balance_outlined,
+            label:    'Projects',
+            value:    rules.landscapeProjects,
+            max:      4,
+            onChange: notifier.setLandscapeProjects,
+          ),
+          _LandscapeCountTile(
+            icon:     Icons.landscape_outlined,
+            label:    'Landmarks',
+            value:    rules.landscapeLandmarks,
+            max:      3,
+            onChange: notifier.setLandscapeLandmarks,
+          ),
+          _LandscapeCountTile(
+            icon:     Icons.route_outlined,
+            label:    'Ways',
+            value:    rules.landscapeWays,
+            max:      4,
+            onChange: notifier.setLandscapeWays,
+          ),
+          _LandscapeCountTile(
+            icon:     Icons.groups_outlined,
+            label:    'Allies',
+            value:    rules.landscapeAllies,
+            max:      3,
+            onChange: notifier.setLandscapeAllies,
+          ),
+        ],
 
         const _Divider(),
         const SectionHeader(
@@ -112,6 +164,20 @@ class _RulesTabState extends ConsumerState<RulesTab>
           value:    rules.requireVillage,
           onChange: notifier.setRequireVillage,
         ),
+        _RuleTile(
+          icon:     Icons.style_outlined,
+          label:    'Require card draw',
+          detail:   'At least one card that draws additional cards.',
+          value:    rules.requireDraw,
+          onChange: notifier.setRequireDraw,
+        ),
+        _RuleTile(
+          icon:     Icons.security_outlined,
+          label:    'Auto-Reaction',
+          detail:   'If Attacks are present, guarantee at least one Reaction card.',
+          value:    rules.requireReactionIfAttacks,
+          onChange: notifier.setRequireReactionIfAttacks,
+        ),
 
         const _Divider(),
         const SectionHeader(
@@ -122,6 +188,17 @@ class _RulesTabState extends ConsumerState<RulesTab>
         _MaxCostRow(
           currentMax: rules.maxCost,
           onChange:   notifier.setMaxCost,
+        ),
+
+        const _Divider(),
+        const SectionHeader(
+          title:    'Attack Limit',
+          subtitle: 'Cap how many Attack cards can appear in the kingdom.',
+        ),
+
+        _MaxAttacksRow(
+          currentMax: rules.maxAttacks,
+          onChange:   notifier.setMaxAttacks,
         ),
 
         // Active rules summary
@@ -266,6 +343,255 @@ class _MaxCostRow extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             color: currentMax == c
+                                ? AppColors.gold
+                                : AppColors.parchmentDim,
+                          )))
+                      .toList(),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Landscape type count tile ──────────────────────────────────────────────
+
+class _LandscapeCountTile extends StatelessWidget {
+  final IconData           icon;
+  final String             label;
+  final int                value;
+  final int                max;
+  final ValueChanged<int>  onChange;
+
+  const _LandscapeCountTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.max,
+    required this.onChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final nonDefault = value != _default;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      decoration: BoxDecoration(
+        color:        nonDefault
+            ? AppColors.gold.withValues(alpha: 0.08)
+            : AppColors.cardSurface,
+        border:       Border.all(
+          color: nonDefault ? AppColors.goldDark : AppColors.divider,
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Icon(icon,
+                size:  20,
+                color: nonDefault ? AppColors.gold : AppColors.parchmentDim),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color:      nonDefault
+                      ? AppColors.parchment
+                      : AppColors.parchmentDim,
+                  fontWeight: nonDefault
+                      ? FontWeight.w500
+                      : FontWeight.w400,
+                  fontSize:   14,
+                ),
+              ),
+            ),
+            // Stepper: − count +
+            _Stepper(
+              value:    value,
+              min:      0,
+              max:      max,
+              onChange: onChange,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Returns the "default" count for this tile based on the label.
+  int get _default => switch (label) {
+    'Events'    => 2,
+    'Projects'  => 2,
+    _           => 1,
+  };
+}
+
+class _Stepper extends StatelessWidget {
+  final int             value;
+  final int             min;
+  final int             max;
+  final ValueChanged<int> onChange;
+
+  const _Stepper({
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.onChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _StepBtn(
+          icon:      Icons.remove_rounded,
+          enabled:   value > min,
+          onPressed: () => onChange(value - 1),
+        ),
+        SizedBox(
+          width: 28,
+          child: Text(
+            '$value',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color:      value == 0
+                  ? AppColors.errorRed
+                  : AppColors.parchment,
+              fontWeight: FontWeight.w600,
+              fontSize:   15,
+            ),
+          ),
+        ),
+        _StepBtn(
+          icon:      Icons.add_rounded,
+          enabled:   value < max,
+          onPressed: () => onChange(value + 1),
+        ),
+      ],
+    );
+  }
+}
+
+class _StepBtn extends StatelessWidget {
+  final IconData     icon;
+  final bool         enabled;
+  final VoidCallback onPressed;
+
+  const _StepBtn({
+    required this.icon,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width:  32,
+      height: 32,
+      child: Material(
+        color:        enabled
+            ? AppColors.cardSurface
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(6),
+        child: InkWell(
+          onTap:        enabled ? onPressed : null,
+          borderRadius: BorderRadius.circular(6),
+          child: Icon(
+            icon,
+            size:  16,
+            color: enabled ? AppColors.parchment : AppColors.divider,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Max attacks slider row ─────────────────────────────────────────────────
+
+class _MaxAttacksRow extends StatelessWidget {
+  final int?               currentMax;
+  final ValueChanged<int?> onChange;
+
+  const _MaxAttacksRow({required this.currentMax, required this.onChange});
+
+  @override
+  Widget build(BuildContext context) {
+    final active = currentMax != null;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          color:        active
+              ? AppColors.gold.withValues(alpha: 0.08)
+              : AppColors.cardSurface,
+          border:       Border.all(
+            color: active ? AppColors.goldDark : AppColors.divider,
+          ),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SwitchListTile(
+              secondary: Icon(Icons.shield_outlined,
+                  size:  20,
+                  color: active ? AppColors.gold : AppColors.parchmentDim),
+              title: Text(
+                active ? 'Max attacks: $currentMax' : 'Enable attack limit',
+                style: TextStyle(
+                  color:      active ? AppColors.parchment : AppColors.parchmentDim,
+                  fontWeight: active ? FontWeight.w500 : FontWeight.w400,
+                  fontSize:   14,
+                ),
+              ),
+              subtitle: const Text(
+                'Limit how many Attack cards appear in the kingdom.',
+                style: TextStyle(color: AppColors.parchmentDim, fontSize: 12),
+              ),
+              value:     active,
+              onChanged: (v) => onChange(v ? 2 : null),
+              dense:     true,
+            ),
+            if (active) ...[
+              SliderTheme(
+                data: SliderThemeData(
+                  activeTrackColor:    AppColors.gold,
+                  inactiveTrackColor:  AppColors.divider,
+                  thumbColor:          AppColors.gold,
+                  overlayColor:        AppColors.gold.withValues(alpha: 0.12),
+                  valueIndicatorColor: AppColors.cardSurface,
+                  valueIndicatorTextStyle:
+                      const TextStyle(color: AppColors.parchment),
+                ),
+                child: Slider(
+                  min:       1,
+                  max:       5,
+                  divisions: 4,
+                  value:     currentMax!.toDouble(),
+                  label:     '$currentMax',
+                  onChanged: (v) => onChange(v.round()),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [1, 2, 3, 4, 5]
+                      .map((n) => Text('$n',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: currentMax == n
                                 ? AppColors.gold
                                 : AppColors.parchmentDim,
                           )))

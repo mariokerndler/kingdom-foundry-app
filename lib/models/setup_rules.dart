@@ -13,6 +13,14 @@ class SetupRules {
   /// Remove all cards that use Debt tokens.
   final bool noDebt;
 
+  /// Remove cards with the [curse] tag (those that hand out Curse cards,
+  /// e.g. Witch, Mountebank). Lighter than [noAttacks].
+  final bool noCursers;
+
+  /// Remove Traveller cards (Page, Peasant) from the pool to avoid
+  /// the extra setup of setting aside the upgrade chain.
+  final bool noTravellers;
+
   /// Require at least one +Buy card in the kingdom.
   final bool requirePlusBuy;
 
@@ -22,8 +30,19 @@ class SetupRules {
   /// Require at least one Village (+2 Actions) card in the kingdom.
   final bool requireVillage;
 
+  /// Require at least one card-draw card (+Card or draw-to-X).
+  final bool requireDraw;
+
+  /// If any Attack card ends up in the kingdom, also guarantee at least
+  /// one Reaction card. The engine will swap a non-locked, non-attack card
+  /// for a random reaction from the pool.
+  final bool requireReactionIfAttacks;
+
   /// Maximum card cost allowed in the kingdom (null = no limit).
   final int? maxCost;
+
+  /// Maximum number of Attack cards allowed in the kingdom (null = no limit).
+  final int? maxAttacks;
 
   /// Minimum number of distinct expansions the 10 cards must span (1 = any).
   final int minExpansionVariety;
@@ -32,17 +51,35 @@ class SetupRules {
   /// will be drawn even if the owned expansions contain them.
   final bool includeLandscape;
 
+  /// How many of each landscape type to draw (0 = none).
+  /// Defaults reflect the standard Dominion rule suggestions.
+  final int landscapeEvents;
+  final int landscapeProjects;
+  final int landscapeLandmarks;
+  final int landscapeWays;
+  final int landscapeAllies;
+
   const SetupRules({
-    this.noAttacks            = false,
-    this.noDuration           = false,
-    this.noPotions            = false,
-    this.noDebt               = false,
-    this.requirePlusBuy       = false,
-    this.requireTrashing      = false,
-    this.requireVillage       = false,
+    this.noAttacks                = false,
+    this.noDuration               = false,
+    this.noPotions                = false,
+    this.noDebt                   = false,
+    this.noCursers                = false,
+    this.noTravellers             = false,
+    this.requirePlusBuy           = false,
+    this.requireTrashing          = false,
+    this.requireVillage           = false,
+    this.requireDraw              = false,
+    this.requireReactionIfAttacks = false,
     this.maxCost,
-    this.minExpansionVariety  = 1,
-    this.includeLandscape     = true,
+    this.maxAttacks,
+    this.minExpansionVariety      = 1,
+    this.includeLandscape         = true,
+    this.landscapeEvents          = 2,
+    this.landscapeProjects        = 2,
+    this.landscapeLandmarks       = 1,
+    this.landscapeWays            = 1,
+    this.landscapeAllies          = 1,
   });
 
   SetupRules copyWith({
@@ -50,43 +87,72 @@ class SetupRules {
     bool? noDuration,
     bool? noPotions,
     bool? noDebt,
+    bool? noCursers,
+    bool? noTravellers,
     bool? requirePlusBuy,
     bool? requireTrashing,
     bool? requireVillage,
-    int? maxCost,
-    int? minExpansionVariety,
+    bool? requireDraw,
+    bool? requireReactionIfAttacks,
+    int?  maxCost,
+    int?  maxAttacks,
+    int?  minExpansionVariety,
     bool? includeLandscape,
-    bool clearMaxCost = false,
+    int?  landscapeEvents,
+    int?  landscapeProjects,
+    int?  landscapeLandmarks,
+    int?  landscapeWays,
+    int?  landscapeAllies,
+    bool  clearMaxCost    = false,
+    bool  clearMaxAttacks = false,
   }) {
     return SetupRules(
-      noAttacks:           noAttacks           ?? this.noAttacks,
-      noDuration:          noDuration          ?? this.noDuration,
-      noPotions:           noPotions           ?? this.noPotions,
-      noDebt:              noDebt              ?? this.noDebt,
-      requirePlusBuy:      requirePlusBuy      ?? this.requirePlusBuy,
-      requireTrashing:     requireTrashing     ?? this.requireTrashing,
-      requireVillage:      requireVillage      ?? this.requireVillage,
-      maxCost:             clearMaxCost ? null : (maxCost ?? this.maxCost),
+      noAttacks:                noAttacks                ?? this.noAttacks,
+      noDuration:               noDuration               ?? this.noDuration,
+      noPotions:                noPotions                ?? this.noPotions,
+      noDebt:                   noDebt                   ?? this.noDebt,
+      noCursers:                noCursers                ?? this.noCursers,
+      noTravellers:             noTravellers             ?? this.noTravellers,
+      requirePlusBuy:           requirePlusBuy           ?? this.requirePlusBuy,
+      requireTrashing:          requireTrashing          ?? this.requireTrashing,
+      requireVillage:           requireVillage           ?? this.requireVillage,
+      requireDraw:              requireDraw              ?? this.requireDraw,
+      requireReactionIfAttacks: requireReactionIfAttacks ?? this.requireReactionIfAttacks,
+      maxCost:    clearMaxCost    ? null : (maxCost    ?? this.maxCost),
+      maxAttacks: clearMaxAttacks ? null : (maxAttacks ?? this.maxAttacks),
       minExpansionVariety: minExpansionVariety ?? this.minExpansionVariety,
       includeLandscape:    includeLandscape    ?? this.includeLandscape,
+      landscapeEvents:     landscapeEvents     ?? this.landscapeEvents,
+      landscapeProjects:   landscapeProjects   ?? this.landscapeProjects,
+      landscapeLandmarks:  landscapeLandmarks  ?? this.landscapeLandmarks,
+      landscapeWays:       landscapeWays       ?? this.landscapeWays,
+      landscapeAllies:     landscapeAllies     ?? this.landscapeAllies,
     );
   }
 
   /// Human-readable summary of active rules (for display in the UI).
   List<String> get activeRuleDescriptions {
     final rules = <String>[];
-    if (noAttacks)          rules.add('No Attack cards');
-    if (noDuration)         rules.add('No Duration cards');
-    if (noPotions)          rules.add('No Potion-cost cards');
-    if (noDebt)             rules.add('No Debt cards');
-    if (requirePlusBuy)     rules.add('Must include a +Buy');
-    if (requireTrashing)    rules.add('Must include a Trasher');
-    if (requireVillage)     rules.add('Must include a Village');
-    if (maxCost != null)    rules.add('Max cost: \$$maxCost');
-    if (minExpansionVariety > 1) {
-      rules.add('At least $minExpansionVariety expansions');
-    }
-    if (!includeLandscape)   rules.add('No landscape cards');
+    if (noAttacks)                rules.add('No Attack cards');
+    if (noCursers)                rules.add('No Curse-givers');
+    if (noDuration)               rules.add('No Duration cards');
+    if (noPotions)                rules.add('No Potion-cost cards');
+    if (noDebt)                   rules.add('No Debt cards');
+    if (noTravellers)             rules.add('No Travellers');
+    if (requirePlusBuy)           rules.add('Must include +Buy');
+    if (requireTrashing)          rules.add('Must include Trasher');
+    if (requireVillage)           rules.add('Must include Village');
+    if (requireDraw)              rules.add('Must include Draw');
+    if (requireReactionIfAttacks) rules.add('Auto-Reaction');
+    if (maxCost != null)          rules.add('Max cost: \$$maxCost');
+    if (maxAttacks != null)       rules.add('Max $maxAttacks attack${maxAttacks == 1 ? '' : 's'}');
+    if (minExpansionVariety > 1)  rules.add('At least $minExpansionVariety expansions');
+    if (!includeLandscape)        rules.add('No landscape cards');
+    if (landscapeEvents    != 2)  rules.add('Events: $landscapeEvents');
+    if (landscapeProjects  != 2)  rules.add('Projects: $landscapeProjects');
+    if (landscapeLandmarks != 1)  rules.add('Landmarks: $landscapeLandmarks');
+    if (landscapeWays      != 1)  rules.add('Ways: $landscapeWays');
+    if (landscapeAllies    != 1)  rules.add('Allies: $landscapeAllies');
     return rules;
   }
 

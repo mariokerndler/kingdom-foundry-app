@@ -98,8 +98,43 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
     );
   }
 
+  void setNoCursers(bool v) =>
+      state = state.copyWith(rules: state.rules.copyWith(noCursers: v));
+
+  void setNoTravellers(bool v) =>
+      state = state.copyWith(rules: state.rules.copyWith(noTravellers: v));
+
+  void setRequireDraw(bool v) =>
+      state = state.copyWith(rules: state.rules.copyWith(requireDraw: v));
+
+  void setRequireReactionIfAttacks(bool v) =>
+      state = state.copyWith(
+          rules: state.rules.copyWith(requireReactionIfAttacks: v));
+
+  void setMaxAttacks(int? count) {
+    state = state.copyWith(
+      rules: state.rules.copyWith(
+          maxAttacks: count, clearMaxAttacks: count == null),
+    );
+  }
+
   void setIncludeLandscape(bool v) =>
       state = state.copyWith(rules: state.rules.copyWith(includeLandscape: v));
+
+  void setLandscapeEvents(int v) =>
+      state = state.copyWith(rules: state.rules.copyWith(landscapeEvents: v));
+
+  void setLandscapeProjects(int v) =>
+      state = state.copyWith(rules: state.rules.copyWith(landscapeProjects: v));
+
+  void setLandscapeLandmarks(int v) =>
+      state = state.copyWith(rules: state.rules.copyWith(landscapeLandmarks: v));
+
+  void setLandscapeWays(int v) =>
+      state = state.copyWith(rules: state.rules.copyWith(landscapeWays: v));
+
+  void setLandscapeAllies(int v) =>
+      state = state.copyWith(rules: state.rules.copyWith(landscapeAllies: v));
 
   void resetRules() => state = state.copyWith(rules: const SetupRules());
 
