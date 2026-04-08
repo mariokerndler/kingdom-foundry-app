@@ -69,6 +69,7 @@ class DominionCard {
   String get costString {
     if (potionCost && debtCost != null) return '\$$cost' 'P+${debtCost!}D';
     if (potionCost)                     return '\$$cost' 'P';
+    if (debtCost != null && cost == 0)  return '${debtCost!}D';   // pure debt
     if (debtCost != null)               return '\$$cost+${debtCost!}D';
     return '\$$cost';
   }

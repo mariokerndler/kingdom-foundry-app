@@ -164,6 +164,10 @@ class SetupEngine {
     final kingdom = <DominionCard>[];
     final locked  = <DominionCard>[];
 
+    // Track slots filled (each split pile counts as 1 slot regardless of how
+    // many individual cards it adds to [kingdom]).
+    var slotsSelected = 0;
+
     // ── Phase 1: required slots ─────────────────────────────────────────────
 
     void reserveSlot(
@@ -184,6 +188,7 @@ class SetupEngine {
       _addPile(pick, splitGroups, kingdom);
       locked.addAll(_allCardsForRep(pick, splitGroups));
       pileReps.remove(pick);
+      slotsSelected++;
     }
 
     reserveSlot(
@@ -212,7 +217,7 @@ class SetupEngine {
     int attacksInKingdom = kingdom.where((c) => c.isAttack).length;
 
     for (final rep in pileReps) {
-      if (kingdom.length >= 10) break;
+      if (slotsSelected >= 10) break;
       final pileCards    = _allCardsForRep(rep, splitGroups);
       final pileIsAttack = pileCards.any((c) => c.isAttack);
       if (rules.maxAttacks != null &&
@@ -221,25 +226,32 @@ class SetupEngine {
         continue;
       }
       _addPile(rep, splitGroups, kingdom);
+      slotsSelected++;
       if (pileIsAttack) attacksInKingdom++;
     }
 
-    if (kingdom.length < 10) {
+    if (slotsSelected < 10) {
       throw SetupException(
-        'Pool exhausted before 10 cards could be selected '
-        '(${kingdom.length}/10). This is likely a bug.',
+        'Pool exhausted before 10 slots could be selected '
+        '($slotsSelected/10). This is likely a bug.',
         SetupFailureReason.poolTooSmall,
       );
     }
 
     // ── Phase 3: expansion variety ──────────────────────────────────────────
 
+    // Count locked slots (each split pile = 1 slot even if it has 2 cards).
+    final lockedSlots = locked
+        .map((c) => c.splitPileId ?? c.id)
+        .toSet()
+        .length;
+
     if (rules.minExpansionVariety > 1) {
       final ownedCount = pool.map((c) => c.expansion).toSet().length;
       _enforceExpansionVariety(
         kingdom:    kingdom,
         locked:     locked,
-        remainder:  pileReps.skip(10 - locked.length).toList(),
+        remainder:  pileReps.skip(10 - lockedSlots).toList(),
         splitGroups: splitGroups,
         minVariety: rules.minExpansionVariety,
         ownedCount: ownedCount,

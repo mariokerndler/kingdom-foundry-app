@@ -15,6 +15,35 @@ import '../widgets/cards/archetype_card.dart';
 import '../widgets/cards/kingdom_card_widget.dart';
 import '../widgets/common/section_header.dart';
 
+/// Groups a flat kingdom card list into display slots.
+/// Cards sharing a splitPileId collapse into a single (primary, partner) slot.
+/// The lower-cost card is the primary (shown on the tile).
+List<(DominionCard, DominionCard?)> _splitPileSlots(
+    List<DominionCard> cards) {
+  final seen    = <String>{};
+  final slots   = <(DominionCard, DominionCard?)>[];
+  final byPile  = <String, List<DominionCard>>{};
+
+  for (final c in cards) {
+    if (c.splitPileId != null) {
+      (byPile[c.splitPileId!] ??= []).add(c);
+    }
+  }
+
+  for (final c in cards) {
+    if (c.splitPileId == null) {
+      slots.add((c, null));
+    } else if (!seen.contains(c.splitPileId)) {
+      seen.add(c.splitPileId!);
+      final pair    = byPile[c.splitPileId!]!;
+      final primary = pair.reduce((a, b) => a.cost <= b.cost ? a : b);
+      final partner = pair.firstWhere((x) => x.id != primary.id);
+      slots.add((primary, partner));
+    }
+  }
+  return slots;
+}
+
 /// Public route builder — shared by ConfigurationScreen and HistorySheet.
 Route<void> buildResultsRoute() => PageRouteBuilder<void>(
       pageBuilder:               (_, __, ___) => const ResultsScreen(),
@@ -76,10 +105,18 @@ class ResultsScreen extends ConsumerWidget {
   }
 
   void _copyKingdom(BuildContext context, SetupResult result) {
-    final lines = result.kingdomCards
+    final slots = _splitPileSlots(result.kingdomCards);
+    final lines = slots
         .asMap()
         .entries
-        .map((e) => '${e.key + 1}. ${e.value.name} (${e.value.costString})')
+        .map((e) {
+          final primary = e.value.$1;
+          final partner = e.value.$2;
+          final label   = partner != null
+              ? '${primary.name} / ${partner.name}'
+              : primary.name;
+          return '${e.key + 1}. $label (${primary.costString})';
+        })
         .join('\n');
     Clipboard.setData(ClipboardData(text: lines));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -206,15 +243,21 @@ class _ResultsBody extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           sliver: SliverGrid(
             delegate: SliverChildBuilderDelegate(
-              (_, i) => _StaggeredEntry(
-                key:   ValueKey('${genKey}_$i'),
-                index: i,
-                child: KingdomCardWidget(
-                  card:  result.kingdomCards[i],
-                  index: i + 1,
-                ),
-              ),
-              childCount: result.kingdomCards.length,
+              (_, i) {
+                final slots   = _splitPileSlots(result.kingdomCards);
+                final primary = slots[i].$1;
+                final partner = slots[i].$2;
+                return _StaggeredEntry(
+                  key:   ValueKey('${genKey}_$i'),
+                  index: i,
+                  child: KingdomCardWidget(
+                    card:         primary,
+                    splitPartner: partner,
+                    index:        i + 1,
+                  ),
+                );
+              },
+              childCount: _splitPileSlots(result.kingdomCards).length,
             ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount:   2,

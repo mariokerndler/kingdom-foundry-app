@@ -9,12 +9,14 @@ import '../../utils/app_theme.dart';
 import '../common/expansion_badge.dart';
 
 class KingdomCardWidget extends StatelessWidget {
-  final DominionCard card;
-  final int          index; // 1-based display number
+  final DominionCard  card;
+  final DominionCard? splitPartner; // non-null for split piles
+  final int           index; // 1-based display number
 
   const KingdomCardWidget({
     super.key,
     required this.card,
+    this.splitPartner,
     required this.index,
   });
 
@@ -22,8 +24,10 @@ class KingdomCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = _accentColor(card.types);
 
+    final isSplit = splitPartner != null;
+
     return Semantics(
-      label:  '${card.name}, ${card.typeString}. Cost: ${card.costString}. Tap for details.',
+      label:  '${card.name}${isSplit ? ' / ${splitPartner!.name}' : ''}, ${card.typeString}. Cost: ${card.costString}. Tap for details.',
       button: true,
       excludeSemantics: true,
       child: Material(
@@ -95,6 +99,29 @@ class KingdomCardWidget extends StatelessWidget {
 
               const SizedBox(height: 6),
 
+              // Split pile partner label
+              if (isSplit) ...[
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.layers_rounded,
+                        size: 10, color: AppColors.gold),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        '+ ${splitPartner!.name}',
+                        style: const TextStyle(
+                          color:    AppColors.gold,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
               // Footer: expansion + tap hint
               Row(
                 children: [
@@ -122,7 +149,11 @@ class KingdomCardWidget extends StatelessWidget {
       context:           context,
       isScrollControlled: true,
       backgroundColor:   Colors.transparent,
-      builder: (_) => _CardDetailSheet(card: card, accent: accent),
+      builder: (_) => _CardDetailSheet(
+        card:         card,
+        splitPartner: splitPartner,
+        accent:       accent,
+      ),
     );
   }
 
@@ -142,14 +173,39 @@ class KingdomCardWidget extends StatelessWidget {
   }
 }
 
-// ── Cost badge (coin circle) ───────────────────────────────────────────────
+// ── Cost badge (coin circle / debt hexagon) ───────────────────────────────
 
 class _CostBadge extends StatelessWidget {
   final String cost;
   const _CostBadge({required this.cost});
 
+  // Pure-debt cards end with 'D' and have no '$' prefix (e.g. "4D").
+  bool get _isDebt => cost.endsWith('D') && !cost.startsWith(r'$');
+
   @override
   Widget build(BuildContext context) {
+    if (_isDebt) {
+      // Debt badge: dark iron/charcoal rounded rect to distinguish from coins.
+      return Container(
+        constraints: const BoxConstraints(minWidth: 26),
+        height:      26,
+        padding:     const EdgeInsets.symmetric(horizontal: 6),
+        decoration:  BoxDecoration(
+          color:        const Color(0xFF37474F), // blue-grey dark
+          borderRadius: BorderRadius.circular(5),
+          border:       Border.all(color: const Color(0xFF78909C), width: 1),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          cost,
+          style: const TextStyle(
+            color:      Color(0xFFB0BEC5),
+            fontSize:   11,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
+    }
     return Container(
       constraints:  const BoxConstraints(minWidth: 26),
       height:       26,
@@ -164,6 +220,57 @@ class _CostBadge extends StatelessWidget {
         style: const TextStyle(
           color:      Colors.black,
           fontSize:   11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Detail sheet cost badge (larger, same debt logic) ─────────────────────
+
+class _DetailCostBadge extends StatelessWidget {
+  final String costString;
+  const _DetailCostBadge({required this.costString});
+
+  bool get _isDebt => costString.endsWith('D') && !costString.startsWith(r'$');
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isDebt) {
+      return Container(
+        constraints: const BoxConstraints(minWidth: 40),
+        height:      40,
+        padding:     const EdgeInsets.symmetric(horizontal: 8),
+        decoration:  BoxDecoration(
+          color:        const Color(0xFF37474F),
+          borderRadius: BorderRadius.circular(7),
+          border:       Border.all(color: const Color(0xFF78909C), width: 1.5),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          costString,
+          style: const TextStyle(
+            color:      Color(0xFFB0BEC5),
+            fontSize:   14,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
+    }
+    return Container(
+      width: 40, height: 40,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.goldDark,
+        border: Border.all(color: AppColors.gold, width: 1.5),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        costString,
+        style: const TextStyle(
+          color:      Colors.black,
+          fontSize:   14,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -226,10 +333,15 @@ class _TypePills extends StatelessWidget {
 // ── Card detail bottom sheet ─────────────────────────────────────────────────
 
 class _CardDetailSheet extends StatelessWidget {
-  final DominionCard card;
-  final Color        accent;
+  final DominionCard  card;
+  final DominionCard? splitPartner;
+  final Color         accent;
 
-  const _CardDetailSheet({required this.card, required this.accent});
+  const _CardDetailSheet({
+    required this.card,
+    this.splitPartner,
+    required this.accent,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -274,24 +386,7 @@ class _CardDetailSheet extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Container(
-                        width: 40, height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.goldDark,
-                          border: Border.all(
-                              color: AppColors.gold, width: 1.5),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          card.costString,
-                          style: const TextStyle(
-                            color:      Colors.black,
-                            fontSize:   14,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
+                      _DetailCostBadge(costString: card.costString),
                     ],
                   ),
 
@@ -319,6 +414,28 @@ class _CardDetailSheet extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 20),
+
+                  // Split pile partner card
+                  if (splitPartner != null) ...[
+                    const SizedBox(height: 20),
+                    const Text(
+                      'SPLIT PILE',
+                      style: TextStyle(
+                        color:         AppColors.gold,
+                        fontSize:      10,
+                        fontWeight:    FontWeight.w700,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Both halves share one supply pile.',
+                      style: TextStyle(
+                          color: AppColors.parchmentDim, fontSize: 12),
+                    ),
+                    const SizedBox(height: 10),
+                    _SplitPartnerCard(partner: splitPartner!),
+                  ],
 
                   // Traveller upgrade chain
                   if (card.travellerChain.isNotEmpty) ...[
@@ -386,6 +503,59 @@ class _CardDetailSheet extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Split pile partner card ────────────────────────────────────────────────
+
+class _SplitPartnerCard extends StatelessWidget {
+  final DominionCard partner;
+  const _SplitPartnerCard({required this.partner});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = KingdomCardWidget._accentColor(partner.types);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color:        accent.withValues(alpha: 0.07),
+        border:       Border.all(color: accent.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.layers_rounded, size: 13, color: AppColors.gold),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  partner.name,
+                  style: TextStyle(
+                    color:      accent,
+                    fontSize:   15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              _CostBadge(cost: partner.costString),
+            ],
+          ),
+          const SizedBox(height: 6),
+          _TypePills(types: partner.types),
+          const SizedBox(height: 8),
+          Text(
+            partner.text,
+            style: const TextStyle(
+              color:    AppColors.parchment,
+              fontSize: 13,
+              height:   1.5,
+            ),
+          ),
+        ],
       ),
     );
   }
