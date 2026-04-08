@@ -197,18 +197,24 @@ class _HistoryTile extends StatelessWidget {
                                   ))
                               .toList(),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 8),
                         // Age + primary archetype
-                        Text(
-                          primary != null
-                              ? '${primary.headline} · $age'
-                              : age,
-                          style: const TextStyle(
-                            color:    AppColors.parchmentDim,
-                            fontSize: 11,
+                        Flexible(
+                          child: Text(
+                            primary != null
+                                ? '${primary.headline} · $age'
+                                : age,
+                            style: const TextStyle(
+                              color:    AppColors.parchmentDim,
+                              fontSize: 11,
+                            ),
+                            textAlign: TextAlign.end,
+                            overflow:  TextOverflow.ellipsis,
+                            maxLines:  1,
                           ),
                         ),
                       ],
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     ),
                   ],
                 ),
