@@ -394,7 +394,7 @@ class _ErrorState extends ConsumerWidget {
         children: [
           // ignore: prefer_const_constructors
           Icon(Icons.error_outline_rounded,
-              size: 48, color: AppColors.errorRed),
+              size: 48, color: cs.error),
           const SizedBox(height: 16),
           Text(message, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 12),
