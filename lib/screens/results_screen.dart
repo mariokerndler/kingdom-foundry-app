@@ -638,7 +638,7 @@ class _ArchetypeBanner extends StatelessWidget {
                 Text(
                   primary.headline,
                   style: TextStyle(
-                    color:      ArchetypeUtils.color(primary.kind),
+                    color:      Theme.of(context).colorScheme.onSurface,
                     fontSize:   13,
                     fontWeight: FontWeight.w700,
                   ),
@@ -677,7 +677,7 @@ class _ArchetypeBanner extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(a.headline,
-                            style: TextStyle(color: c, fontSize: 12)),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12)),
                       ],
                     ),
                   );

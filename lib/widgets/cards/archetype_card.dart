@@ -82,7 +82,7 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                         Text(
                           'PRIMARY STRATEGY',
                           style: TextStyle(
-                            color:         color,
+                            color:         cs.onSurface,
                             fontSize:      11,
                             fontWeight:    FontWeight.w700,
                             letterSpacing: 1.2,
@@ -99,18 +99,17 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                   ),
                 ),
 
-                // Strength badge
+                // Strength badge — solid fill so white text always reads
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color:        color.withValues(alpha: 0.15),
+                    color:        color,
                     borderRadius: BorderRadius.circular(20),
-                    border:       Border.all(color: color.withValues(alpha: 0.4)),
                   ),
                   child: Text(
                     '$pct%',
-                    style: TextStyle(
-                      color:      color,
+                    style: const TextStyle(
+                      color:      Colors.white,
                       fontSize:   12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -183,7 +182,7 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                               child: Text(
                                 name,
                                 style: TextStyle(
-                                  color:      color.withValues(alpha: 0.9),
+                                  color:      cs.onSurface,
                                   fontSize:   11,
                                   fontWeight: FontWeight.w500,
                                 ),
