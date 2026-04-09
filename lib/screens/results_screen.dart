@@ -563,7 +563,7 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
                 child: InkWell(
                   onTap:        _rolling ? null : _roll,
                   borderRadius: BorderRadius.circular(10),
-                  splashColor:  Colors.black26,
+                  splashColor:  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     width: 48, height: 48,
@@ -575,15 +575,15 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
                     ),
                     alignment: Alignment.center,
                     child: _rolling
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 20, height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:  AlwaysStoppedAnimation(Colors.black),
+                              valueColor:  AlwaysStoppedAnimation(Theme.of(context).colorScheme.onPrimary),
                             ),
                           )
-                        : const Icon(Icons.casino_rounded,
-                            color: Colors.black, size: 22),
+                        : Icon(Icons.casino_rounded,
+                            color: Theme.of(context).colorScheme.onPrimary, size: 22),
                   ),
                 ),
               ),
