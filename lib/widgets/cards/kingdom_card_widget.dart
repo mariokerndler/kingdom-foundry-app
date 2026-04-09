@@ -31,7 +31,7 @@ class KingdomCardWidget extends StatelessWidget {
       button: true,
       excludeSemantics: true,
       child: Material(
-      color:        AppColors.cardSurface,
+      color:        Theme.of(context).colorScheme.surfaceContainer,
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         onTap:        () => _showDetail(context, accent),
@@ -40,8 +40,8 @@ class KingdomCardWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         child: Container(
           decoration: BoxDecoration(
-            color:  AppColors.cardSurface,
-            border: Border.all(color: AppColors.divider),
+            color:  Theme.of(context).colorScheme.surfaceContainer,
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -61,8 +61,8 @@ class KingdomCardWidget extends StatelessWidget {
                   Expanded(
                     child: Text(
                       card.name,
-                      style: const TextStyle(
-                        color:      AppColors.parchment,
+                      style: TextStyle(
+                        color:      Theme.of(context).colorScheme.onSurface,
                         fontSize:   13,
                         fontWeight: FontWeight.w700,
                         height:     1.2,
@@ -87,8 +87,8 @@ class KingdomCardWidget extends StatelessWidget {
               Expanded(
                 child: Text(
                   card.text,
-                  style: const TextStyle(
-                    color:    AppColors.parchmentDim,
+                  style: TextStyle(
+                    color:    Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12,
                     height:   1.35,
                   ),
@@ -104,15 +104,15 @@ class KingdomCardWidget extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.layers_rounded,
-                        size: 10, color: AppColors.gold),
+                    Icon(Icons.layers_rounded,
+                        size: 10, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         '+ ${splitPartner!.name}',
-                        style: const TextStyle(
-                          color:    AppColors.gold,
-                          fontSize: 10,
+                        style: TextStyle(
+                          color:      Theme.of(context).colorScheme.primary,
+                          fontSize:   10,
                           fontWeight: FontWeight.w600,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -127,8 +127,8 @@ class KingdomCardWidget extends StatelessWidget {
                 children: [
                   ExpansionBadge(expansion: card.expansion, fontSize: 11),
                   const Spacer(),
-                  const Icon(Icons.open_in_full_rounded,
-                      size: 11, color: AppColors.parchmentDim),
+                  Icon(Icons.open_in_full_rounded,
+                      size: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ],
               ),
             ],
@@ -184,41 +184,48 @@ class _CostBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs     = Theme.of(context).colorScheme;
+
     if (_isDebt) {
-      // Debt badge: dark iron/charcoal rounded rect to distinguish from coins.
       return Container(
         constraints: const BoxConstraints(minWidth: 26),
         height:      26,
         padding:     const EdgeInsets.symmetric(horizontal: 6),
         decoration:  BoxDecoration(
-          color:        const Color(0xFF37474F), // blue-grey dark
+          color:        isDark ? AppColors.debtBadgeFillDark   : AppColors.debtBadgeFill,
           borderRadius: BorderRadius.circular(5),
-          border:       Border.all(color: const Color(0xFF78909C), width: 1),
+          border:       Border.all(
+            color: isDark ? AppColors.debtBadgeBorderDark : AppColors.debtBadgeBorder,
+          ),
         ),
         alignment: Alignment.center,
         child: Text(
           cost,
-          style: const TextStyle(
-            color:      Color(0xFFB0BEC5),
+          style: TextStyle(
+            color:      isDark ? AppColors.debtBadgeTextDark : AppColors.debtBadgeText,
             fontSize:   11,
             fontWeight: FontWeight.w800,
           ),
         ),
       );
     }
+
+    // Standard coin badge
     return Container(
-      constraints:  const BoxConstraints(minWidth: 26),
-      height:       26,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.goldDark,
+      constraints: const BoxConstraints(minWidth: 26),
+      height:      26,
+      padding:     const EdgeInsets.symmetric(horizontal: 6),
+      decoration:  BoxDecoration(
+        shape:  BoxShape.circle,
+        color:  cs.primary,
+        border: Border.all(color: cs.primary.withValues(alpha: 0.7)),
       ),
       alignment: Alignment.center,
       child: Text(
         cost,
-        style: const TextStyle(
-          color:      Colors.black,
+        style: TextStyle(
+          color:      cs.onPrimary,
           fontSize:   11,
           fontWeight: FontWeight.w800,
         ),
@@ -237,39 +244,46 @@ class _DetailCostBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs     = Theme.of(context).colorScheme;
+
     if (_isDebt) {
       return Container(
         constraints: const BoxConstraints(minWidth: 40),
         height:      40,
         padding:     const EdgeInsets.symmetric(horizontal: 8),
         decoration:  BoxDecoration(
-          color:        const Color(0xFF37474F),
+          color:        isDark ? AppColors.debtBadgeFillDark   : AppColors.debtBadgeFill,
           borderRadius: BorderRadius.circular(7),
-          border:       Border.all(color: const Color(0xFF78909C), width: 1.5),
+          border:       Border.all(
+            color: isDark ? AppColors.debtBadgeBorderDark : AppColors.debtBadgeBorder,
+            width: 1.5,
+          ),
         ),
         alignment: Alignment.center,
         child: Text(
           costString,
-          style: const TextStyle(
-            color:      Color(0xFFB0BEC5),
+          style: TextStyle(
+            color:      isDark ? AppColors.debtBadgeTextDark : AppColors.debtBadgeText,
             fontSize:   14,
             fontWeight: FontWeight.w800,
           ),
         ),
       );
     }
+
     return Container(
       width: 40, height: 40,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.goldDark,
-        border: Border.all(color: AppColors.gold, width: 1.5),
+        shape:  BoxShape.circle,
+        color:  cs.primary,
+        border: Border.all(color: cs.primary.withValues(alpha: 0.7), width: 1.5),
       ),
       alignment: Alignment.center,
       child: Text(
         costString,
-        style: const TextStyle(
-          color:      Colors.black,
+        style: TextStyle(
+          color:      cs.onPrimary,
           fontSize:   14,
           fontWeight: FontWeight.w800,
         ),
@@ -325,7 +339,7 @@ class _TypePills extends StatelessWidget {
       case CardType.duration:  return const Color(0xFFFFB74D);
       case CardType.night:     return const Color(0xFF9575CD);
       case CardType.reserve:   return const Color(0xFF80CBC4);
-      default:                 return AppColors.parchmentDim;
+      default:                 return const Color(0xFF78909C);
     }
   }
 }
@@ -351,7 +365,7 @@ class _CardDetailSheet extends StatelessWidget {
       maxChildSize:     0.85,
       builder: (_, ctrl) => Container(
         decoration: BoxDecoration(
-          color:        AppColors.surface,
+          color:        Theme.of(context).colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           border:       Border(top: BorderSide(color: accent, width: 3)),
         ),
@@ -362,7 +376,7 @@ class _CardDetailSheet extends StatelessWidget {
               margin: const EdgeInsets.only(top: 10),
               width:  40, height: 4,
               decoration: BoxDecoration(
-                color:        AppColors.divider,
+                color:        Theme.of(context).colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -378,8 +392,8 @@ class _CardDetailSheet extends StatelessWidget {
                       Expanded(
                         child: Text(
                           card.name,
-                          style: const TextStyle(
-                            color:      AppColors.parchment,
+                          style: TextStyle(
+                            color:      Theme.of(context).colorScheme.onSurface,
                             fontSize:   22,
                             fontWeight: FontWeight.w700,
                           ),
@@ -406,8 +420,8 @@ class _CardDetailSheet extends StatelessWidget {
                   // Rules text
                   Text(
                     card.text,
-                    style: const TextStyle(
-                      color:    AppColors.parchment,
+                    style: TextStyle(
+                      color:    Theme.of(context).colorScheme.onSurface,
                       fontSize: 15,
                       height:   1.55,
                     ),
@@ -418,20 +432,15 @@ class _CardDetailSheet extends StatelessWidget {
                   // Split pile partner card
                   if (splitPartner != null) ...[
                     const SizedBox(height: 20),
-                    const Text(
+                    Text(
                       'SPLIT PILE',
-                      style: TextStyle(
-                        color:         AppColors.gold,
-                        fontSize:      10,
-                        fontWeight:    FontWeight.w700,
-                        letterSpacing: 1.4,
-                      ),
+                      style: Theme.of(context).textTheme.labelMedium,
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'Both halves share one supply pile.',
                       style: TextStyle(
-                          color: AppColors.parchmentDim, fontSize: 12),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                     ),
                     const SizedBox(height: 10),
                     _SplitPartnerCard(partner: splitPartner!),
@@ -440,20 +449,15 @@ class _CardDetailSheet extends StatelessWidget {
                   // Traveller upgrade chain
                   if (card.travellerChain.isNotEmpty) ...[
                     const SizedBox(height: 20),
-                    const Text(
+                    Text(
                       'TRAVELLER CHAIN',
-                      style: TextStyle(
-                        color:         AppColors.gold,
-                        fontSize:      10,
-                        fontWeight:    FontWeight.w700,
-                        letterSpacing: 1.4,
-                      ),
+                      style: Theme.of(context).textTheme.labelMedium,
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'Set these cards aside before play.',
                       style: TextStyle(
-                          color: AppColors.parchmentDim, fontSize: 12),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                     ),
                     const SizedBox(height: 10),
                     _TravellerChain(
@@ -464,14 +468,9 @@ class _CardDetailSheet extends StatelessWidget {
 
                   // Tags section
                   if (card.tags.isNotEmpty) ...[
-                    const Text(
+                    Text(
                       'MECHANICS',
-                      style: TextStyle(
-                        color:         AppColors.gold,
-                        fontSize:      10,
-                        fontWeight:    FontWeight.w700,
-                        letterSpacing: 1.4,
-                      ),
+                      style: Theme.of(context).textTheme.labelMedium,
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -529,7 +528,7 @@ class _SplitPartnerCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.layers_rounded, size: 13, color: AppColors.gold),
+              Icon(Icons.layers_rounded, size: 13, color: Theme.of(context).colorScheme.primary),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -549,8 +548,8 @@ class _SplitPartnerCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             partner.text,
-            style: const TextStyle(
-              color:    AppColors.parchment,
+            style: TextStyle(
+              color:    Theme.of(context).colorScheme.onSurface,
               fontSize: 13,
               height:   1.5,
             ),
@@ -600,17 +599,20 @@ class _TravellerChain extends ConsumerWidget {
             accent:   _accentColor(i, names.length),
           ),
           if (i < names.length - 1)
-            Padding(
-              padding: const EdgeInsets.only(left: 14),
-              child: Row(
-                children: [
-                  Container(width: 2, height: 12, color: AppColors.divider),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.arrow_downward_rounded,
-                      size: 11, color: AppColors.parchmentDim),
-                ],
-              ),
-            ),
+            Builder(builder: (ctx) {
+              final cs = Theme.of(ctx).colorScheme;
+              return Padding(
+                padding: const EdgeInsets.only(left: 14),
+                child: Row(
+                  children: [
+                    Container(width: 2, height: 12, color: cs.outlineVariant),
+                    const SizedBox(width: 8),
+                    Icon(Icons.arrow_downward_rounded,
+                        size: 11, color: cs.onSurfaceVariant),
+                  ],
+                ),
+              );
+            }),
         ],
       ],
     );
@@ -618,8 +620,8 @@ class _TravellerChain extends ConsumerWidget {
 
   static Color _accentColor(int index, int total) {
     if (index == 0)          return const Color(0xFF26C6DA); // teal – base
-    if (index == total - 1)  return AppColors.gold;          // gold – top
-    return AppColors.parchmentDim;                           // dim – middle
+    if (index == total - 1)  return const Color(0xFFC49A0A); // gold – top
+    return const Color(0xFF7D8590);                          // dim – middle
   }
 }
 
