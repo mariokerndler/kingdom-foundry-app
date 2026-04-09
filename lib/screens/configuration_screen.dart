@@ -153,19 +153,20 @@ class _AppTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize:       MainAxisSize.min,
       children: [
-        const Text('Dominion Setup',
+        Text('Dominion Setup',
             style: TextStyle(
-              color:      AppColors.parchment,
+              color:      cs.onSurface,
               fontSize:   18,
               fontWeight: FontWeight.w700,
             )),
         Text('Kingdom Generator',
             style: TextStyle(
-              color:    AppColors.gold.withValues(alpha: 0.8),
+              color:    cs.primary.withValues(alpha: 0.8),
               fontSize: 11,
             )),
       ],
@@ -190,23 +191,27 @@ class _GenerateFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return FloatingActionButton.extended(
       onPressed:       isLoading ? null : onGenerate,
-      backgroundColor: isLoading ? AppColors.goldDark : AppColors.gold,
+      backgroundColor: isLoading
+          ? cs.primary.withValues(alpha: 0.6)
+          : cs.primary,
       label: isLoading
-          ? const Row(
+          ? Row(
               children: [
                 SizedBox(
                   width: 18, height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor:  AlwaysStoppedAnimation(Colors.black),
+                    valueColor:  AlwaysStoppedAnimation(cs.onPrimary),
                   ),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Text('Generating...',
                     style: TextStyle(
-                        color: Colors.black, fontWeight: FontWeight.w700)),
+                        color:      cs.onPrimary,
+                        fontWeight: FontWeight.w700)),
               ],
             )
           : Row(
@@ -221,12 +226,12 @@ class _GenerateFab extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color:        Colors.black.withValues(alpha: 0.25),
+                      color:        Colors.black.withValues(alpha: 0.20),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       '$activeRuleCount rule${activeRuleCount == 1 ? '' : 's'}',
-                      style: const TextStyle(fontSize: 11, color: Colors.black),
+                      style: TextStyle(fontSize: 11, color: cs.onPrimary),
                     ),
                   ),
                 ],
@@ -278,16 +283,16 @@ class _ImportDialogState extends State<_ImportDialog> {
     final isValid = _parsed.length == 10;
 
     return AlertDialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       titlePadding:    const EdgeInsets.fromLTRB(20, 20, 20, 0),
       contentPadding:  const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.paste_rounded, color: AppColors.gold, size: 20),
-          SizedBox(width: 8),
+          Icon(Icons.paste_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+          const SizedBox(width: 8),
           Text('Import Kingdom',
               style: TextStyle(
-                color:      AppColors.parchment,
+                color:      Theme.of(context).colorScheme.onSurface,
                 fontSize:   17,
                 fontWeight: FontWeight.w700,
               )),
@@ -299,9 +304,9 @@ class _ImportDialogState extends State<_ImportDialog> {
           mainAxisSize:       MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Paste a kingdom list shared from another player\'s device.',
-              style: TextStyle(color: AppColors.parchmentDim, fontSize: 13),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 12),
 
@@ -311,8 +316,7 @@ class _ImportDialogState extends State<_ImportDialog> {
               maxLines:   12,
               minLines:   5,
               autofocus:  true,
-              style: const TextStyle(
-                  color: AppColors.parchment, fontSize: 12, height: 1.6),
+              style: const TextStyle(fontSize: 12, height: 1.6),
               decoration: const InputDecoration(
                 hintText: '1. Village (\$3)\n2. Smithy (\$4)\n…',
                 alignLabelWithHint: true,
@@ -332,15 +336,15 @@ class _ImportDialogState extends State<_ImportDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel',
-              style: TextStyle(color: AppColors.parchmentDim)),
+          child: Text('Cancel',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ),
         TextButton(
           onPressed: isValid ? () => Navigator.pop(context, _ctrl.text) : null,
           child: Text(
             'Import Kingdom',
             style: TextStyle(
-              color:      isValid ? AppColors.gold : AppColors.divider,
+              color:      isValid ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -426,7 +430,7 @@ class _SetupErrorDialog extends StatelessWidget {
     final (icon, title, suggestion) = _content(reason);
 
     return AlertDialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       titlePadding:    const EdgeInsets.fromLTRB(20, 20, 20, 0),
       contentPadding:  const EdgeInsets.fromLTRB(20, 12, 20, 0),
       title: Row(
@@ -436,8 +440,8 @@ class _SetupErrorDialog extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                color:      AppColors.parchment,
+              style: TextStyle(
+                color:      Theme.of(context).colorScheme.onSurface,
                 fontSize:   16,
                 fontWeight: FontWeight.w700,
               ),
@@ -451,27 +455,27 @@ class _SetupErrorDialog extends StatelessWidget {
         children: [
           const SizedBox(height: 8),
           Text(message,
-              style: const TextStyle(
-                  color: AppColors.parchmentDim, fontSize: 13, height: 1.5)),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5)),
           const SizedBox(height: 12),
           Container(
             padding:    const EdgeInsets.fromLTRB(12, 10, 12, 10),
             decoration: BoxDecoration(
-              color:        AppColors.gold.withValues(alpha: 0.07),
-              border:       Border.all(color: AppColors.goldDark.withValues(alpha: 0.4)),
+              color:        Theme.of(context).colorScheme.primary.withValues(alpha: 0.07),
+              border:       Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.lightbulb_outline_rounded,
-                    color: AppColors.gold, size: 15),
+                Icon(Icons.lightbulb_outline_rounded,
+                    color: Theme.of(context).colorScheme.primary, size: 15),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     suggestion,
-                    style: const TextStyle(
-                        color: AppColors.parchmentDim, fontSize: 12, height: 1.5),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, height: 1.5),
                   ),
                 ),
               ],
@@ -483,7 +487,7 @@ class _SetupErrorDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('OK', style: TextStyle(color: AppColors.gold)),
+          child: Text('OK', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
         ),
       ],
     );
