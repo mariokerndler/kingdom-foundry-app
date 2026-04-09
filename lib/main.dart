@@ -33,12 +33,12 @@ class DominionApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title:        'Dominion Setup',
+      title:                      'Dominion Setup',
       debugShowCheckedModeBanner: false,
-      theme:        buildAppTheme(),
-      darkTheme:    buildAppTheme(),
-      themeMode:    ThemeMode.dark,
-      home:         const ConfigurationScreen(),
+      theme:                      buildLightTheme(),
+      darkTheme:                  buildDarkTheme(),
+      themeMode:                  ThemeMode.system,
+      home:                       const ConfigurationScreen(),
     );
   }
 }
