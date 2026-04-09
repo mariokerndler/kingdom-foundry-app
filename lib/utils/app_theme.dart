@@ -1,130 +1,199 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+// ── Retained constants (no Material 3 colorScheme slot) ──────────────────────
 
 abstract class AppColors {
-  static const background   = Color(0xFF0F0F1A);
-  static const surface      = Color(0xFF1A1A2E);
-  static const cardSurface  = Color(0xFF16213E);
-  static const divider      = Color(0xFF2A2A45);
-  static const gold         = Color(0xFFFFD700);
-  static const goldDark     = Color(0xFFB8860B);
-  static const parchment    = Color(0xFFF0E6D3);
-  static const parchmentDim = Color(0xFF8A7A6A);
-  static const errorRed     = Color(0xFFCF3C3C);
-  static const successGreen = Color(0xFF4CAF50);
+  // Archetype accent strips — used on kingdom card tiles and chips
+  static const statAttack      = Color(0xFFBE123C); // crimson rose
+  static const statTrasher     = Color(0xFF7C3AED); // indigo-violet
+  static const statDuration    = Color(0xFFB45309); // amber-brown
+  static const statAltVP       = Color(0xFF15803D); // forest green
+  static const landscapeAccent = Color(0xFF1D4ED8); // cobalt blue
 
-  // Stat strip / archetype accent colours — single source of truth.
-  static const statAttack   = Color(0xFFEF5350);
-  static const statTrasher  = Color(0xFFAB47BC);
-  static const statDuration = Color(0xFFFFB74D);
-  static const statAltVP    = Color(0xFF66BB6A);
+  // Semantic singletons used in SnackBar / ScaffoldMessenger directly
+  static const errorRed     = Color(0xFFDC2626);
+  static const successGreen = Color(0xFF15803D); // same hue as statAltVP
 
-  // Landscape card left-accent strip.
-  static const landscapeAccent = Color(0xFF7E57C2);
+  // Debt badge — intentionally fixed "iron" styling regardless of mode
+  static const debtBadgeFill       = Color(0xFF334155);
+  static const debtBadgeBorder     = Color(0xFF64748B);
+  static const debtBadgeText       = Color(0xFFCBD5E1);
+  static const debtBadgeFillDark   = Color(0xFF37474F);
+  static const debtBadgeBorderDark = Color(0xFF78909C);
+  static const debtBadgeTextDark   = Color(0xFFB0BEC5);
 }
 
-ThemeData buildAppTheme() {
+// ── Shared text theme ─────────────────────────────────────────────────────────
+
+TextTheme _buildTextTheme(TextTheme base) =>
+    GoogleFonts.dmSansTextTheme(base).copyWith(
+      titleLarge:  GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w700),
+      titleMedium: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w600),
+      bodyLarge:   GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w400),
+      bodyMedium:  GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w400),
+      labelLarge:  GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w700),
+      labelMedium: GoogleFonts.dmSans(
+        fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.4,
+      ),
+      labelSmall: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w500),
+    );
+
+// ── Light theme ───────────────────────────────────────────────────────────────
+
+ThemeData buildLightTheme() {
+  const cs = ColorScheme.light(
+    surface:          Color(0xFFFFFFFF),
+    surfaceContainer: Color(0xFFF1F5F9),
+    primary:          Color(0xFFC49A0A),
+    onPrimary:        Color(0xFFFFFFFF),
+    secondary:        Color(0xFFC49A0A),
+    onSecondary:      Color(0xFFFFFFFF),
+    onSurface:        Color(0xFF0F172A),
+    onSurfaceVariant: Color(0xFF475569),
+    outline:          Color(0xFF94A3B8),
+    outlineVariant:   Color(0xFFE2E8F0),
+    error:            Color(0xFFDC2626),
+    onError:          Color(0xFFFFFFFF),
+  );
+
+  return _buildTheme(
+    colorScheme:        cs,
+    scaffoldBackground: const Color(0xFFF8F9FB),
+    textTheme:          _buildTextTheme(ThemeData.light().textTheme),
+  );
+}
+
+// ── Dark theme ────────────────────────────────────────────────────────────────
+
+ThemeData buildDarkTheme() {
+  const cs = ColorScheme.dark(
+    surface:          Color(0xFF161B22),
+    surfaceContainer: Color(0xFF1C2333),
+    primary:          Color(0xFFD4A520),
+    onPrimary:        Color(0xFFFFFFFF),
+    secondary:        Color(0xFFD4A520),
+    onSecondary:      Color(0xFFFFFFFF),
+    onSurface:        Color(0xFFE6EDF3),
+    onSurfaceVariant: Color(0xFF7D8590),
+    outline:          Color(0xFF4D5566),
+    outlineVariant:   Color(0xFF30363D),
+    error:            Color(0xFFF87171),
+    onError:          Color(0xFF1A0000),
+  );
+
+  return _buildTheme(
+    colorScheme:        cs,
+    scaffoldBackground: const Color(0xFF0D1117),
+    textTheme:          _buildTextTheme(ThemeData.dark().textTheme),
+  );
+}
+
+// ── Shared component builder ──────────────────────────────────────────────────
+
+ThemeData _buildTheme({
+  required ColorScheme colorScheme,
+  required Color       scaffoldBackground,
+  required TextTheme   textTheme,
+}) {
+  final isDark = colorScheme.brightness == Brightness.dark;
+
   return ThemeData(
-    useMaterial3:  true,
-    brightness:    Brightness.dark,
-    colorScheme:   const ColorScheme.dark(
-      surface:          AppColors.surface,
-      primary:          AppColors.gold,
-      onPrimary:        Colors.black,
-      secondary:        AppColors.goldDark,
-      onSecondary:      Colors.black,
-      error:            AppColors.errorRed,
-      onSurface:        AppColors.parchment,
-      surfaceContainer: AppColors.cardSurface,
+    useMaterial3:            true,
+    colorScheme:             colorScheme,
+    scaffoldBackgroundColor: scaffoldBackground,
+    textTheme:               textTheme,
+
+    appBarTheme: AppBarTheme(
+      backgroundColor:        colorScheme.surface,
+      foregroundColor:        colorScheme.onSurface,
+      centerTitle:            false,
+      elevation:              0,
+      scrolledUnderElevation: 1,
     ),
-    scaffoldBackgroundColor: AppColors.background,
-    appBarTheme: const AppBarTheme(
-      backgroundColor:  AppColors.surface,
-      foregroundColor:  AppColors.parchment,
-      centerTitle:      true,
-      elevation:        0,
-      scrolledUnderElevation: 2,
+
+    tabBarTheme: TabBarThemeData(
+      labelColor:            colorScheme.primary,
+      unselectedLabelColor:  colorScheme.onSurfaceVariant,
+      indicatorColor:        colorScheme.primary,
+      dividerColor:          colorScheme.outlineVariant,
     ),
-    tabBarTheme: const TabBarThemeData(
-      labelColor:        AppColors.gold,
-      unselectedLabelColor: AppColors.parchmentDim,
-      indicatorColor:    AppColors.gold,
-      dividerColor:      AppColors.divider,
-    ),
+
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((states) =>
           states.contains(WidgetState.selected)
-              ? AppColors.gold
-              : AppColors.parchmentDim),
+              ? Colors.white
+              : colorScheme.onSurfaceVariant),
       trackColor: WidgetStateProperty.resolveWith((states) =>
           states.contains(WidgetState.selected)
-              ? AppColors.goldDark.withValues(alpha: 0.5)
-              : AppColors.divider),
+              ? colorScheme.primary
+              : colorScheme.outlineVariant),
     ),
+
     checkboxTheme: CheckboxThemeData(
       fillColor: WidgetStateProperty.resolveWith((states) =>
           states.contains(WidgetState.selected)
-              ? AppColors.gold
+              ? colorScheme.primary
               : Colors.transparent),
-      checkColor: WidgetStateProperty.all(Colors.black),
-      side: const BorderSide(color: AppColors.parchmentDim, width: 1.5),
+      checkColor: WidgetStateProperty.all(Colors.white),
+      side: BorderSide(color: colorScheme.outline, width: 1.5),
     ),
+
     chipTheme: ChipThemeData(
-      backgroundColor:       AppColors.cardSurface,
-      selectedColor:         AppColors.goldDark,
-      labelStyle:            const TextStyle(color: AppColors.parchment, fontSize: 13),
-      secondaryLabelStyle:   const TextStyle(color: Colors.black, fontSize: 13),
-      side:                  const BorderSide(color: AppColors.divider),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      backgroundColor:     colorScheme.surfaceContainer,
+      selectedColor:       colorScheme.primary,
+      labelStyle:          TextStyle(color: colorScheme.onSurface, fontSize: 13),
+      secondaryLabelStyle: const TextStyle(color: Colors.white, fontSize: 13),
+      side:                BorderSide(color: colorScheme.outlineVariant),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),
+
     inputDecorationTheme: InputDecorationTheme(
       filled:          true,
-      fillColor:       AppColors.cardSurface,
-      hintStyle:       const TextStyle(color: AppColors.parchmentDim),
-      prefixIconColor: AppColors.parchmentDim,
-      border:          OutlineInputBorder(
+      fillColor:       colorScheme.surface,
+      hintStyle:       TextStyle(color: colorScheme.onSurfaceVariant),
+      prefixIconColor: colorScheme.onSurfaceVariant,
+      border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide:   const BorderSide(color: AppColors.divider),
+        borderSide:   BorderSide(color: colorScheme.outlineVariant),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide:   const BorderSide(color: AppColors.divider),
+        borderSide:   BorderSide(color: colorScheme.outlineVariant),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide:   const BorderSide(color: AppColors.gold, width: 1.5),
+        borderSide:   BorderSide(color: colorScheme.primary, width: 1.5),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     ),
-    dividerTheme: const DividerThemeData(
-      color:     AppColors.divider,
+
+    dividerTheme: DividerThemeData(
+      color:     colorScheme.outlineVariant,
       thickness: 1,
       space:     1,
     ),
-    listTileTheme: const ListTileThemeData(
+
+    listTileTheme: ListTileThemeData(
       tileColor:      Colors.transparent,
-      textColor:      AppColors.parchment,
-      iconColor:      AppColors.parchmentDim,
-      // Increased from vertical: 2 to meet touch target requirements.
-      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      textColor:      colorScheme.onSurface,
+      iconColor:      colorScheme.onSurfaceVariant,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     ),
-    textTheme: const TextTheme(
-      titleLarge:  TextStyle(color: AppColors.parchment,    fontWeight: FontWeight.w700, fontSize: 17),
-      titleMedium: TextStyle(color: AppColors.parchment,    fontWeight: FontWeight.w600, fontSize: 15),
-      bodyLarge:   TextStyle(color: AppColors.parchment,    fontSize: 15),
-      bodyMedium:  TextStyle(color: AppColors.parchmentDim, fontSize: 13),
-      // Section-header label: gold, uppercase, tracked — used via textTheme.labelMedium.
-      labelMedium: TextStyle(
-        color:         AppColors.gold,
-        fontSize:      11,
-        fontWeight:    FontWeight.w700,
-        letterSpacing: 1.4,
-      ),
-      labelSmall:  TextStyle(color: AppColors.parchmentDim, fontSize: 11),
-    ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: AppColors.gold,
-      foregroundColor: Colors.black,
+
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: colorScheme.primary,
+      foregroundColor: colorScheme.onPrimary,
       elevation:       4,
+    ),
+
+    cardTheme: CardThemeData(
+      color:        colorScheme.surface,
+      elevation:    isDark ? 0 : 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side:         BorderSide(color: colorScheme.outlineVariant),
+      ),
     ),
   );
 }
