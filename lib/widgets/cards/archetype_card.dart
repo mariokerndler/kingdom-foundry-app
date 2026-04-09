@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../models/strategy_archetype.dart';
-import '../../utils/app_theme.dart';
 import '../../utils/archetype_utils.dart';
 
 class ArchetypeCard extends StatefulWidget {
@@ -38,14 +37,15 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
     final color = ArchetypeUtils.color(widget.archetype.kind);
     final icon  = ArchetypeUtils.icon(widget.archetype.kind);
     final pct   = (widget.archetype.strength * 100).round();
+    final cs = Theme.of(context).colorScheme;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color:        AppColors.cardSurface,
+        color:        cs.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
         border:       Border.all(
-          color: widget.isPrimary ? color : AppColors.divider,
+          color: widget.isPrimary ? color : cs.outlineVariant,
           width: widget.isPrimary ? 1.5 : 1,
         ),
       ),
@@ -91,7 +91,7 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                       Text(
                         widget.archetype.headline,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: AppColors.parchment,
+                          color: cs.onSurface,
                           fontSize: widget.isPrimary ? 17 : 15,
                         ),
                       ),
@@ -124,7 +124,7 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
           LayoutBuilder(
             builder: (_, constraints) => Stack(
               children: [
-                Container(height: 3, color: AppColors.divider),
+                Container(height: 3, color: cs.outlineVariant),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 700),
                   curve:    Curves.easeOut,
@@ -152,8 +152,8 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                 // Description
                 Text(
                   widget.archetype.description,
-                  style: const TextStyle(
-                    color:  AppColors.parchmentDim,
+                  style: TextStyle(
+                    color:  cs.onSurfaceVariant,
                     fontSize: 13,
                     height: 1.55,
                   ),
@@ -215,9 +215,9 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                           AnimatedRotation(
                             turns:    _tipsExpanded ? 0.5 : 0,
                             duration: const Duration(milliseconds: 200),
-                            child: const Icon(
+                            child: Icon(
                               Icons.expand_more_rounded,
-                              color: AppColors.gold,
+                              color: cs.primary,
                               size:  16,
                             ),
                           ),
@@ -282,25 +282,21 @@ class _TipRow extends StatelessWidget {
             width: 20, height: 20,
             margin: const EdgeInsets.only(top: 1, right: 10),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color.withValues(alpha: 0.15),
+              shape:  BoxShape.circle,
+              color:  color.withValues(alpha: 0.15),
               border: Border.all(color: color.withValues(alpha: 0.35)),
             ),
             alignment: Alignment.center,
             child: Text(
               '$number',
-              style: TextStyle(
-                color:      color,
-                fontSize:   11,
-                fontWeight: FontWeight.w700,
-              ),
+              style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
             ),
           ),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                color:    AppColors.parchmentDim,
+              style: TextStyle(
+                color:    Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 13,
                 height:   1.45,
               ),
