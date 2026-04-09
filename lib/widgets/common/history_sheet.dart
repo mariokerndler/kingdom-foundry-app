@@ -32,11 +32,11 @@ class _HistorySheet extends ConsumerWidget {
       minChildSize:     0.4,
       maxChildSize:     0.92,
       builder: (ctx, ctrl) => Container(
-        decoration: const BoxDecoration(
-          color:        AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color:        Theme.of(ctx).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           border: Border(
-            top: BorderSide(color: AppColors.goldDark, width: 2),
+            top: BorderSide(color: Theme.of(ctx).colorScheme.primary, width: 2),
           ),
         ),
         child: Column(
@@ -46,7 +46,7 @@ class _HistorySheet extends ConsumerWidget {
               margin: const EdgeInsets.only(top: 10),
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color:        AppColors.divider,
+                color:        Theme.of(ctx).colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -56,8 +56,8 @@ class _HistorySheet extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(20, 14, 8, 4),
               child: Row(
                 children: [
-                  const Icon(Icons.history_rounded,
-                      color: AppColors.gold, size: 18),
+                  Icon(Icons.history_rounded,
+                      color: Theme.of(context).colorScheme.primary, size: 18),
                   const SizedBox(width: 8),
                   Text(
                     'Kingdom History',
@@ -77,8 +77,8 @@ class _HistorySheet extends ConsumerWidget {
                       ),
                     ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: AppColors.parchmentDim, size: 20),
+                    icon: Icon(Icons.close_rounded,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
                     tooltip: 'Close',
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -151,16 +151,16 @@ class _HistoryTile extends StatelessWidget {
               Container(
                 width: 28, height: 28,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.cardSurface,
-                  border: Border.all(color: AppColors.divider),
+                  shape:  BoxShape.circle,
+                  color:  Theme.of(context).colorScheme.surfaceContainer,
+                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   '${index + 1}',
-                  style: const TextStyle(
-                    color:    AppColors.parchmentDim,
-                    fontSize: 11,
+                  style: TextStyle(
+                    color:      Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize:   11,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -174,8 +174,8 @@ class _HistoryTile extends StatelessWidget {
                     // Card names
                     Text(
                       result.kingdomCards.map((c) => c.name).join(', '),
-                      style: const TextStyle(
-                        color:    AppColors.parchment,
+                      style: TextStyle(
+                        color:  Theme.of(context).colorScheme.onSurface,
                         fontSize: 13,
                         height:   1.4,
                       ),
@@ -184,6 +184,7 @@ class _HistoryTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         // Expansion badges
                         Wrap(
@@ -201,11 +202,9 @@ class _HistoryTile extends StatelessWidget {
                         // Age + primary archetype
                         Flexible(
                           child: Text(
-                            primary != null
-                                ? '${primary.headline} · $age'
-                                : age,
-                            style: const TextStyle(
-                              color:    AppColors.parchmentDim,
+                            primary != null ? '${primary.headline} · $age' : age,
+                            style: TextStyle(
+                              color:    Theme.of(context).colorScheme.onSurfaceVariant,
                               fontSize: 11,
                             ),
                             textAlign: TextAlign.end,
@@ -214,15 +213,14 @@ class _HistoryTile extends StatelessWidget {
                           ),
                         ),
                       ],
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     ),
                   ],
                 ),
               ),
 
               const SizedBox(width: 8),
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.divider, size: 18),
+              Icon(Icons.chevron_right_rounded,
+                  color: Theme.of(context).colorScheme.outlineVariant, size: 18),
             ],
           ),
         ),
@@ -243,20 +241,23 @@ class _EmptyHistory extends StatelessWidget {
   const _EmptyHistory();
 
   @override
-  Widget build(BuildContext context) => const Center(
+  Widget build(BuildContext context) => Center(
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.history_rounded, size: 48, color: AppColors.divider),
-        SizedBox(height: 16),
+        Icon(Icons.history_rounded, size: 48,
+            color: Theme.of(context).colorScheme.outlineVariant),
+        const SizedBox(height: 16),
         Text(
           'No kingdoms generated yet.',
-          style: TextStyle(color: AppColors.parchmentDim),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           'Generate your first kingdom to see it here.',
-          style: TextStyle(color: AppColors.parchmentDim, fontSize: 12),
+          style: TextStyle(
+              color:    Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12),
         ),
       ],
     ),
