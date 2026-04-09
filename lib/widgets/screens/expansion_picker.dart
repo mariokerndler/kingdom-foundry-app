@@ -67,44 +67,20 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: TextField(
-                controller:  _searchCtrl,
-                onChanged:   (v) =>
-                    setState(() => _query = v.toLowerCase()),
-                style: const TextStyle(
-                    color: AppColors.parchment, fontSize: 14),
+                controller: _searchCtrl,
+                onChanged:  (v) => setState(() => _query = v.toLowerCase()),
                 decoration: InputDecoration(
                   hintText:  'Search expansions…',
-                  hintStyle: const TextStyle(
-                      color: AppColors.parchmentDim, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search_rounded,
-                      color: AppColors.parchmentDim, size: 20),
+                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
                   suffixIcon: _query.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.close_rounded,
-                              color: AppColors.parchmentDim, size: 18),
+                          icon: const Icon(Icons.close_rounded, size: 18),
                           onPressed: () {
                             _searchCtrl.clear();
                             setState(() => _query = '');
                           },
                         )
                       : null,
-                  filled:      true,
-                  fillColor:   AppColors.cardSurface,
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 10),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide:   const BorderSide(color: AppColors.divider),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide:   const BorderSide(color: AppColors.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        const BorderSide(color: AppColors.gold, width: 1.5),
-                  ),
                 ),
               ),
             ),
@@ -131,8 +107,8 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
                       allOwned ? 'Clear all' : 'Select all',
                       style: TextStyle(
                         color:    allOwned
-                            ? AppColors.errorRed
-                            : AppColors.gold,
+                            ? AppColors.errorRed  // keep — destructive action
+                            : Theme.of(context).colorScheme.primary,
                         fontSize: 13,
                       ),
                     ),
@@ -270,14 +246,15 @@ class _GroupHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     return Padding(
       padding: const EdgeInsets.fromLTRB(2, 4, 0, 8),
       child: Row(
         children: [
           Text(
             title.toUpperCase(),
-            style: const TextStyle(
-              color:         AppColors.gold,
+            style: TextStyle(
+              color:         primary,
               fontSize:      10,
               fontWeight:    FontWeight.w700,
               letterSpacing: 1.3,
@@ -287,13 +264,13 @@ class _GroupHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
             decoration: BoxDecoration(
-              color:        AppColors.gold.withValues(alpha: 0.12),
+              color:        primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               '$count',
-              style: const TextStyle(
-                color:      AppColors.gold,
+              style: TextStyle(
+                color:      primary,
                 fontSize:   10,
                 fontWeight: FontWeight.w600,
               ),
@@ -323,6 +300,7 @@ class _ExpansionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final badgeColor = Color(expansion.badgeColorValue);
+    final cs         = Theme.of(context).colorScheme;
 
     return Semantics(
       label:  '${expansion.displayName}, '
@@ -334,10 +312,10 @@ class _ExpansionTile extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         decoration: BoxDecoration(
           color:        selected
-              ? badgeColor.withValues(alpha: 0.14)
-              : AppColors.cardSurface,
+              ? badgeColor.withValues(alpha: 0.10)
+              : cs.surfaceContainer,
           border:       Border.all(
-            color: selected ? badgeColor : AppColors.divider,
+            color: selected ? badgeColor : cs.outlineVariant,
             width: selected ? 1.5 : 1,
           ),
           borderRadius: BorderRadius.circular(10),
@@ -355,21 +333,17 @@ class _ExpansionTile extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
               child: Row(
                 children: [
-                  // Colour indicator dot
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    width:  10,
-                    height: 10,
+                    width: 10, height: 10,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: selected
                           ? badgeColor
-                          : AppColors.parchmentDim.withValues(alpha: 0.3),
+                          : cs.onSurfaceVariant.withValues(alpha: 0.3),
                     ),
                   ),
                   const SizedBox(width: 12),
-
-                  // Name + card counts
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,13 +351,9 @@ class _ExpansionTile extends StatelessWidget {
                         Text(
                           expansion.displayName,
                           style: TextStyle(
-                            color:      selected
-                                ? AppColors.parchment
-                                : AppColors.parchmentDim,
+                            color:      selected ? cs.onSurface : cs.onSurfaceVariant,
                             fontSize:   14,
-                            fontWeight: selected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
+                            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                           ),
                         ),
                         const SizedBox(height: 3),
@@ -393,9 +363,8 @@ class _ExpansionTile extends StatelessWidget {
                               icon:  Icons.grid_view_rounded,
                               label: '${stats.kingdom} kingdom',
                               color: selected
-                                  ? AppColors.parchmentDim
-                                  : AppColors.parchmentDim
-                                      .withValues(alpha: 0.55),
+                                  ? cs.onSurfaceVariant
+                                  : cs.onSurfaceVariant.withValues(alpha: 0.55),
                             ),
                             if (stats.landscape > 0) ...[
                               const SizedBox(width: 8),
@@ -403,8 +372,8 @@ class _ExpansionTile extends StatelessWidget {
                                 icon:  Icons.map_outlined,
                                 label: '${stats.landscape} landscape',
                                 color: selected
-                                    ? AppColors.gold.withValues(alpha: 0.85)
-                                    : AppColors.gold.withValues(alpha: 0.45),
+                                    ? cs.primary.withValues(alpha: 0.85)
+                                    : cs.primary.withValues(alpha: 0.45),
                               ),
                             ],
                           ],
@@ -412,27 +381,20 @@ class _ExpansionTile extends StatelessWidget {
                       ],
                     ),
                   ),
-
                   const SizedBox(width: 10),
-
-                  // Animated checkbox
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    width:  22,
-                    height: 22,
+                    width: 22, height: 22,
                     decoration: BoxDecoration(
-                      color:        selected
-                          ? badgeColor
-                          : Colors.transparent,
+                      color:        selected ? badgeColor : Colors.transparent,
                       border:       Border.all(
-                        color: selected ? badgeColor : AppColors.divider,
+                        color: selected ? badgeColor : cs.outlineVariant,
                         width: 1.5,
                       ),
                       borderRadius: BorderRadius.circular(5),
                     ),
                     child: selected
-                        ? const Icon(Icons.check_rounded,
-                            size: 14, color: Colors.white)
+                        ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
                         : null,
                   ),
                 ],
@@ -540,14 +502,15 @@ class _EmptySearch extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.search_off_rounded,
-              size: 40, color: AppColors.parchmentDim),
+          Icon(Icons.search_off_rounded, size: 40,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
           const SizedBox(height: 12),
           Text(
             'No expansions match "$query"',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-                color: AppColors.parchmentDim, fontSize: 14),
+            style: TextStyle(
+                color:    Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 14),
           ),
         ],
       ),
