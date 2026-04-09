@@ -163,7 +163,7 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
           Text(
             '10 cards · $expansionCount expansion${expansionCount == 1 ? '' : 's'}',
             style: tt.labelSmall?.copyWith(
-              color: AppColors.gold.withValues(alpha: 0.8),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -172,20 +172,22 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           tooltip:   'Copy kingdom list',
           onPressed: isRegenerating ? null : onCopy,
-          icon: const Icon(Icons.copy_rounded, color: AppColors.parchmentDim),
+          icon: Icon(Icons.copy_rounded,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         IconButton(
           tooltip:   'Regenerate kingdom',
           onPressed: isRegenerating ? null : onRegenerate,
           icon: isRegenerating
-              ? const SizedBox(
+              ? SizedBox(
                   width: 18, height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor:  AlwaysStoppedAnimation(AppColors.gold),
+                    valueColor:  AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
                   ),
                 )
-              : const Icon(Icons.casino_rounded, color: AppColors.gold),
+              : Icon(Icons.casino_rounded,
+                  color: Theme.of(context).colorScheme.primary),
         ),
         const SizedBox(width: 4),
       ],
@@ -203,8 +205,8 @@ class _RegeneratingOverlay extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation(AppColors.gold)),
+        CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary)),
         const SizedBox(height: 20),
         Text('Drawing a new kingdom…',
             style: Theme.of(context).textTheme.bodyMedium),
@@ -427,8 +429,8 @@ class _LandscapeGroup extends StatelessWidget {
             margin:     const EdgeInsets.only(bottom: 6),
             padding:    const EdgeInsets.fromLTRB(14, 10, 14, 10),
             decoration: BoxDecoration(
-              color:        AppColors.cardSurface,
-              border:       Border.all(color: AppColors.divider),
+              color:        Theme.of(context).colorScheme.surfaceContainer,
+              border:       Border.all(color: Theme.of(context).colorScheme.outlineVariant),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -449,7 +451,7 @@ class _LandscapeGroup extends StatelessWidget {
                     children: [
                       Text(c.name,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color:      AppColors.parchment,
+                            color:      Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
                           )),
                       const SizedBox(height: 3),
@@ -512,8 +514,8 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
       child: Container(
         padding:    const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
-          color:        AppColors.cardSurface,
-          border:       Border.all(color: AppColors.divider),
+          color:        Theme.of(context).colorScheme.surfaceContainer,
+          border:       Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -541,8 +543,8 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
                             key: ValueKey(_picked),
                             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               color:      _rolling
-                                  ? AppColors.parchmentDim
-                                  : AppColors.parchment,
+                                  ? Theme.of(context).colorScheme.onSurfaceVariant
+                                  : Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -567,8 +569,8 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
                     width: 48, height: 48,
                     decoration: BoxDecoration(
                       color:        _rolling
-                          ? AppColors.goldDark
-                          : AppColors.gold,
+                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)
+                          : Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     alignment: Alignment.center,
@@ -615,7 +617,7 @@ class _ArchetypeBanner extends StatelessWidget {
             begin:  Alignment.topLeft,
             end:    Alignment.bottomRight,
             colors: [
-              AppColors.cardSurface,
+              Theme.of(context).colorScheme.surfaceContainer,
               ArchetypeUtils.color(primary.kind).withValues(alpha: 0.12),
             ],
           ),
@@ -760,13 +762,13 @@ class _Stat extends StatelessWidget {
         children: [
           ExcludeSemantics(
             child: Icon(icon,
-                color: active ? color : AppColors.divider, size: 18),
+                color: active ? color : Theme.of(context).colorScheme.outlineVariant, size: 18),
           ),
           const SizedBox(height: 2),
           Text(
             '$value',
             style: TextStyle(
-              color:      active ? color : AppColors.parchmentDim,
+              color:      active ? color : Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize:   16,
               fontWeight: FontWeight.w700,
             ),
@@ -802,9 +804,9 @@ class _SetupNotesSection extends StatelessWidget {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color:        AppColors.gold.withValues(alpha: 0.06),
+              color:        Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
               border:       Border.all(
-                  color: AppColors.goldDark.withValues(alpha: 0.4)),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
@@ -819,16 +821,16 @@ class _SetupNotesSection extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const ExcludeSemantics(
+                            ExcludeSemantics(
                               child: Icon(Icons.info_outline_rounded,
-                                  color: AppColors.gold, size: 15),
+                                  color: Theme.of(context).colorScheme.primary, size: 15),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 entry.value,
-                                style: const TextStyle(
-                                  color:    AppColors.parchmentDim,
+                                style: TextStyle(
+                                  color:    Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontSize: 13,
                                   height:   1.45,
                                 ),
