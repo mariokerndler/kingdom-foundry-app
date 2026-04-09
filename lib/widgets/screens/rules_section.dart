@@ -230,33 +230,33 @@ class _RuleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      margin:   const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       decoration: BoxDecoration(
         color:        value
-            ? AppColors.gold.withValues(alpha: 0.08)
-            : AppColors.cardSurface,
+            ? cs.primary.withValues(alpha: 0.08)
+            : cs.surfaceContainer,
         border:       Border.all(
-          color: value ? AppColors.goldDark : AppColors.divider,
+          color: value ? cs.primary : cs.outlineVariant,
         ),
         borderRadius: BorderRadius.circular(10),
       ),
       child: SwitchListTile(
         secondary: Icon(icon,
-            size:  20,
-            color: value ? AppColors.gold : AppColors.parchmentDim),
+            size: 20, color: value ? cs.primary : cs.onSurfaceVariant),
         title: Text(
           label,
           style: TextStyle(
-            color:      value ? AppColors.parchment : AppColors.parchmentDim,
+            color:      value ? cs.onSurface : cs.onSurfaceVariant,
             fontWeight: value ? FontWeight.w500 : FontWeight.w400,
             fontSize:   14,
           ),
         ),
         subtitle: Text(
           detail,
-          style: const TextStyle(color: AppColors.parchmentDim, fontSize: 12),
+          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
         ),
         value:     value,
         onChanged: onChange,
@@ -276,6 +276,7 @@ class _MaxCostRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs     = Theme.of(context).colorScheme;
     final active = currentMax != null;
 
     return Padding(
@@ -283,12 +284,8 @@ class _MaxCostRow extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         decoration: BoxDecoration(
-          color:        active
-              ? AppColors.gold.withValues(alpha: 0.08)
-              : AppColors.cardSurface,
-          border:       Border.all(
-            color: active ? AppColors.goldDark : AppColors.divider,
-          ),
+          color:        active ? cs.primary.withValues(alpha: 0.08) : cs.surfaceContainer,
+          border:       Border.all(color: active ? cs.primary : cs.outlineVariant),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
@@ -296,19 +293,18 @@ class _MaxCostRow extends StatelessWidget {
           children: [
             SwitchListTile(
               secondary: Icon(Icons.paid_outlined,
-                  size:  20,
-                  color: active ? AppColors.gold : AppColors.parchmentDim),
+                  size: 20, color: active ? cs.primary : cs.onSurfaceVariant),
               title: Text(
                 active ? 'Max cost: \$$currentMax' : 'Enable max cost',
                 style: TextStyle(
-                  color:      active ? AppColors.parchment : AppColors.parchmentDim,
+                  color:      active ? cs.onSurface : cs.onSurfaceVariant,
                   fontWeight: active ? FontWeight.w500 : FontWeight.w400,
                   fontSize:   14,
                 ),
               ),
-              subtitle: const Text(
+              subtitle: Text(
                 'Exclude cards that cost more than this.',
-                style: TextStyle(color: AppColors.parchmentDim, fontSize: 12),
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
               ),
               value:     active,
               onChanged: (v) => onChange(v ? 6 : null),
@@ -317,20 +313,17 @@ class _MaxCostRow extends StatelessWidget {
             if (active) ...[
               SliderTheme(
                 data: SliderThemeData(
-                  activeTrackColor:    AppColors.gold,
-                  inactiveTrackColor:  AppColors.divider,
-                  thumbColor:          AppColors.gold,
-                  overlayColor:        AppColors.gold.withValues(alpha: 0.12),
-                  valueIndicatorColor: AppColors.cardSurface,
-                  valueIndicatorTextStyle:
-                      const TextStyle(color: AppColors.parchment),
+                  activeTrackColor:    cs.primary,
+                  inactiveTrackColor:  cs.outlineVariant,
+                  thumbColor:          cs.primary,
+                  overlayColor:        cs.primary.withValues(alpha: 0.12),
+                  valueIndicatorColor: cs.surfaceContainer,
+                  valueIndicatorTextStyle: TextStyle(color: cs.onSurface),
                 ),
                 child: Slider(
-                  min:       2,
-                  max:       8,
-                  divisions: 6,
-                  value:     currentMax!.toDouble(),
-                  label:     '\$$currentMax',
+                  min: 2, max: 8, divisions: 6,
+                  value:    currentMax!.toDouble(),
+                  label:    '\$$currentMax',
                   onChanged: (v) => onChange(v.round()),
                 ),
               ),
@@ -342,9 +335,7 @@ class _MaxCostRow extends StatelessWidget {
                       .map((c) => Text('\$$c',
                           style: TextStyle(
                             fontSize: 11,
-                            color: currentMax == c
-                                ? AppColors.gold
-                                : AppColors.parchmentDim,
+                            color: currentMax == c ? cs.primary : cs.onSurfaceVariant,
                           )))
                       .toList(),
                 ),
@@ -376,49 +367,35 @@ class _LandscapeCountTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs         = Theme.of(context).colorScheme;
     final nonDefault = value != _default;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      margin:   const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       decoration: BoxDecoration(
-        color:        nonDefault
-            ? AppColors.gold.withValues(alpha: 0.08)
-            : AppColors.cardSurface,
-        border:       Border.all(
-          color: nonDefault ? AppColors.goldDark : AppColors.divider,
-        ),
+        color:        nonDefault ? cs.primary.withValues(alpha: 0.08) : cs.surfaceContainer,
+        border:       Border.all(color: nonDefault ? cs.primary : cs.outlineVariant),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
-            Icon(icon,
-                size:  20,
-                color: nonDefault ? AppColors.gold : AppColors.parchmentDim),
+            Icon(icon, size: 20,
+                color: nonDefault ? cs.primary : cs.onSurfaceVariant),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
-                  color:      nonDefault
-                      ? AppColors.parchment
-                      : AppColors.parchmentDim,
-                  fontWeight: nonDefault
-                      ? FontWeight.w500
-                      : FontWeight.w400,
+                  color:      nonDefault ? cs.onSurface : cs.onSurfaceVariant,
+                  fontWeight: nonDefault ? FontWeight.w500 : FontWeight.w400,
                   fontSize:   14,
                 ),
               ),
             ),
-            // Stepper: − count +
-            _Stepper(
-              value:    value,
-              min:      0,
-              max:      max,
-              onChange: onChange,
-            ),
+            _Stepper(value: value, min: 0, max: max, onChange: onChange),
           ],
         ),
       ),
@@ -463,8 +440,8 @@ class _Stepper extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               color:      value == 0
-                  ? AppColors.errorRed
-                  : AppColors.parchment,
+                  ? AppColors.errorRed  // keep — signals invalid zero count
+                  : Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
               fontSize:   15,
             ),
@@ -493,13 +470,11 @@ class _StepBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return SizedBox(
-      width:  32,
-      height: 32,
+      width: 32, height: 32,
       child: Material(
-        color:        enabled
-            ? AppColors.cardSurface
-            : Colors.transparent,
+        color:        enabled ? cs.surfaceContainer : Colors.transparent,
         borderRadius: BorderRadius.circular(6),
         child: InkWell(
           onTap:        enabled ? onPressed : null,
@@ -507,7 +482,7 @@ class _StepBtn extends StatelessWidget {
           child: Icon(
             icon,
             size:  16,
-            color: enabled ? AppColors.parchment : AppColors.divider,
+            color: enabled ? cs.onSurface : cs.outlineVariant,
           ),
         ),
       ),
@@ -525,6 +500,7 @@ class _MaxAttacksRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs     = Theme.of(context).colorScheme;
     final active = currentMax != null;
 
     return Padding(
@@ -532,12 +508,8 @@ class _MaxAttacksRow extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         decoration: BoxDecoration(
-          color:        active
-              ? AppColors.gold.withValues(alpha: 0.08)
-              : AppColors.cardSurface,
-          border:       Border.all(
-            color: active ? AppColors.goldDark : AppColors.divider,
-          ),
+          color:        active ? cs.primary.withValues(alpha: 0.08) : cs.surfaceContainer,
+          border:       Border.all(color: active ? cs.primary : cs.outlineVariant),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
@@ -545,19 +517,18 @@ class _MaxAttacksRow extends StatelessWidget {
           children: [
             SwitchListTile(
               secondary: Icon(Icons.shield_outlined,
-                  size:  20,
-                  color: active ? AppColors.gold : AppColors.parchmentDim),
+                  size: 20, color: active ? cs.primary : cs.onSurfaceVariant),
               title: Text(
                 active ? 'Max attacks: $currentMax' : 'Enable attack limit',
                 style: TextStyle(
-                  color:      active ? AppColors.parchment : AppColors.parchmentDim,
+                  color:      active ? cs.onSurface : cs.onSurfaceVariant,
                   fontWeight: active ? FontWeight.w500 : FontWeight.w400,
                   fontSize:   14,
                 ),
               ),
-              subtitle: const Text(
+              subtitle: Text(
                 'Limit how many Attack cards appear in the kingdom.',
-                style: TextStyle(color: AppColors.parchmentDim, fontSize: 12),
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
               ),
               value:     active,
               onChanged: (v) => onChange(v ? 2 : null),
@@ -566,20 +537,17 @@ class _MaxAttacksRow extends StatelessWidget {
             if (active) ...[
               SliderTheme(
                 data: SliderThemeData(
-                  activeTrackColor:    AppColors.gold,
-                  inactiveTrackColor:  AppColors.divider,
-                  thumbColor:          AppColors.gold,
-                  overlayColor:        AppColors.gold.withValues(alpha: 0.12),
-                  valueIndicatorColor: AppColors.cardSurface,
-                  valueIndicatorTextStyle:
-                      const TextStyle(color: AppColors.parchment),
+                  activeTrackColor:    cs.primary,
+                  inactiveTrackColor:  cs.outlineVariant,
+                  thumbColor:          cs.primary,
+                  overlayColor:        cs.primary.withValues(alpha: 0.12),
+                  valueIndicatorColor: cs.surfaceContainer,
+                  valueIndicatorTextStyle: TextStyle(color: cs.onSurface),
                 ),
                 child: Slider(
-                  min:       1,
-                  max:       5,
-                  divisions: 4,
-                  value:     currentMax!.toDouble(),
-                  label:     '$currentMax',
+                  min: 1, max: 5, divisions: 4,
+                  value:    currentMax!.toDouble(),
+                  label:    '$currentMax',
                   onChanged: (v) => onChange(v.round()),
                 ),
               ),
@@ -591,9 +559,7 @@ class _MaxAttacksRow extends StatelessWidget {
                       .map((n) => Text('$n',
                           style: TextStyle(
                             fontSize: 11,
-                            color: currentMax == n
-                                ? AppColors.gold
-                                : AppColors.parchmentDim,
+                            color: currentMax == n ? cs.primary : cs.onSurfaceVariant,
                           )))
                       .toList(),
                 ),
@@ -614,39 +580,32 @@ class _ActiveRulesSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'ACTIVE RULES',
-            style: TextStyle(
-              color:         AppColors.gold,
-              fontSize:      10,
-              fontWeight:    FontWeight.w700,
-              letterSpacing: 1.4,
-            ),
+            style: Theme.of(context).textTheme.labelMedium,
           ),
           const SizedBox(height: 8),
           Wrap(
-            spacing:    6,
-            runSpacing: 6,
+            spacing: 6, runSpacing: 6,
             children: descriptions
                 .map((d) => Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color:        AppColors.goldDark.withValues(alpha: 0.15),
-                        border:       Border.all(color: AppColors.goldDark),
+                        color:        cs.primary.withValues(alpha: 0.10),
+                        border:       Border.all(color: cs.primary),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         d,
-                        style: const TextStyle(
-                          color:    AppColors.gold,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(
+                            color: cs.primary, fontSize: 12),
                       ),
                     ))
                 .toList(),
