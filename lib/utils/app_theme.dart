@@ -47,7 +47,7 @@ ThemeData buildLightTheme() {
     surfaceContainer: Color(0xFFF1F5F9),
     primary:          Color(0xFFC49A0A),
     onPrimary:        Color(0xFFFFFFFF),
-    secondary:        Color(0xFFC49A0A),
+    secondary:        Color(0xFFC49A0A), // mirrors primary — no distinct secondary hue in this design
     onSecondary:      Color(0xFFFFFFFF),
     onSurface:        Color(0xFF0F172A),
     onSurfaceVariant: Color(0xFF475569),
@@ -72,7 +72,7 @@ ThemeData buildDarkTheme() {
     surfaceContainer: Color(0xFF1C2333),
     primary:          Color(0xFFD4A520),
     onPrimary:        Color(0xFFFFFFFF),
-    secondary:        Color(0xFFD4A520),
+    secondary:        Color(0xFFD4A520), // mirrors primary — no distinct secondary hue in this design
     onSecondary:      Color(0xFFFFFFFF),
     onSurface:        Color(0xFFE6EDF3),
     onSurfaceVariant: Color(0xFF7D8590),
