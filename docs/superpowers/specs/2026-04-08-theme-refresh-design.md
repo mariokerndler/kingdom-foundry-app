@@ -120,7 +120,52 @@ All `TextStyle` entries are defined in `buildLightTheme()` and `buildDarkTheme()
 - Border: `1px solid colorScheme.outlineVariant` (`#E2E8F0` / `#30363D`)
 - `borderRadius`: 10px
 - `boxShadow`: `0 1px 3px rgba(0,0,0,0.04)` (light mode only)
-- Kingdom cards: 4px left accent strip using archetype color; neutral `#E2E8F0` for unclassified cards
+- Kingdom cards: 4px left accent strip using archetype color; neutral `colorScheme.outlineVariant` for unclassified cards
+
+### Split Pile Cards
+
+Kingdom cards can represent a split pile (two cards sharing one supply pile). When `splitPartner != null`, the tile renders an extra row below the main card info:
+
+- Icon: `Icons.layers_rounded` at 10px, `colorScheme.primary` (gold)
+- Label: `"+ {partnerName}"` in `labelSmall` style, `colorScheme.primary`
+- Overflow: `TextOverflow.ellipsis`
+
+In the card detail bottom sheet, split pile cards render a `_SplitPartnerCard` section:
+
+- Section label: `"SPLIT PILE"` in `labelMedium` style (gold, uppercase, 1.4px tracking)
+- Subtitle: `"Both halves share one supply pile."` in `bodySmall`, `colorScheme.onSurfaceVariant`
+- Partner card container: accent color at 7% opacity fill, accent border at 30% opacity, `borderRadius` 8px
+- Partner card text (`partner.text`): `bodyMedium`, `colorScheme.onSurface`
+
+**Migration:** `_SplitPartnerCard` currently uses `AppColors.parchment` and `AppColors.parchmentDim` for partner card text — replace with `colorScheme.onSurface` and `colorScheme.onSurfaceVariant` respectively.
+
+### Cost Badges — Standard vs. Debt
+
+Two visual variants of the cost badge exist, selected by whether the cost string ends in `'D'` without a `'$'` prefix:
+
+**Standard (coin):** circular, gold fill (`colorScheme.secondary`), gold border (`colorScheme.primary`), black text. Unchanged from current design.
+
+**Debt badge:** rectangular rounded rect, distinguishing "iron" styling:
+
+| Property | Light Mode | Dark Mode |
+|---|---|---|
+| Fill | `#334155` (dark slate) | `#37474F` (blue-grey) |
+| Border | `#64748B` | `#78909C` |
+| Text color | `#CBD5E1` | `#B0BEC5` |
+| Border radius | 5px (card) / 7px (detail sheet) | same |
+
+The debt badge colors are intentionally not theme tokens — they represent a fixed "iron/debt" visual metaphor that should look the same regardless of light/dark mode. Define them as constants in `AppColors`:
+
+```dart
+static const debtBadgeFill   = Color(0xFF334155); // light mode
+static const debtBadgeBorder = Color(0xFF64748B);
+static const debtBadgeText   = Color(0xFFCBD5E1);
+static const debtBadgeFillDark   = Color(0xFF37474F); // dark mode
+static const debtBadgeBorderDark = Color(0xFF78909C);
+static const debtBadgeTextDark   = Color(0xFFB0BEC5);
+```
+
+Both `_CostBadge` and `_DetailCostBadge` use `Theme.of(context).brightness` to select the correct set.
 
 ### Buttons
 
@@ -214,7 +259,20 @@ darkTheme:  buildDarkTheme(),
 
 ### Hardcoded color migration
 
-All widget files that reference `AppColors.parchment`, `AppColors.parchmentDim`, `AppColors.surface`, `AppColors.cardSurface`, `AppColors.gold`, `AppColors.goldDark`, `AppColors.divider`, `AppColors.background` are updated to use `Theme.of(context).colorScheme.*` equivalents. `AppColors` retains only: `statAttack`, `statTrasher`, `statDuration`, `statAltVP`, `landscapeAccent`, `errorRed` (for direct SnackBar/ScaffoldMessenger calls that don't go through theme).
+All widget files that reference `AppColors.parchment`, `AppColors.parchmentDim`, `AppColors.surface`, `AppColors.cardSurface`, `AppColors.gold`, `AppColors.goldDark`, `AppColors.divider`, `AppColors.background` are updated to use `Theme.of(context).colorScheme.*` equivalents.
+
+`AppColors` retains only:
+
+| Constant | Reason to keep |
+|---|---|
+| `statAttack`, `statTrasher`, `statDuration`, `statAltVP`, `landscapeAccent` | Archetype accent strips — no Material 3 slot |
+| `errorRed` | Direct `SnackBar` / `ScaffoldMessenger` calls (not theme-resolved) |
+| `debtBadgeFill`, `debtBadgeBorder`, `debtBadgeText` | Fixed "iron" metaphor, light mode |
+| `debtBadgeFillDark`, `debtBadgeBorderDark`, `debtBadgeTextDark` | Fixed "iron" metaphor, dark mode |
+
+`_SplitPartnerCard` (in `kingdom_card_widget.dart`): replace `AppColors.parchment` → `colorScheme.onSurface`, `AppColors.parchmentDim` → `colorScheme.onSurfaceVariant`.
+
+`_CostBadge` and `_DetailCostBadge` debt branch: replace inline `Color(0xFF37474F)` etc. with the new `AppColors.debtBadge*` constants, selected by `Theme.of(context).brightness`.
 
 ---
 
