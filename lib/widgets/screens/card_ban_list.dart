@@ -175,10 +175,9 @@ class _SearchBar extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
-              style:       const TextStyle(color: AppColors.parchment),
               decoration: const InputDecoration(
-                hintText:    'Search cards...',
-                prefixIcon:  Icon(Icons.search_rounded),
+                hintText:   'Search cards...',
+                prefixIcon: Icon(Icons.search_rounded),
               ),
             ),
           ),
@@ -210,6 +209,7 @@ class _ExpansionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 6),
       child: Row(
@@ -218,19 +218,13 @@ class _ExpansionHeader extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             expansion.displayName,
-            style: const TextStyle(
-              color:      AppColors.parchment,
-              fontSize:   13,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(
+                color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
           ),
           const Spacer(),
           Text(
             '$count cards',
-            style: const TextStyle(
-              color:   AppColors.parchmentDim,
-              fontSize: 12,
-            ),
+            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
           ),
         ],
       ),
@@ -253,73 +247,55 @@ class _CardRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Semantics(
       label:  '${card.name}, ${isDisabled ? "banned" : "available"}',
       hint:   'Double tap to ${isDisabled ? "enable" : "ban"}',
       button: true,
       excludeSemantics: true,
       child: AnimatedOpacity(
-      duration: const Duration(milliseconds: 200),
-      opacity:  isDisabled ? 0.45 : 1.0,
-      child: InkWell(
-        onTap: onToggle,
-        child: Container(
-          margin:  const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color:        isDisabled
-                ? AppColors.background
-                : AppColors.cardSurface,
-            border:       Border.all(
-              color: isDisabled ? AppColors.divider : AppColors.divider,
+        duration: const Duration(milliseconds: 200),
+        opacity:  isDisabled ? 0.45 : 1.0,
+        child: InkWell(
+          onTap: onToggle,
+          child: Container(
+            margin:  const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color:        cs.surfaceContainer,
+              border:       Border.all(color: cs.outlineVariant),
+              borderRadius: BorderRadius.circular(8),
             ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              // Cost coin
-              _CostBadge(cost: card.cost),
-              const SizedBox(width: 10),
-
-              // Name + type
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      card.name,
-                      style: TextStyle(
-                        color:      isDisabled
-                            ? AppColors.parchmentDim
-                            : AppColors.parchment,
-                        fontSize:   14,
-                        fontWeight: FontWeight.w500,
-                        decoration: isDisabled
-                            ? TextDecoration.lineThrough
-                            : null,
+            child: Row(
+              children: [
+                _CostBadge(cost: card.cost),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        card.name,
+                        style: TextStyle(
+                          color:      isDisabled ? cs.onSurfaceVariant : cs.onSurface,
+                          fontSize:   14,
+                          fontWeight: FontWeight.w500,
+                          decoration: isDisabled ? TextDecoration.lineThrough : null,
+                        ),
                       ),
-                    ),
-                    Text(
-                      card.typeString,
-                      style: const TextStyle(
-                        color:   AppColors.parchmentDim,
-                        fontSize: 11,
+                      Text(
+                        card.typeString,
+                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-
-              // Checkbox
-              Checkbox(
-                value:     !isDisabled,
-                onChanged: (_) => onToggle(),
-              ),
-            ],
+                Checkbox(value: !isDisabled, onChanged: (_) => onToggle()),
+              ],
+            ),
           ),
         ),
       ),
-      ),  // Semantics
     );
   }
 }
@@ -332,18 +308,18 @@ class _CostBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
-      width:  28,
-      height: 28,
-      decoration: const BoxDecoration(
+      width: 28, height: 28,
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppColors.goldDark,
+        color: cs.primary,
       ),
       alignment: Alignment.center,
       child: Text(
         '$cost',
-        style: const TextStyle(
-          color:      Colors.black,
+        style: TextStyle(
+          color:      cs.onPrimary,
           fontSize:   13,
           fontWeight: FontWeight.w700,
         ),
@@ -359,18 +335,19 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final cs = Theme.of(context).colorScheme;
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.library_books_outlined,
-              size: 48, color: AppColors.parchmentDim),
-          SizedBox(height: 16),
+              size: 48, color: cs.onSurfaceVariant),
+          const SizedBox(height: 16),
           Text('No expansions selected.',
-              style: TextStyle(color: AppColors.parchmentDim)),
-          SizedBox(height: 4),
+              style: TextStyle(color: cs.onSurfaceVariant)),
+          const SizedBox(height: 4),
           Text('Go to the Expansions tab to pick your sets.',
-              style: TextStyle(color: AppColors.parchmentDim, fontSize: 12)),
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
         ],
       ),
     );
@@ -383,12 +360,14 @@ class _NoResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.search_off_rounded,
-              size: 40, color: AppColors.parchmentDim),
+          // ignore: prefer_const_constructors
+          Icon(Icons.search_off_rounded,
+              size: 40, color: cs.onSurfaceVariant),
           const SizedBox(height: 12),
           Text('No cards match "$query"',
               style: Theme.of(context).textTheme.bodyMedium),
@@ -408,11 +387,13 @@ class _ErrorState extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.error_outline_rounded,
+          // ignore: prefer_const_constructors
+          Icon(Icons.error_outline_rounded,
               size: 48, color: AppColors.errorRed),
           const SizedBox(height: 16),
           Text(message, style: Theme.of(context).textTheme.bodyMedium),
@@ -421,7 +402,7 @@ class _ErrorState extends ConsumerWidget {
             onPressed: onRetry,
             icon:  const Icon(Icons.refresh_rounded, size: 16),
             label: const Text('Retry'),
-            style: TextButton.styleFrom(foregroundColor: AppColors.gold),
+            style: TextButton.styleFrom(foregroundColor: cs.primary),
           ),
         ],
       ),
