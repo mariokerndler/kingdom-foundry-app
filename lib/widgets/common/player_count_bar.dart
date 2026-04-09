@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/config_provider.dart';
-import '../../utils/app_theme.dart';
 
 /// Compact 2–6 player toggle shown below the AppBar on the config screen.
 class PlayerCountBar extends ConsumerWidget {
@@ -13,18 +12,16 @@ class PlayerCountBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final count    = ref.watch(configProvider).playerCount;
     final notifier = ref.read(configProvider.notifier);
+    final cs       = Theme.of(context).colorScheme;
 
     return Semantics(
       label: 'Player count: $count players',
       child: Container(
-        color: AppColors.surface,
+        color: cs.surface,
         padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
         child: Row(
           children: [
-            Text(
-              'Players',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            Text('Players', style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(width: 12),
             ...List.generate(5, (i) {
               final n        = i + 2;
@@ -52,18 +49,16 @@ class PlayerCountBar extends ConsumerWidget {
                           width: 44, height: 44,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: selected
-                                ? AppColors.gold
-                                : AppColors.cardSurface,
+                            color:  selected ? cs.primary : cs.surfaceContainer,
                             border: Border.all(
-                              color: selected ? AppColors.gold : AppColors.divider,
+                              color: selected ? cs.primary : cs.outlineVariant,
                             ),
                           ),
                           alignment: Alignment.center,
                           child: Text(
                             '$n',
                             style: TextStyle(
-                              color:      selected ? Colors.black : AppColors.parchmentDim,
+                              color:      selected ? cs.onPrimary : cs.onSurfaceVariant,
                               fontSize:   13,
                               fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
                             ),
