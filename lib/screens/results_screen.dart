@@ -664,8 +664,8 @@ class _ArchetypeBanner extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color:        c.withValues(alpha: 0.1),
-                      border:       Border.all(color: c.withValues(alpha: 0.3)),
+                      color:        Theme.of(context).colorScheme.surface,
+                      border:       Border.all(color: c.withValues(alpha: 0.55)),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
