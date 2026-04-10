@@ -2,7 +2,7 @@ import 'dart:math';
 
 import '../models/card_tag.dart';
 import '../models/card_type.dart';
-import '../models/dominion_card.dart';
+import '../models/kingdom_card.dart';
 import '../models/expansion.dart';
 import '../models/setup_result.dart';
 import '../models/setup_rules.dart';
@@ -49,7 +49,7 @@ class SetupEngine {
   // ===========================================================================
 
   SetupResult generate({
-    required List<DominionCard> allCards,
+    required List<KingdomCard> allCards,
     required Set<Expansion> ownedExpansions,
     required SetupRules rules,
   }) {
@@ -111,15 +111,15 @@ class SetupEngine {
   /// Kingdom pool: owned, isKingdomCard. For split piles, one card per pile id
   /// (the lower-cost half) acts as the pile representative; the other is kept
   /// alongside so both are added to the kingdom when the pile is selected.
-  List<DominionCard> _stepAKingdomPool(
-    List<DominionCard> all,
+  List<KingdomCard> _stepAKingdomPool(
+    List<KingdomCard> all,
     Set<Expansion> owned,
   ) =>
       all.where((c) => owned.contains(c.expansion) && c.isKingdomCard).toList();
 
   /// Landscape pool: owned, non-kingdom (Events, Landmarks, Projects, Ways, Allies).
-  List<DominionCard> _stepALandscapePool(
-    List<DominionCard> all,
+  List<KingdomCard> _stepALandscapePool(
+    List<KingdomCard> all,
     Set<Expansion> owned,
   ) =>
       all
@@ -130,7 +130,7 @@ class SetupEngine {
   // Step B — Manual exclusions
   // ===========================================================================
 
-  void _stepBRemoveDisabled(List<DominionCard> pool) {
+  void _stepBRemoveDisabled(List<KingdomCard> pool) {
     pool.removeWhere((c) => c.isDisabled);
   }
 
@@ -138,7 +138,7 @@ class SetupEngine {
   // Step C — Rule modifiers
   // ===========================================================================
 
-  void _stepCApplyRules(List<DominionCard> pool, SetupRules rules) {
+  void _stepCApplyRules(List<KingdomCard> pool, SetupRules rules) {
     pool.removeWhere((c) {
       if (rules.noAttacks && c.isAttack) return true;
       if (rules.noDuration && c.isDuration) return true;
@@ -155,15 +155,15 @@ class SetupEngine {
   // Step D — Selection (split-pile aware)
   // ===========================================================================
 
-  (List<DominionCard>, List<DominionCard>) _stepDSelect(
-    List<DominionCard> pool,
+  (List<KingdomCard>, List<KingdomCard>) _stepDSelect(
+    List<KingdomCard> pool,
     SetupRules rules,
   ) {
     // Collapse split piles: group by splitPileId.
     // Each unique pile id becomes one "slot". Within a slot, all member cards
     // are always selected together.
-    final splitGroups = <String, List<DominionCard>>{};
-    final singles = <DominionCard>[];
+    final splitGroups = <String, List<KingdomCard>>{};
+    final singles = <KingdomCard>[];
 
     for (final c in pool) {
       if (c.splitPileId != null) {
@@ -175,15 +175,15 @@ class SetupEngine {
 
     // Build a list of "pile representatives" for shuffling.
     // Each representative is the lowest-cost card in the group.
-    final pileReps = <DominionCard>[
+    final pileReps = <KingdomCard>[
       ...singles,
       ...splitGroups.values.map(
         (g) => g.reduce((a, b) => a.cost <= b.cost ? a : b),
       ),
     ]..shuffle(_rng);
 
-    final kingdom = <DominionCard>[];
-    final locked = <DominionCard>[];
+    final kingdom = <KingdomCard>[];
+    final locked = <KingdomCard>[];
 
     // Track slots filled (each split pile counts as 1 slot regardless of how
     // many individual cards it adds to [kingdom]).
@@ -193,7 +193,7 @@ class SetupEngine {
 
     void reserveSlot(
       bool condition,
-      bool Function(DominionCard) matcher,
+      bool Function(KingdomCard) matcher,
       String ruleName,
     ) {
       if (!condition) return;
@@ -295,17 +295,17 @@ class SetupEngine {
 
   /// Adds a pile representative (and all its split-pile partners) to [kingdom].
   void _addPile(
-    DominionCard rep,
-    Map<String, List<DominionCard>> splitGroups,
-    List<DominionCard> kingdom,
+    KingdomCard rep,
+    Map<String, List<KingdomCard>> splitGroups,
+    List<KingdomCard> kingdom,
   ) {
     kingdom.addAll(_allCardsForRep(rep, splitGroups));
   }
 
   /// Returns all cards that belong to the same pile as [rep].
-  List<DominionCard> _allCardsForRep(
-    DominionCard rep,
-    Map<String, List<DominionCard>> splitGroups,
+  List<KingdomCard> _allCardsForRep(
+    KingdomCard rep,
+    Map<String, List<KingdomCard>> splitGroups,
   ) {
     if (rep.splitPileId != null) {
       return splitGroups[rep.splitPileId!] ?? [rep];
@@ -314,7 +314,7 @@ class SetupEngine {
   }
 
   /// Effective pool size = number of kingdom slots (each split pile = 1 slot).
-  int _effectivePoolSize(List<DominionCard> pool) {
+  int _effectivePoolSize(List<KingdomCard> pool) {
     final splitIds = pool
         .where((c) => c.splitPileId != null)
         .map((c) => c.splitPileId!)
@@ -327,10 +327,10 @@ class SetupEngine {
   /// asks players to buy Potions for too little payoff. When a mixed kingdom
   /// already includes Alchemy, gently steer it toward 3-5 Alchemy slots.
   void _enforceAlchemyCluster({
-    required List<DominionCard> kingdom,
-    required List<DominionCard> locked,
-    required List<DominionCard> candidates,
-    required Map<String, List<DominionCard>> splitGroups,
+    required List<KingdomCard> kingdom,
+    required List<KingdomCard> locked,
+    required List<KingdomCard> candidates,
+    required Map<String, List<KingdomCard>> splitGroups,
   }) {
     final kingdomExpansions = kingdom.map((c) => c.expansion).toSet();
     if (!kingdomExpansions.contains(Expansion.alchemy)) return;
@@ -353,13 +353,13 @@ class SetupEngine {
       ..shuffle(_rng);
 
     while (alchemySlots() < 3) {
-      final incoming = candidatePool.cast<DominionCard?>().firstWhere(
+      final incoming = candidatePool.cast<KingdomCard?>().firstWhere(
             (c) => c!.expansion == Expansion.alchemy,
             orElse: () => null,
           );
       if (incoming == null) break;
 
-      final outgoing = kingdom.cast<DominionCard?>().firstWhere(
+      final outgoing = kingdom.cast<KingdomCard?>().firstWhere(
             (c) =>
                 c!.expansion != Expansion.alchemy &&
                 !lockedSlots.contains(_slotId(c)),
@@ -377,13 +377,13 @@ class SetupEngine {
     }
 
     while (alchemySlots() > 5) {
-      final incoming = candidatePool.cast<DominionCard?>().firstWhere(
+      final incoming = candidatePool.cast<KingdomCard?>().firstWhere(
             (c) => c!.expansion != Expansion.alchemy,
             orElse: () => null,
           );
       if (incoming == null) break;
 
-      final outgoing = kingdom.cast<DominionCard?>().firstWhere(
+      final outgoing = kingdom.cast<KingdomCard?>().firstWhere(
             (c) =>
                 c!.expansion == Expansion.alchemy &&
                 !lockedSlots.contains(_slotId(c)),
@@ -402,17 +402,17 @@ class SetupEngine {
   }
 
   void _replacePile({
-    required DominionCard outgoing,
-    required DominionCard incoming,
-    required Map<String, List<DominionCard>> splitGroups,
-    required List<DominionCard> kingdom,
+    required KingdomCard outgoing,
+    required KingdomCard incoming,
+    required Map<String, List<KingdomCard>> splitGroups,
+    required List<KingdomCard> kingdom,
   }) {
     final outgoingSlot = _slotId(outgoing);
     kingdom.removeWhere((c) => _slotId(c) == outgoingSlot);
     _addPile(incoming, splitGroups, kingdom);
   }
 
-  String _slotId(DominionCard card) => card.splitPileId ?? card.id;
+  String _slotId(KingdomCard card) => card.splitPileId ?? card.id;
 
   // ===========================================================================
   // Step F — Auto-reaction swap
@@ -421,9 +421,9 @@ class SetupEngine {
   /// If the kingdom has Attacks but no Reactions, swaps one non-locked,
   /// non-Attack card for a random Reaction from the filtered pool.
   void _stepFAutoReaction(
-    List<DominionCard> kingdom,
-    List<DominionCard> locked,
-    List<DominionCard> filteredPool,
+    List<KingdomCard> kingdom,
+    List<KingdomCard> locked,
+    List<KingdomCard> filteredPool,
   ) {
     if (!kingdom.any((c) => c.isAttack)) return;
     if (kingdom.any((c) => c.isReaction)) return;
@@ -461,18 +461,18 @@ class SetupEngine {
   // ===========================================================================
 
   /// Draws landscape cards according to per-type counts in [rules].
-  List<DominionCard> _stepESelectLandscape(
-    List<DominionCard> pool,
-    List<DominionCard> kingdom,
+  List<KingdomCard> _stepESelectLandscape(
+    List<KingdomCard> pool,
+    List<KingdomCard> kingdom,
     Set<Expansion> owned,
     SetupRules rules,
   ) {
     if (pool.isEmpty) return const [];
 
-    final result = <DominionCard>[];
+    final result = <KingdomCard>[];
     final shuffled = [...pool]..shuffle(_rng);
 
-    void draw(bool Function(DominionCard) filter, int count) {
+    void draw(bool Function(KingdomCard) filter, int count) {
       if (count <= 0) return;
       final candidates = shuffled.where(filter).toList();
       result.addAll(candidates.take(count.clamp(0, candidates.length)));
@@ -508,10 +508,10 @@ class SetupEngine {
   // ===========================================================================
 
   void _enforceExpansionVariety({
-    required List<DominionCard> kingdom,
-    required List<DominionCard> locked,
-    required List<DominionCard> remainder,
-    required Map<String, List<DominionCard>> splitGroups,
+    required List<KingdomCard> kingdom,
+    required List<KingdomCard> locked,
+    required List<KingdomCard> remainder,
+    required Map<String, List<KingdomCard>> splitGroups,
     required int minVariety,
     required int ownedCount,
   }) {
@@ -530,7 +530,7 @@ class SetupEngine {
       final present = kingdom.map((c) => c.expansion).toSet();
       if (present.length >= minVariety) break;
 
-      final candidate = remainder.cast<DominionCard?>().firstWhere(
+      final candidate = remainder.cast<KingdomCard?>().firstWhere(
             (c) => !present.contains(c!.expansion),
             orElse: () => null,
           );
@@ -553,8 +553,8 @@ class SetupEngine {
   }
 
   Expansion _mostRepresentedExpansion(
-    List<DominionCard> kingdom,
-    List<DominionCard> locked,
+    List<KingdomCard> kingdom,
+    List<KingdomCard> locked,
   ) {
     final counts = <Expansion, int>{};
     for (final c in kingdom) {
@@ -570,8 +570,8 @@ class SetupEngine {
   // ===========================================================================
 
   List<String> _generateSetupNotes(
-    List<DominionCard> kingdom,
-    List<DominionCard> landscape,
+    List<KingdomCard> kingdom,
+    List<KingdomCard> landscape,
     Set<Expansion> owned,
   ) {
     final notes = <String>[];
@@ -676,7 +676,7 @@ class SetupEngine {
       );
     }
 
-    final selectedProphecy = landscape.cast<DominionCard?>().firstWhere(
+    final selectedProphecy = landscape.cast<KingdomCard?>().firstWhere(
           (c) => c!.isProphecy,
           orElse: () => null,
         );

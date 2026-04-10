@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:dominion_setup/providers/generation_provider.dart';
+import 'package:kingdom_foundry/providers/generation_provider.dart';
 
 void main() {
   group('parseKingdomText', () {

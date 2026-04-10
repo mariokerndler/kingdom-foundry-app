@@ -1,11 +1,11 @@
 {
-    "name": "dominion_setup",
-    "short_name": "dominion_setup",
+    "name": "kingdom_foundry",
+    "short_name": "kingdom_foundry",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Kingdom Foundry — automated kingdom generation for a deck-building card game.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

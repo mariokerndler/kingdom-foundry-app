@@ -22,18 +22,18 @@ Future<void> main() async {
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
       ],
-      child: const DominionApp(),
+      child: const KingdomFoundryApp(),
     ),
   );
 }
 
-class DominionApp extends StatelessWidget {
-  const DominionApp({super.key});
+class KingdomFoundryApp extends StatelessWidget {
+  const KingdomFoundryApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title:                      'Dominion Setup',
+      title:                      'Kingdom Foundry',
       debugShowCheckedModeBanner: false,
       theme:                      buildLightTheme(),
       darkTheme:                  buildDarkTheme(),

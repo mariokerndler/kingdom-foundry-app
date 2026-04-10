@@ -2,11 +2,11 @@ import 'card_type.dart';
 import 'card_tag.dart';
 import 'expansion.dart';
 
-/// The core data model for every Dominion card.
+/// The core data model for every kingdom card.
 ///
 /// A card may have multiple [types] (e.g., Action + Attack) and carries
 /// semantic [tags] used by the Heuristic Engine to detect strategy archetypes.
-class DominionCard {
+class KingdomCard {
   final String id;
   final String name;
   final Expansion expansion;
@@ -34,7 +34,7 @@ class DominionCard {
   /// generator slots, such as the individual Knights under the Knights pile.
   final List<String> pileCards;
 
-  DominionCard({
+  KingdomCard({
     required this.id,
     required this.name,
     required this.expansion,
@@ -89,8 +89,8 @@ class DominionCard {
 
   // ── Serialisation ──────────────────────────────────────────────────────────
 
-  factory DominionCard.fromJson(Map<String, dynamic> json) {
-    return DominionCard(
+  factory KingdomCard.fromJson(Map<String, dynamic> json) {
+    return KingdomCard(
       id: json['id'] as String,
       name: json['name'] as String,
       expansion: Expansion.values.firstWhere(
@@ -139,7 +139,7 @@ class DominionCard {
         if (pileCards.isNotEmpty) 'pileCards': pileCards,
       };
 
-  DominionCard copyWith({bool? isDisabled}) => DominionCard(
+  KingdomCard copyWith({bool? isDisabled}) => KingdomCard(
         id: id,
         name: name,
         expansion: expansion,
@@ -156,12 +156,12 @@ class DominionCard {
       );
 
   @override
-  bool operator ==(Object other) => other is DominionCard && other.id == id;
+  bool operator ==(Object other) => other is KingdomCard && other.id == id;
 
   @override
   int get hashCode => id.hashCode;
 
   @override
   String toString() =>
-      'DominionCard($name, ${expansion.displayName}, $costString)';
+      'KingdomCard($name, ${expansion.displayName}, $costString)';
 }

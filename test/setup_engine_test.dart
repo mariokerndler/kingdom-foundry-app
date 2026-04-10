@@ -2,18 +2,18 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:dominion_setup/controllers/setup_engine.dart';
-import 'package:dominion_setup/controllers/setup_exception.dart';
-import 'package:dominion_setup/models/card_tag.dart';
-import 'package:dominion_setup/models/card_type.dart';
-import 'package:dominion_setup/models/dominion_card.dart';
-import 'package:dominion_setup/models/expansion.dart';
-import 'package:dominion_setup/models/setup_rules.dart';
+import 'package:kingdom_foundry/controllers/setup_engine.dart';
+import 'package:kingdom_foundry/controllers/setup_exception.dart';
+import 'package:kingdom_foundry/models/card_tag.dart';
+import 'package:kingdom_foundry/models/card_type.dart';
+import 'package:kingdom_foundry/models/kingdom_card.dart';
+import 'package:kingdom_foundry/models/expansion.dart';
+import 'package:kingdom_foundry/models/setup_rules.dart';
 
 // ── Test helpers ───────────────────────────────────────────────────────────
 
 /// Creates a minimal kingdom card for testing.
-DominionCard _card({
+KingdomCard _card({
   required String id,
   String? name,
   List<CardType> types = const [CardType.action],
@@ -25,7 +25,7 @@ DominionCard _card({
   int? debtCost,
   List<String> pileCards = const [],
 }) =>
-    DominionCard(
+    KingdomCard(
       id: id,
       name: name ?? id,
       expansion: expansion,
@@ -40,7 +40,7 @@ DominionCard _card({
     );
 
 /// Builds a pool of [n] generic action cards.
-List<DominionCard> _pool(
+List<KingdomCard> _pool(
   int n, {
   Expansion expansion = Expansion.baseSecondEdition,
 }) =>

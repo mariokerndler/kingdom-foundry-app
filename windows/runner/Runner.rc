@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.dominionsetup" "\0"
-            VALUE "FileDescription", "dominion_setup" "\0"
+            VALUE "CompanyName", "com.kingdomfoundry" "\0"
+            VALUE "FileDescription", "Kingdom Foundry" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "dominion_setup" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.dominionsetup. All rights reserved." "\0"
-            VALUE "OriginalFilename", "dominion_setup.exe" "\0"
-            VALUE "ProductName", "dominion_setup" "\0"
+            VALUE "InternalName", "Kingdom Foundry" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.kingdomfoundry. All rights reserved." "\0"
+            VALUE "OriginalFilename", "kingdom_foundry.exe" "\0"
+            VALUE "ProductName", "Kingdom Foundry" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

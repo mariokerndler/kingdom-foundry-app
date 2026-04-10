@@ -1,22 +1,22 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:dominion_setup/controllers/heuristic_engine.dart';
-import 'package:dominion_setup/models/card_tag.dart';
-import 'package:dominion_setup/models/card_type.dart';
-import 'package:dominion_setup/models/dominion_card.dart';
-import 'package:dominion_setup/models/expansion.dart';
-import 'package:dominion_setup/models/setup_result.dart';
-import 'package:dominion_setup/models/strategy_archetype.dart';
+import 'package:kingdom_foundry/controllers/heuristic_engine.dart';
+import 'package:kingdom_foundry/models/card_tag.dart';
+import 'package:kingdom_foundry/models/card_type.dart';
+import 'package:kingdom_foundry/models/kingdom_card.dart';
+import 'package:kingdom_foundry/models/expansion.dart';
+import 'package:kingdom_foundry/models/setup_result.dart';
+import 'package:kingdom_foundry/models/strategy_archetype.dart';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-DominionCard _card({
+KingdomCard _card({
   required String id,
   List<CardType> types = const [CardType.action],
   List<CardTag> tags = const [],
   int cost = 3,
 }) =>
-    DominionCard(
+    KingdomCard(
       id: id,
       name: id,
       expansion: Expansion.baseSecondEdition,
@@ -27,7 +27,7 @@ DominionCard _card({
     );
 
 /// Pads [cards] with generic action cards to reach exactly 10.
-List<DominionCard> _kingdom(List<DominionCard> cards) {
+List<KingdomCard> _kingdom(List<KingdomCard> cards) {
   assert(cards.length <= 10);
   final pad = List.generate(
     10 - cards.length,
@@ -38,7 +38,7 @@ List<DominionCard> _kingdom(List<DominionCard> cards) {
 
 final _engine = HeuristicEngine();
 
-List<StrategyArchetype> _analyze(List<DominionCard> kingdom) =>
+List<StrategyArchetype> _analyze(List<KingdomCard> kingdom) =>
     _engine.analyze(kingdom);
 
 StrategyArchetype? _find(List<StrategyArchetype> results, ArchetypeKind kind) =>

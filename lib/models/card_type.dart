@@ -1,4 +1,4 @@
-/// All possible card types in Dominion.
+/// All possible card types in the game.
 /// A single card can have multiple types (e.g., Action + Attack).
 enum CardType {
   action,

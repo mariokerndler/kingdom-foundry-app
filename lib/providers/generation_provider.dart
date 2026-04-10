@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/heuristic_engine.dart';
 import '../controllers/setup_engine.dart';
 import '../controllers/setup_exception.dart';
-import '../models/dominion_card.dart';
+import '../models/kingdom_card.dart';
 import '../models/setup_result.dart';
 import 'card_data_providers.dart';
 import 'config_provider.dart';
@@ -112,7 +112,7 @@ Future<bool> importKingdom(WidgetRef ref, String rawText) async {
     }
 
     final allCards = await ref.read(allCardsProvider.future);
-    final kingdom  = <DominionCard>[];
+    final kingdom  = <KingdomCard>[];
     final notFound = <String>[];
 
     for (final name in names) {

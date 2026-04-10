@@ -1,4 +1,4 @@
-package com.dominionsetup.dominion_setup
+package com.kingdomfoundry.kingdom_foundry
 
 import io.flutter.embedding.android.FlutterActivity
 

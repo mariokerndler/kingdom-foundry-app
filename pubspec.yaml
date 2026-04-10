@@ -1,5 +1,5 @@
-name: dominion_setup
-description: Dominion Setup Assistant — automated kingdom generation for the board game Dominion.
+name: kingdom_foundry
+description: Kingdom Foundry — automated kingdom generation for a deck-building card game.
 publish_to: 'none'
 
 version: 1.0.0+1

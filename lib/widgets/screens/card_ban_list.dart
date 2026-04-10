@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/dominion_card.dart';
+import '../../models/kingdom_card.dart';
 import '../../models/expansion.dart';
 import '../../providers/card_data_providers.dart';
 import '../../providers/config_provider.dart';
@@ -101,12 +101,12 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
   // ── List building helpers ────────────────────────────────────────────────
 
   /// Returns an ordered list of (expansion, cards) pairs, query-filtered.
-  Map<Expansion, List<DominionCard>> _applyQuery(
-    Map<Expansion, List<DominionCard>> source,
+  Map<Expansion, List<KingdomCard>> _applyQuery(
+    Map<Expansion, List<KingdomCard>> source,
     String query,
   ) {
     if (query.isEmpty) return source;
-    final result = <Expansion, List<DominionCard>>{};
+    final result = <Expansion, List<KingdomCard>>{};
     for (final entry in source.entries) {
       final matches = entry.value
           .where((c) =>
@@ -119,14 +119,14 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
   }
 
   /// Each expansion has 1 header + N card rows.
-  int _flatItemCount(Map<Expansion, List<DominionCard>> grouped) {
+  int _flatItemCount(Map<Expansion, List<KingdomCard>> grouped) {
     return grouped.entries.fold(0, (s, e) => s + 1 + e.value.length);
   }
 
   Widget _buildItem(
     BuildContext context,
     int index,
-    Map<Expansion, List<DominionCard>> grouped,
+    Map<Expansion, List<KingdomCard>> grouped,
     ConfigState config,
     WidgetRef ref,
   ) {
@@ -235,7 +235,7 @@ class _ExpansionHeader extends StatelessWidget {
 // ── Card row ────────────────────────────────────────────────────────────────
 
 class _CardRow extends StatelessWidget {
-  final DominionCard card;
+  final KingdomCard card;
   final bool         isDisabled;
   final VoidCallback onToggle;
 

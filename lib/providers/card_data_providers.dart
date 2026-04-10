@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/dominion_card.dart';
+import '../models/kingdom_card.dart';
 import '../models/expansion.dart';
 import '../services/card_data_service.dart';
 
@@ -12,7 +12,7 @@ final cardDataServiceProvider = Provider<CardDataService>(
 
 // ── Raw catalogue (all cards, unfiltered) ─────────────────────────────────
 
-final allCardsProvider = FutureProvider<List<DominionCard>>((ref) async {
+final allCardsProvider = FutureProvider<List<KingdomCard>>((ref) async {
   return ref.read(cardDataServiceProvider).loadAll();
 });
 
@@ -25,7 +25,7 @@ final availableExpansionsProvider = FutureProvider<Set<Expansion>>((ref) async {
 // ── Cards grouped by expansion (for the Configuration list) ──────────────
 
 final cardsByExpansionProvider =
-    FutureProvider<Map<Expansion, List<DominionCard>>>((ref) async {
+    FutureProvider<Map<Expansion, List<KingdomCard>>>((ref) async {
   return ref.read(cardDataServiceProvider).groupedByExpansion();
 });
 

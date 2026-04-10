@@ -1,16 +1,16 @@
 import 'card_tag.dart';
-import 'dominion_card.dart';
+import 'kingdom_card.dart';
 import 'strategy_archetype.dart';
 
 /// The complete output of a single run of the Setup Engine.
 class SetupResult {
   /// The 10 selected Kingdom cards (split-pile pairs count as one slot).
-  final List<DominionCard> kingdomCards;
+  final List<KingdomCard> kingdomCards;
 
   /// Landscape cards drawn alongside the kingdom:
   /// Events, Landmarks, Projects, Ways, and Allies.
   /// Empty when no owned expansions contribute landscape cards.
-  final List<DominionCard> landscapeCards;
+  final List<KingdomCard> landscapeCards;
 
   /// Strategy archetypes detected by the Heuristic Engine, sorted by strength.
   final List<StrategyArchetype> archetypes;
@@ -56,10 +56,10 @@ class SetupResult {
   factory SetupResult.fromJson(Map<String, dynamic> json) {
     return SetupResult(
       kingdomCards: (json['kingdomCards'] as List)
-          .map((c) => DominionCard.fromJson(c as Map<String, dynamic>))
+          .map((c) => KingdomCard.fromJson(c as Map<String, dynamic>))
           .toList(),
       landscapeCards: (json['landscapeCards'] as List? ?? [])
-          .map((c) => DominionCard.fromJson(c as Map<String, dynamic>))
+          .map((c) => KingdomCard.fromJson(c as Map<String, dynamic>))
           .toList(),
       archetypes: (json['archetypes'] as List)
           .map((a) => StrategyArchetype.fromJson(a as Map<String, dynamic>))

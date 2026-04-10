@@ -1,5 +1,5 @@
 import '../models/card_tag.dart';
-import '../models/dominion_card.dart';
+import '../models/kingdom_card.dart';
 import '../models/setup_result.dart';
 import '../models/strategy_archetype.dart';
 
@@ -15,7 +15,7 @@ import '../models/strategy_archetype.dart';
 /// ```
 class HeuristicEngine {
   /// Entry point. Returns 1-4 archetypes, strongest first.
-  List<StrategyArchetype> analyze(List<DominionCard> kingdom) {
+  List<StrategyArchetype> analyze(List<KingdomCard> kingdom) {
     final profile = _KingdomProfile(kingdom);
 
     final candidates = [
@@ -192,7 +192,7 @@ class HeuristicEngine {
   // Archetype: Big Money / Slog
   //
   // Triggered by: coin generation without reliable action chaining, or heavy
-  // terminal draw. Big Money is the baseline Dominion strategy and always
+  // terminal draw. Big Money is the baseline economy strategy and always
   // viable — but strongest when the kingdom has weak engine support.
   // Threshold: raw >= 2.0  (almost always shown unless a full engine exists)
   // ===========================================================================
@@ -587,22 +587,31 @@ class HeuristicEngine {
     );
   }
 
-  String _altVicHeadline(List<DominionCard> altCards) {
+  String _altVicHeadline(List<KingdomCard> altCards) {
     if (altCards.length >= 2) return 'Multi-Path Alt-Victory';
     return 'Alt-Victory: ${altCards.first.name}';
   }
 
-  String _altVicDescription(_KingdomProfile p, List<DominionCard> altCards) {
+  String _altVicDescription(_KingdomProfile p, List<KingdomCard> altCards) {
     final paths = altCards.map((c) {
-      if (c.id == 'gardens') return '${c.name} (1VP per 10 cards — buy lots)';
-      if (c.id == 'duke')
+      if (c.id == 'gardens') {
+        return '${c.name} (1VP per 10 cards — buy lots)';
+      }
+      if (c.id == 'duke') {
         return '${c.name} (1VP per Duchy — stack Duchies early)';
-      if (c.id == 'harem') return '${c.name} (\$2 + 2VP — strong economy)';
-      if (c.id == 'nobles')
+      }
+      if (c.id == 'harem') {
+        return '${c.name} (\$2 + 2VP — strong economy)';
+      }
+      if (c.id == 'nobles') {
         return '${c.name} (flexible +Cards or +Actions + 2VP)';
-      if (c.id == 'mill') return '${c.name} (1VP + situational +\$2)';
-      if (c.id == 'island')
+      }
+      if (c.id == 'mill') {
+        return '${c.name} (1VP + situational +\$2)';
+      }
+      if (c.id == 'island') {
         return '${c.name} (set aside 2VP, removes junk from deck)';
+      }
       return c.name;
     }).join('; ');
 
@@ -612,7 +621,7 @@ class HeuristicEngine {
         'accumulate points faster or on a cheaper budget.';
   }
 
-  List<String> _altVicTips(_KingdomProfile p, List<DominionCard> altCards) {
+  List<String> _altVicTips(_KingdomProfile p, List<KingdomCard> altCards) {
     final tips = <String>[];
 
     for (final alt in altCards) {
@@ -678,12 +687,12 @@ class HeuristicEngine {
     );
   }
 
-  String _extraTurnHeadline(List<DominionCard> cards) {
+  String _extraTurnHeadline(List<KingdomCard> cards) {
     if (cards.length >= 2) return 'Extra-Turn Chain';
     return 'Extra Turn: ${cards.first.name}';
   }
 
-  String _extraTurnDescription(_KingdomProfile p, List<DominionCard> cards) {
+  String _extraTurnDescription(_KingdomProfile p, List<KingdomCard> cards) {
     final names = cards.map((c) => c.name).join(' and ');
     final support = p.drawCount > 0 || p.siftingCards.isNotEmpty
         ? ' The kingdom has draw or filtering support, so you can line up the '
@@ -695,7 +704,7 @@ class HeuristicEngine {
         'a tempo swing before opponents can respond.$support';
   }
 
-  List<String> _extraTurnTips(_KingdomProfile p, List<DominionCard> cards) {
+  List<String> _extraTurnTips(_KingdomProfile p, List<KingdomCard> cards) {
     final tips = <String>[];
     final primary = cards.first;
 
@@ -788,9 +797,9 @@ class HeuristicEngine {
 // =============================================================================
 
 class _KingdomProfile {
-  final List<DominionCard> kingdom;
+  final List<KingdomCard> kingdom;
 
-  late final Map<CardTag, List<DominionCard>> _byTag;
+  late final Map<CardTag, List<KingdomCard>> _byTag;
 
   _KingdomProfile(this.kingdom) {
     _byTag = {};
@@ -799,7 +808,7 @@ class _KingdomProfile {
     }
   }
 
-  List<DominionCard> cardsWithTag(CardTag tag) => _byTag[tag]!;
+  List<KingdomCard> cardsWithTag(CardTag tag) => _byTag[tag]!;
 
   // ── Action chaining ────────────────────────────────────────────────────────
   int get villageCount => cardsWithTag(CardTag.villageEffect).length;
@@ -808,7 +817,7 @@ class _KingdomProfile {
       cardsWithTag(CardTag.plusTwoActions).length;
 
   // ── Draw ───────────────────────────────────────────────────────────────────
-  List<DominionCard> get drawCards => kingdom
+  List<KingdomCard> get drawCards => kingdom
       .where((c) => c.hasTag(CardTag.plusCard) || c.hasTag(CardTag.drawToX))
       .toList();
   int get drawCount => drawCards.length;
@@ -822,20 +831,20 @@ class _KingdomProfile {
       .length;
 
   // ── Sifting ────────────────────────────────────────────────────────────────
-  List<DominionCard> get siftingCards => cardsWithTag(CardTag.sifting);
+  List<KingdomCard> get siftingCards => cardsWithTag(CardTag.sifting);
 
   // ── Extra turns ────────────────────────────────────────────────────────────
-  List<DominionCard> get extraTurnCards => cardsWithTag(CardTag.extraTurn);
+  List<KingdomCard> get extraTurnCards => cardsWithTag(CardTag.extraTurn);
 
   // ── Trashing ───────────────────────────────────────────────────────────────
-  List<DominionCard> get trashCards => kingdom
+  List<KingdomCard> get trashCards => kingdom
       .where((c) =>
           c.hasTag(CardTag.trashCards) || c.hasTag(CardTag.trashForBenefit))
       .toList();
   int get trashCount => trashCards.length;
 
   // ── Attacks ────────────────────────────────────────────────────────────────
-  List<DominionCard> get attackCards =>
+  List<KingdomCard> get attackCards =>
       kingdom.where((c) => c.isAttack).toList();
   int get attackCount => attackCards.length;
   int get discardAttackCount => cardsWithTag(CardTag.discard).length;

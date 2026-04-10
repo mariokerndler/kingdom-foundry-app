@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/card_tag.dart';
-import '../models/dominion_card.dart';
+import '../models/kingdom_card.dart';
 import '../models/setup_result.dart';
 import '../providers/config_provider.dart';
 import '../providers/generation_provider.dart';
@@ -18,10 +18,10 @@ import '../widgets/common/section_header.dart';
 /// Groups a flat kingdom card list into display slots.
 /// Cards sharing a splitPileId collapse into a single pile slot.
 /// The lower-cost card is the primary (shown on the tile).
-List<_KingdomSlot> _splitPileSlots(List<DominionCard> cards) {
+List<_KingdomSlot> _splitPileSlots(List<KingdomCard> cards) {
   final seen = <String>{};
   final slots = <_KingdomSlot>[];
-  final byPile = <String, List<DominionCard>>{};
+  final byPile = <String, List<KingdomCard>>{};
 
   for (final c in cards) {
     if (c.splitPileId != null) {
@@ -46,8 +46,8 @@ List<_KingdomSlot> _splitPileSlots(List<DominionCard> cards) {
 }
 
 class _KingdomSlot {
-  final DominionCard primary;
-  final List<DominionCard> splitPileCards;
+  final KingdomCard primary;
+  final List<KingdomCard> splitPileCards;
 
   const _KingdomSlot(this.primary, this.splitPileCards);
 
@@ -366,13 +366,13 @@ class _StaggeredEntryState extends State<_StaggeredEntry>
 // ── Landscape section ──────────────────────────────────────────────────────
 
 class _LandscapeSection extends StatelessWidget {
-  final List<DominionCard> cards;
+  final List<KingdomCard> cards;
   const _LandscapeSection({required this.cards});
 
   @override
   Widget build(BuildContext context) {
     // Group by type label for display
-    final groups = <String, List<DominionCard>>{};
+    final groups = <String, List<KingdomCard>>{};
     for (final c in cards) {
       final label = _landscapeLabel(c);
       (groups[label] ??= []).add(c);
@@ -405,7 +405,7 @@ class _LandscapeSection extends StatelessWidget {
     );
   }
 
-  static String _landscapeLabel(DominionCard c) {
+  static String _landscapeLabel(KingdomCard c) {
     if (c.isEvent) return 'Events';
     if (c.isLandmark) return 'Landmarks';
     if (c.isProject) return 'Projects';
@@ -419,7 +419,7 @@ class _LandscapeSection extends StatelessWidget {
 
 class _LandscapeGroup extends StatelessWidget {
   final String label;
-  final List<DominionCard> cards;
+  final List<KingdomCard> cards;
   const _LandscapeGroup({required this.label, required this.cards});
 
   @override

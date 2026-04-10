@@ -3,14 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/card_tag.dart';
 import '../../models/card_type.dart';
-import '../../models/dominion_card.dart';
+import '../../models/kingdom_card.dart';
 import '../../providers/card_data_providers.dart';
 import '../../utils/app_theme.dart';
 import '../common/expansion_badge.dart';
 
 class KingdomCardWidget extends StatelessWidget {
-  final DominionCard card;
-  final List<DominionCard> splitPileCards;
+  final KingdomCard card;
+  final List<KingdomCard> splitPileCards;
   final int index; // 1-based display number
 
   const KingdomCardWidget({
@@ -171,7 +171,7 @@ class KingdomCardWidget extends StatelessWidget {
   }
 
   // ── Type → accent colour ──────────────────────────────────────────────────
-  // Priority matches Dominion's visual hierarchy: curse > attack > reaction >
+  // Priority matches the game's visual hierarchy: curse > attack > reaction >
   // duration > treasure > victory > night > action (default).
   // Internal-accessible so _ChainStep can reuse it for upgrade card sheets.
   static Color _accentColor(List<CardType> types) {
@@ -377,8 +377,8 @@ class _TypePills extends StatelessWidget {
 // ── Card detail bottom sheet ─────────────────────────────────────────────────
 
 class _CardDetailSheet extends StatelessWidget {
-  final DominionCard card;
-  final List<DominionCard> splitPileCards;
+  final KingdomCard card;
+  final List<KingdomCard> splitPileCards;
   final Color accent;
 
   const _CardDetailSheet({
@@ -569,7 +569,7 @@ class _CardDetailSheet extends StatelessWidget {
 // ── Split pile card ────────────────────────────────────────────────────────
 
 class _SplitPileCard extends StatelessWidget {
-  final DominionCard card;
+  final KingdomCard card;
   const _SplitPileCard({required this.card});
 
   @override
@@ -648,7 +648,7 @@ class _PileCards extends ConsumerWidget {
 
 class _PileCardRow extends StatelessWidget {
   final String name;
-  final DominionCard? card;
+  final KingdomCard? card;
 
   const _PileCardRow({required this.name, required this.card});
 
@@ -737,7 +737,7 @@ class _PileCardRow extends StatelessWidget {
 /// the chained card's rules text. Uses [allCardsProvider] to look up text for
 /// intermediate cards when they are present in the data file.
 class _TravellerChain extends ConsumerWidget {
-  final DominionCard base;
+  final KingdomCard base;
   final List<String> chain;
 
   const _TravellerChain({required this.base, required this.chain});
@@ -793,7 +793,7 @@ class _TravellerChain extends ConsumerWidget {
 
 class _ChainStep extends StatelessWidget {
   final String name;
-  final DominionCard? card; // null while allCardsProvider is loading
+  final KingdomCard? card; // null while allCardsProvider is loading
   final bool isBase;
   final bool isFinal;
   final Color accent;

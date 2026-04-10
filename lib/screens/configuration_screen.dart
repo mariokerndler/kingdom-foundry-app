@@ -158,7 +158,7 @@ class _AppTitle extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize:       MainAxisSize.min,
       children: [
-        Text('Dominion Setup',
+        Text('Kingdom Foundry',
             style: TextStyle(
               color:      cs.onSurface,
               fontSize:   18,

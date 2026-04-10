@@ -1,4 +1,4 @@
-/// Every official Dominion expansion.
+/// Every official game expansion.
 enum Expansion {
   base,
   baseSecondEdition,

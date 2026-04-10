@@ -53,7 +53,7 @@ class SetupRules {
   final bool includeLandscape;
 
   /// How many of each landscape type to draw (0 = none).
-  /// Defaults reflect the standard Dominion rule suggestions.
+  /// Defaults reflect the standard rule suggestions.
   final int landscapeEvents;
   final int landscapeProjects;
   final int landscapeLandmarks;

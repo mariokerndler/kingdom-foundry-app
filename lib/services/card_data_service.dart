@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart' show rootBundle;
 
-import '../models/dominion_card.dart';
+import '../models/kingdom_card.dart';
 import '../models/expansion.dart';
 
 /// Loads, parses, and caches the card catalogue from assets/data/cards.json.
@@ -13,7 +13,7 @@ class CardDataService {
   static const _assetPath = 'assets/data/cards.json';
 
   // Lazily populated cache — null until first call to [loadAll].
-  List<DominionCard>? _cache;
+  List<KingdomCard>? _cache;
 
   // -------------------------------------------------------------------------
   // Public API
@@ -21,21 +21,21 @@ class CardDataService {
 
   /// Returns every card in the catalogue.
   /// Parses the JSON asset on first call; subsequent calls return the cache.
-  Future<List<DominionCard>> loadAll() async {
+  Future<List<KingdomCard>> loadAll() async {
     if (_cache != null) return _cache!;
 
     final raw = await rootBundle.loadString(_assetPath);
     final parsed = json.decode(raw) as List<dynamic>;
 
     _cache = parsed
-        .map((e) => DominionCard.fromJson(e as Map<String, dynamic>))
+        .map((e) => KingdomCard.fromJson(e as Map<String, dynamic>))
         .toList(growable: false);
 
     return _cache!;
   }
 
   /// Returns all kingdom cards from the given [expansions].
-  Future<List<DominionCard>> forExpansions(Set<Expansion> expansions) async {
+  Future<List<KingdomCard>> forExpansions(Set<Expansion> expansions) async {
     final all = await loadAll();
     return all
         .where((c) =>
@@ -46,9 +46,9 @@ class CardDataService {
   }
 
   /// Returns cards grouped by expansion.
-  Future<Map<Expansion, List<DominionCard>>> groupedByExpansion() async {
+  Future<Map<Expansion, List<KingdomCard>>> groupedByExpansion() async {
     final all = await loadAll();
-    final map = <Expansion, List<DominionCard>>{};
+    final map = <Expansion, List<KingdomCard>>{};
     for (final card in all) {
       if (card.isDisabled) continue;
       map.putIfAbsent(card.expansion, () => []).add(card);
