@@ -625,6 +625,14 @@ class SetupEngine {
       );
     }
 
+    if (kingdom.any((c) => c.name == 'Black Market')) {
+      notes.add(
+        'Black Market present: make a Black Market deck from different unused '
+        'Kingdom cards that are not otherwise in the Supply or set aside for '
+        'other setup effects.',
+      );
+    }
+
     if (kingdom.any((c) => c.name == 'Footpad')) {
       notes.add(
         'Footpad present: for the whole game, whenever a player gains a card '

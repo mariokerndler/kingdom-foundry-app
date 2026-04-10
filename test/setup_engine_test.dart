@@ -23,6 +23,7 @@ KingdomCard _card({
   bool isDisabled = false,
   bool potionCost = false,
   int? debtCost,
+  String? splitPileId,
   List<String> pileCards = const [],
 }) =>
     KingdomCard(
@@ -36,6 +37,7 @@ KingdomCard _card({
       debtCost: debtCost,
       text: '',
       isDisabled: isDisabled,
+      splitPileId: splitPileId,
       pileCards: pileCards,
     );
 
@@ -567,6 +569,59 @@ void main() {
 
       expect(
         result.setupNotes.any((note) => note.contains('Shadow cards present')),
+        isTrue,
+      );
+    });
+  });
+
+  group('SetupEngine — Promos', () {
+    test('Black Market emits setup note', () {
+      final blackMarket = _card(
+        id: 'black_market',
+        name: 'Black Market',
+        expansion: Expansion.promos,
+        tags: [CardTag.plusCoin, CardTag.lookAtCards],
+      );
+
+      final result = _seededEngine().generate(
+        allCards: [..._pool(9), blackMarket],
+        ownedExpansions: {Expansion.baseSecondEdition, Expansion.promos},
+        rules: const SetupRules(includeLandscape: false),
+      );
+
+      expect(
+        result.setupNotes.any((note) => note.contains('Black Market present')),
+        isTrue,
+      );
+    });
+
+    test('Sauna and Avanto share one split pile slot', () {
+      final sauna = _card(
+        id: 'sauna',
+        name: 'Sauna',
+        expansion: Expansion.promos,
+        cost: 4,
+        splitPileId: 'promos_sauna_avanto',
+      );
+      final avanto = _card(
+        id: 'avanto',
+        name: 'Avanto',
+        expansion: Expansion.promos,
+        cost: 5,
+        splitPileId: 'promos_sauna_avanto',
+      );
+
+      final result = _seededEngine().generate(
+        allCards: [..._pool(9), sauna, avanto],
+        ownedExpansions: {Expansion.baseSecondEdition, Expansion.promos},
+        rules: const SetupRules(includeLandscape: false),
+      );
+
+      expect(result.kingdomCards.any((c) => c.name == 'Sauna'), isTrue);
+      expect(result.kingdomCards.any((c) => c.name == 'Avanto'), isTrue);
+      expect(
+        result.setupNotes
+            .any((note) => note.contains('Split pile: Sauna / Avanto')),
         isTrue,
       );
     });
