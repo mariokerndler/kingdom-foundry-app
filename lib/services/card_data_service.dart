@@ -24,7 +24,7 @@ class CardDataService {
   Future<List<DominionCard>> loadAll() async {
     if (_cache != null) return _cache!;
 
-    final raw    = await rootBundle.loadString(_assetPath);
+    final raw = await rootBundle.loadString(_assetPath);
     final parsed = json.decode(raw) as List<dynamic>;
 
     _cache = parsed
@@ -38,7 +38,10 @@ class CardDataService {
   Future<List<DominionCard>> forExpansions(Set<Expansion> expansions) async {
     final all = await loadAll();
     return all
-        .where((c) => expansions.contains(c.expansion) && c.isKingdomCard)
+        .where((c) =>
+            expansions.contains(c.expansion) &&
+            c.isKingdomCard &&
+            !c.isDisabled)
         .toList();
   }
 
@@ -47,6 +50,7 @@ class CardDataService {
     final all = await loadAll();
     final map = <Expansion, List<DominionCard>>{};
     for (final card in all) {
+      if (card.isDisabled) continue;
       map.putIfAbsent(card.expansion, () => []).add(card);
     }
     // Sort each group by cost then name for stable display ordering.

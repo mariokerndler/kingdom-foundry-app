@@ -17,8 +17,8 @@ class SetupRules {
   /// e.g. Witch, Mountebank). Lighter than [noAttacks].
   final bool noCursers;
 
-  /// Remove Traveller cards (Page, Peasant) from the pool to avoid
-  /// the extra setup of setting aside the upgrade chain.
+  /// Remove Traveller/exchange-chain cards (Page, Peasant, Hermit, Urchin)
+  /// from the pool to avoid the extra setup of setting aside chained cards.
   final bool noTravellers;
 
   /// Require at least one +Buy card in the kingdom.
@@ -47,7 +47,8 @@ class SetupRules {
   /// Minimum number of distinct expansions the 10 cards must span (1 = any).
   final int minExpansionVariety;
 
-  /// When false, no landscape cards (Events/Landmarks/Projects/Ways/Allies)
+  /// When false, no landscape cards
+  /// (Events/Landmarks/Projects/Ways/Allies/Traits)
   /// will be drawn even if the owned expansions contain them.
   final bool includeLandscape;
 
@@ -58,28 +59,30 @@ class SetupRules {
   final int landscapeLandmarks;
   final int landscapeWays;
   final int landscapeAllies;
+  final int landscapeTraits;
 
   const SetupRules({
-    this.noAttacks                = false,
-    this.noDuration               = false,
-    this.noPotions                = false,
-    this.noDebt                   = false,
-    this.noCursers                = false,
-    this.noTravellers             = false,
-    this.requirePlusBuy           = false,
-    this.requireTrashing          = false,
-    this.requireVillage           = false,
-    this.requireDraw              = false,
+    this.noAttacks = false,
+    this.noDuration = false,
+    this.noPotions = false,
+    this.noDebt = false,
+    this.noCursers = false,
+    this.noTravellers = false,
+    this.requirePlusBuy = false,
+    this.requireTrashing = false,
+    this.requireVillage = false,
+    this.requireDraw = false,
     this.requireReactionIfAttacks = false,
     this.maxCost,
     this.maxAttacks,
-    this.minExpansionVariety      = 1,
-    this.includeLandscape         = true,
-    this.landscapeEvents          = 2,
-    this.landscapeProjects        = 2,
-    this.landscapeLandmarks       = 1,
-    this.landscapeWays            = 1,
-    this.landscapeAllies          = 1,
+    this.minExpansionVariety = 1,
+    this.includeLandscape = true,
+    this.landscapeEvents = 2,
+    this.landscapeProjects = 2,
+    this.landscapeLandmarks = 1,
+    this.landscapeWays = 1,
+    this.landscapeAllies = 1,
+    this.landscapeTraits = 1,
   });
 
   SetupRules copyWith({
@@ -94,65 +97,73 @@ class SetupRules {
     bool? requireVillage,
     bool? requireDraw,
     bool? requireReactionIfAttacks,
-    int?  maxCost,
-    int?  maxAttacks,
-    int?  minExpansionVariety,
+    int? maxCost,
+    int? maxAttacks,
+    int? minExpansionVariety,
     bool? includeLandscape,
-    int?  landscapeEvents,
-    int?  landscapeProjects,
-    int?  landscapeLandmarks,
-    int?  landscapeWays,
-    int?  landscapeAllies,
-    bool  clearMaxCost    = false,
-    bool  clearMaxAttacks = false,
+    int? landscapeEvents,
+    int? landscapeProjects,
+    int? landscapeLandmarks,
+    int? landscapeWays,
+    int? landscapeAllies,
+    int? landscapeTraits,
+    bool clearMaxCost = false,
+    bool clearMaxAttacks = false,
   }) {
     return SetupRules(
-      noAttacks:                noAttacks                ?? this.noAttacks,
-      noDuration:               noDuration               ?? this.noDuration,
-      noPotions:                noPotions                ?? this.noPotions,
-      noDebt:                   noDebt                   ?? this.noDebt,
-      noCursers:                noCursers                ?? this.noCursers,
-      noTravellers:             noTravellers             ?? this.noTravellers,
-      requirePlusBuy:           requirePlusBuy           ?? this.requirePlusBuy,
-      requireTrashing:          requireTrashing          ?? this.requireTrashing,
-      requireVillage:           requireVillage           ?? this.requireVillage,
-      requireDraw:              requireDraw              ?? this.requireDraw,
-      requireReactionIfAttacks: requireReactionIfAttacks ?? this.requireReactionIfAttacks,
-      maxCost:    clearMaxCost    ? null : (maxCost    ?? this.maxCost),
+      noAttacks: noAttacks ?? this.noAttacks,
+      noDuration: noDuration ?? this.noDuration,
+      noPotions: noPotions ?? this.noPotions,
+      noDebt: noDebt ?? this.noDebt,
+      noCursers: noCursers ?? this.noCursers,
+      noTravellers: noTravellers ?? this.noTravellers,
+      requirePlusBuy: requirePlusBuy ?? this.requirePlusBuy,
+      requireTrashing: requireTrashing ?? this.requireTrashing,
+      requireVillage: requireVillage ?? this.requireVillage,
+      requireDraw: requireDraw ?? this.requireDraw,
+      requireReactionIfAttacks:
+          requireReactionIfAttacks ?? this.requireReactionIfAttacks,
+      maxCost: clearMaxCost ? null : (maxCost ?? this.maxCost),
       maxAttacks: clearMaxAttacks ? null : (maxAttacks ?? this.maxAttacks),
       minExpansionVariety: minExpansionVariety ?? this.minExpansionVariety,
-      includeLandscape:    includeLandscape    ?? this.includeLandscape,
-      landscapeEvents:     landscapeEvents     ?? this.landscapeEvents,
-      landscapeProjects:   landscapeProjects   ?? this.landscapeProjects,
-      landscapeLandmarks:  landscapeLandmarks  ?? this.landscapeLandmarks,
-      landscapeWays:       landscapeWays       ?? this.landscapeWays,
-      landscapeAllies:     landscapeAllies     ?? this.landscapeAllies,
+      includeLandscape: includeLandscape ?? this.includeLandscape,
+      landscapeEvents: landscapeEvents ?? this.landscapeEvents,
+      landscapeProjects: landscapeProjects ?? this.landscapeProjects,
+      landscapeLandmarks: landscapeLandmarks ?? this.landscapeLandmarks,
+      landscapeWays: landscapeWays ?? this.landscapeWays,
+      landscapeAllies: landscapeAllies ?? this.landscapeAllies,
+      landscapeTraits: landscapeTraits ?? this.landscapeTraits,
     );
   }
 
   /// Human-readable summary of active rules (for display in the UI).
   List<String> get activeRuleDescriptions {
     final rules = <String>[];
-    if (noAttacks)                rules.add('No Attack cards');
-    if (noCursers)                rules.add('No Curse-givers');
-    if (noDuration)               rules.add('No Duration cards');
-    if (noPotions)                rules.add('No Potion-cost cards');
-    if (noDebt)                   rules.add('No Debt cards');
-    if (noTravellers)             rules.add('No Travellers');
-    if (requirePlusBuy)           rules.add('Must include +Buy');
-    if (requireTrashing)          rules.add('Must include Trasher');
-    if (requireVillage)           rules.add('Must include Village');
-    if (requireDraw)              rules.add('Must include Draw');
+    if (noAttacks) rules.add('No Attack cards');
+    if (noCursers) rules.add('No Curse-givers');
+    if (noDuration) rules.add('No Duration cards');
+    if (noPotions) rules.add('No Potion-cost cards');
+    if (noDebt) rules.add('No Debt cards');
+    if (noTravellers) rules.add('No Travellers');
+    if (requirePlusBuy) rules.add('Must include +Buy');
+    if (requireTrashing) rules.add('Must include Trasher');
+    if (requireVillage) rules.add('Must include Village');
+    if (requireDraw) rules.add('Must include Draw');
     if (requireReactionIfAttacks) rules.add('Auto-Reaction');
-    if (maxCost != null)          rules.add('Max cost: \$$maxCost');
-    if (maxAttacks != null)       rules.add('Max $maxAttacks attack${maxAttacks == 1 ? '' : 's'}');
-    if (minExpansionVariety > 1)  rules.add('At least $minExpansionVariety expansions');
-    if (!includeLandscape)        rules.add('No landscape cards');
-    if (landscapeEvents    != 2)  rules.add('Events: $landscapeEvents');
-    if (landscapeProjects  != 2)  rules.add('Projects: $landscapeProjects');
-    if (landscapeLandmarks != 1)  rules.add('Landmarks: $landscapeLandmarks');
-    if (landscapeWays      != 1)  rules.add('Ways: $landscapeWays');
-    if (landscapeAllies    != 1)  rules.add('Allies: $landscapeAllies');
+    if (maxCost != null) rules.add('Max cost: \$$maxCost');
+    if (maxAttacks != null) {
+      rules.add('Max $maxAttacks attack${maxAttacks == 1 ? '' : 's'}');
+    }
+    if (minExpansionVariety > 1) {
+      rules.add('At least $minExpansionVariety expansions');
+    }
+    if (!includeLandscape) rules.add('No landscape cards');
+    if (landscapeEvents != 2) rules.add('Events: $landscapeEvents');
+    if (landscapeProjects != 2) rules.add('Projects: $landscapeProjects');
+    if (landscapeLandmarks != 1) rules.add('Landmarks: $landscapeLandmarks');
+    if (landscapeWays != 1) rules.add('Ways: $landscapeWays');
+    if (landscapeAllies != 1) rules.add('Allies: $landscapeAllies');
+    if (landscapeTraits != 1) rules.add('Traits: $landscapeTraits');
     return rules;
   }
 

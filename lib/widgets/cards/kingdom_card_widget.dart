@@ -9,14 +9,14 @@ import '../../utils/app_theme.dart';
 import '../common/expansion_badge.dart';
 
 class KingdomCardWidget extends StatelessWidget {
-  final DominionCard  card;
-  final DominionCard? splitPartner; // non-null for split piles
-  final int           index; // 1-based display number
+  final DominionCard card;
+  final List<DominionCard> splitPileCards;
+  final int index; // 1-based display number
 
   const KingdomCardWidget({
     super.key,
     required this.card,
-    this.splitPartner,
+    this.splitPileCards = const [],
     required this.index,
   });
 
@@ -24,135 +24,148 @@ class KingdomCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = _accentColor(card.types);
 
-    final isSplit = splitPartner != null;
+    final isSplit = splitPileCards.isNotEmpty;
+    final splitLabel = splitPileCards.map((c) => c.name).join(' / ');
 
     return Semantics(
-      label:  '${card.name}${isSplit ? ' / ${splitPartner!.name}' : ''}, ${card.typeString}. Cost: ${card.costString}. Tap for details.',
+      label:
+          '${card.name}${isSplit ? ' / $splitLabel' : ''}, ${card.typeString}. Cost: ${card.costString}. Tap for details.',
       button: true,
       excludeSemantics: true,
       child: Material(
-      color:        Theme.of(context).colorScheme.surfaceContainer,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap:        () => _showDetail(context, accent),
+        color: Theme.of(context).colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(10),
-        child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          decoration: BoxDecoration(
-            color:  Theme.of(context).colorScheme.surfaceContainer,
-            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Coloured left-accent strip replaces the BorderSide approach
-              Container(width: 3, color: accent),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-                  child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Name row + cost badge
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: InkWell(
+          onTap: () => _showDetail(context, accent),
+          borderRadius: BorderRadius.circular(10),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainer,
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Coloured left-accent strip replaces the BorderSide approach
+                  Container(width: 3, color: accent),
                   Expanded(
-                    child: Text(
-                      card.name,
-                      style: TextStyle(
-                        color:      Theme.of(context).colorScheme.onSurface,
-                        fontSize:   13,
-                        fontWeight: FontWeight.w700,
-                        height:     1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  _CostBadge(cost: card.costString),
-                ],
-              ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Name row + cost badge
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  card.name,
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.2,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              _CostBadge(cost: card.costString),
+                            ],
+                          ),
 
-              const SizedBox(height: 6),
+                          const SizedBox(height: 6),
 
-              // Type pills
-              _TypePills(types: card.types),
+                          // Type pills
+                          _TypePills(types: card.types),
 
-              const SizedBox(height: 6),
+                          const SizedBox(height: 6),
 
-              // Card text (truncated)
-              Expanded(
-                child: Text(
-                  card.text,
-                  style: TextStyle(
-                    color:    Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 12,
-                    height:   1.35,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+                          // Card text (truncated)
+                          Expanded(
+                            child: Text(
+                              card.text,
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                                fontSize: 12,
+                                height: 1.35,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
 
-              const SizedBox(height: 6),
+                          const SizedBox(height: 6),
 
-              // Split pile partner label
-              if (isSplit) ...[
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.layers_rounded,
-                        size: 10, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        '+ ${splitPartner!.name}',
-                        style: TextStyle(
-                          color:      Theme.of(context).colorScheme.primary,
-                          fontSize:   10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                          // Split pile partner label
+                          if (isSplit) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(Icons.layers_rounded,
+                                    size: 10,
+                                    color:
+                                        Theme.of(context).colorScheme.primary),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    '+ $splitLabel',
+                                    style: TextStyle(
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
 
-              // Footer: expansion + tap hint
-              Row(
-                children: [
-                  ExpansionBadge(expansion: card.expansion, fontSize: 11),
-                  const Spacer(),
-                  Icon(Icons.open_in_full_rounded,
-                      size: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                ],
-              ),
-            ],
-          ),        // Column
-        ),          // Padding
-      ),            // Expanded
-    ],              // Row.children
-  ),               // Row
-),                 // Container
-),                 // ClipRRect
-),                 // InkWell
-),                 // Material
-);                 // Semantics
+                          // Footer: expansion + tap hint
+                          Row(
+                            children: [
+                              ExpansionBadge(
+                                  expansion: card.expansion, fontSize: 11),
+                              const Spacer(),
+                              Icon(Icons.open_in_full_rounded,
+                                  size: 11,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant),
+                            ],
+                          ),
+                        ],
+                      ), // Column
+                    ), // Padding
+                  ), // Expanded
+                ], // Row.children
+              ), // Row
+            ), // Container
+          ), // ClipRRect
+        ), // InkWell
+      ), // Material
+    ); // Semantics
   }
 
   void _showDetail(BuildContext context, Color accent) {
     showModalBottomSheet<void>(
-      context:           context,
+      context: context,
       isScrollControlled: true,
-      backgroundColor:   Colors.transparent,
+      backgroundColor: Colors.transparent,
       builder: (_) => _CardDetailSheet(
-        card:         card,
-        splitPartner: splitPartner,
-        accent:       accent,
+        card: card,
+        splitPileCards: splitPileCards,
+        accent: accent,
       ),
     );
   }
@@ -162,13 +175,13 @@ class KingdomCardWidget extends StatelessWidget {
   // duration > treasure > victory > night > action (default).
   // Internal-accessible so _ChainStep can reuse it for upgrade card sheets.
   static Color _accentColor(List<CardType> types) {
-    if (types.contains(CardType.curse))    return const Color(0xFF9C27B0);
-    if (types.contains(CardType.attack))   return const Color(0xFFCF3C3C);
+    if (types.contains(CardType.curse)) return const Color(0xFF9C27B0);
+    if (types.contains(CardType.attack)) return const Color(0xFFCF3C3C);
     if (types.contains(CardType.reaction)) return const Color(0xFF1976D2);
     if (types.contains(CardType.duration)) return const Color(0xFFE65100);
     if (types.contains(CardType.treasure)) return const Color(0xFFFFB300);
-    if (types.contains(CardType.victory))  return const Color(0xFF388E3C);
-    if (types.contains(CardType.night))    return const Color(0xFF5C35CC);
+    if (types.contains(CardType.victory)) return const Color(0xFF388E3C);
+    if (types.contains(CardType.night)) return const Color(0xFF5C35CC);
     return const Color(0xFF546E7A); // action
   }
 }
@@ -185,26 +198,29 @@ class _CostBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cs     = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
 
     if (_isDebt) {
       return Container(
         constraints: const BoxConstraints(minWidth: 26),
-        height:      26,
-        padding:     const EdgeInsets.symmetric(horizontal: 6),
-        decoration:  BoxDecoration(
-          color:        isDark ? AppColors.debtBadgeFillDark   : AppColors.debtBadgeFill,
+        height: 26,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.debtBadgeFillDark : AppColors.debtBadgeFill,
           borderRadius: BorderRadius.circular(5),
-          border:       Border.all(
-            color: isDark ? AppColors.debtBadgeBorderDark : AppColors.debtBadgeBorder,
+          border: Border.all(
+            color: isDark
+                ? AppColors.debtBadgeBorderDark
+                : AppColors.debtBadgeBorder,
           ),
         ),
         alignment: Alignment.center,
         child: Text(
           cost,
           style: TextStyle(
-            color:      isDark ? AppColors.debtBadgeTextDark : AppColors.debtBadgeText,
-            fontSize:   11,
+            color:
+                isDark ? AppColors.debtBadgeTextDark : AppColors.debtBadgeText,
+            fontSize: 11,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -214,19 +230,19 @@ class _CostBadge extends StatelessWidget {
     // Standard coin badge
     return Container(
       constraints: const BoxConstraints(minWidth: 26),
-      height:      26,
-      padding:     const EdgeInsets.symmetric(horizontal: 6),
-      decoration:  BoxDecoration(
-        shape:  BoxShape.circle,
-        color:  cs.primary,
+      height: 26,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: cs.primary,
         border: Border.all(color: cs.primary.withValues(alpha: 0.7)),
       ),
       alignment: Alignment.center,
       child: Text(
         cost,
         style: TextStyle(
-          color:      cs.onPrimary,
-          fontSize:   11,
+          color: cs.onPrimary,
+          fontSize: 11,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -245,18 +261,20 @@ class _DetailCostBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cs     = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
 
     if (_isDebt) {
       return Container(
         constraints: const BoxConstraints(minWidth: 40),
-        height:      40,
-        padding:     const EdgeInsets.symmetric(horizontal: 8),
-        decoration:  BoxDecoration(
-          color:        isDark ? AppColors.debtBadgeFillDark   : AppColors.debtBadgeFill,
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.debtBadgeFillDark : AppColors.debtBadgeFill,
           borderRadius: BorderRadius.circular(7),
-          border:       Border.all(
-            color: isDark ? AppColors.debtBadgeBorderDark : AppColors.debtBadgeBorder,
+          border: Border.all(
+            color: isDark
+                ? AppColors.debtBadgeBorderDark
+                : AppColors.debtBadgeBorder,
             width: 1.5,
           ),
         ),
@@ -264,8 +282,9 @@ class _DetailCostBadge extends StatelessWidget {
         child: Text(
           costString,
           style: TextStyle(
-            color:      isDark ? AppColors.debtBadgeTextDark : AppColors.debtBadgeText,
-            fontSize:   14,
+            color:
+                isDark ? AppColors.debtBadgeTextDark : AppColors.debtBadgeText,
+            fontSize: 14,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -273,18 +292,20 @@ class _DetailCostBadge extends StatelessWidget {
     }
 
     return Container(
-      width: 40, height: 40,
+      width: 40,
+      height: 40,
       decoration: BoxDecoration(
-        shape:  BoxShape.circle,
-        color:  cs.primary,
-        border: Border.all(color: cs.primary.withValues(alpha: 0.7), width: 1.5),
+        shape: BoxShape.circle,
+        color: cs.primary,
+        border:
+            Border.all(color: cs.primary.withValues(alpha: 0.7), width: 1.5),
       ),
       alignment: Alignment.center,
       child: Text(
         costString,
         style: TextStyle(
-          color:      cs.onPrimary,
-          fontSize:   14,
+          color: cs.onPrimary,
+          fontSize: 14,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -301,45 +322,54 @@ class _TypePills extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing:    4,
+      spacing: 4,
       runSpacing: 3,
       children: types
           .where((t) => t.isKingdomCard) // skip non-kingdom type markers
           .map((t) {
-            final color = _typeColor(t);
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-              decoration: BoxDecoration(
-                color:        color.withValues(alpha: 0.15),
-                border:       Border.all(color: color.withValues(alpha: 0.5)),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Text(
-                t.displayName,
-                style: TextStyle(
-                  color:      color,
-                  fontSize:   11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            );
-          })
-          .toList(),
+        final color = _typeColor(t);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            border: Border.all(color: color.withValues(alpha: 0.5)),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Text(
+            t.displayName,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
   static Color _typeColor(CardType t) {
     switch (t) {
-      case CardType.action:    return const Color(0xFF90A4AE);
-      case CardType.treasure:  return const Color(0xFFFFB300);
-      case CardType.victory:   return const Color(0xFF66BB6A);
-      case CardType.curse:     return const Color(0xFFCE93D8);
-      case CardType.attack:    return const Color(0xFFEF9A9A);
-      case CardType.reaction:  return const Color(0xFF64B5F6);
-      case CardType.duration:  return const Color(0xFFFFB74D);
-      case CardType.night:     return const Color(0xFF9575CD);
-      case CardType.reserve:   return const Color(0xFF80CBC4);
-      default:                 return const Color(0xFF78909C);
+      case CardType.action:
+        return const Color(0xFF90A4AE);
+      case CardType.treasure:
+        return const Color(0xFFFFB300);
+      case CardType.victory:
+        return const Color(0xFF66BB6A);
+      case CardType.curse:
+        return const Color(0xFFCE93D8);
+      case CardType.attack:
+        return const Color(0xFFEF9A9A);
+      case CardType.reaction:
+        return const Color(0xFF64B5F6);
+      case CardType.duration:
+        return const Color(0xFFFFB74D);
+      case CardType.night:
+        return const Color(0xFF9575CD);
+      case CardType.reserve:
+        return const Color(0xFF80CBC4);
+      default:
+        return const Color(0xFF78909C);
     }
   }
 }
@@ -347,13 +377,13 @@ class _TypePills extends StatelessWidget {
 // ── Card detail bottom sheet ─────────────────────────────────────────────────
 
 class _CardDetailSheet extends StatelessWidget {
-  final DominionCard  card;
-  final DominionCard? splitPartner;
-  final Color         accent;
+  final DominionCard card;
+  final List<DominionCard> splitPileCards;
+  final Color accent;
 
   const _CardDetailSheet({
     required this.card,
-    this.splitPartner,
+    this.splitPileCards = const [],
     required this.accent,
   });
 
@@ -361,22 +391,23 @@ class _CardDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
       initialChildSize: 0.55,
-      minChildSize:     0.35,
-      maxChildSize:     0.85,
+      minChildSize: 0.35,
+      maxChildSize: 0.85,
       builder: (_, ctrl) => Container(
         decoration: BoxDecoration(
-          color:        Theme.of(context).colorScheme.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          border:       Border(top: BorderSide(color: accent, width: 3)),
+          border: Border(top: BorderSide(color: accent, width: 3)),
         ),
         child: Column(
           children: [
             // Drag handle
             Container(
               margin: const EdgeInsets.only(top: 10),
-              width:  40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color:        Theme.of(context).colorScheme.outlineVariant,
+                color: Theme.of(context).colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -393,8 +424,8 @@ class _CardDetailSheet extends StatelessWidget {
                         child: Text(
                           card.name,
                           style: TextStyle(
-                            color:      Theme.of(context).colorScheme.onSurface,
-                            fontSize:   22,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 22,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -421,47 +452,75 @@ class _CardDetailSheet extends StatelessWidget {
                   Text(
                     card.text,
                     style: TextStyle(
-                      color:    Theme.of(context).colorScheme.onSurface,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 15,
-                      height:   1.55,
+                      height: 1.55,
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Split pile partner card
-                  if (splitPartner != null) ...[
+                  // Split pile cards
+                  if (splitPileCards.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     Text(
-                      'SPLIT PILE',
+                      splitPileCards.length == 1
+                          ? 'SPLIT PILE'
+                          : 'ROTATING PILE',
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Both halves share one supply pile.',
+                      splitPileCards.length == 1
+                          ? 'Both halves share one Supply pile.'
+                          : 'These cards share one rotating Supply pile.',
                       style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12),
                     ),
                     const SizedBox(height: 10),
-                    _SplitPartnerCard(partner: splitPartner!),
+                    for (final pileCard in splitPileCards) ...[
+                      _SplitPileCard(card: pileCard),
+                      if (pileCard != splitPileCards.last)
+                        const SizedBox(height: 8),
+                    ],
                   ],
 
-                  // Traveller upgrade chain
+                  // Mixed piles such as Dark Ages Knights
+                  if (card.pileCards.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      'PILE CARDS',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'These cards share this Supply pile.',
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12),
+                    ),
+                    const SizedBox(height: 10),
+                    _PileCards(names: card.pileCards),
+                  ],
+
+                  // Traveller/exchange chain
                   if (card.travellerChain.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     Text(
-                      'TRAVELLER CHAIN',
+                      'EXCHANGE CHAIN',
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Set these cards aside before play.',
                       style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12),
                     ),
                     const SizedBox(height: 10),
                     _TravellerChain(
-                      base:  card,
+                      base: card,
                       chain: card.travellerChain,
                     ),
                   ],
@@ -474,22 +533,22 @@ class _CardDetailSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Wrap(
-                      spacing:    6,
+                      spacing: 6,
                       runSpacing: 6,
                       children: card.tags
                           .map((tag) => Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color:        accent.withValues(alpha: 0.1),
-                                  border:       Border.all(
+                                  color: accent.withValues(alpha: 0.1),
+                                  border: Border.all(
                                       color: accent.withValues(alpha: 0.35)),
                                   borderRadius: BorderRadius.circular(5),
                                 ),
                                 child: Text(
                                   tag.displayName,
                                   style: TextStyle(
-                                    color:    accent.withValues(alpha: 0.85),
+                                    color: accent.withValues(alpha: 0.85),
                                     fontSize: 11,
                                   ),
                                 ),
@@ -507,20 +566,20 @@ class _CardDetailSheet extends StatelessWidget {
   }
 }
 
-// ── Split pile partner card ────────────────────────────────────────────────
+// ── Split pile card ────────────────────────────────────────────────────────
 
-class _SplitPartnerCard extends StatelessWidget {
-  final DominionCard partner;
-  const _SplitPartnerCard({required this.partner});
+class _SplitPileCard extends StatelessWidget {
+  final DominionCard card;
+  const _SplitPileCard({required this.card});
 
   @override
   Widget build(BuildContext context) {
-    final accent = KingdomCardWidget._accentColor(partner.types);
+    final accent = KingdomCardWidget._accentColor(card.types);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color:        accent.withValues(alpha: 0.07),
-        border:       Border.all(color: accent.withValues(alpha: 0.3)),
+        color: accent.withValues(alpha: 0.07),
+        border: Border.all(color: accent.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -528,30 +587,31 @@ class _SplitPartnerCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.layers_rounded, size: 13, color: Theme.of(context).colorScheme.primary),
+              Icon(Icons.layers_rounded,
+                  size: 13, color: Theme.of(context).colorScheme.primary),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  partner.name,
+                  card.name,
                   style: TextStyle(
-                    color:      accent,
-                    fontSize:   15,
+                    color: accent,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              _CostBadge(cost: partner.costString),
+              _CostBadge(cost: card.costString),
             ],
           ),
           const SizedBox(height: 6),
-          _TypePills(types: partner.types),
+          _TypePills(types: card.types),
           const SizedBox(height: 8),
           Text(
-            partner.text,
+            card.text,
             style: TextStyle(
-              color:    Theme.of(context).colorScheme.onSurface,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 13,
-              height:   1.5,
+              height: 1.5,
             ),
           ),
         ],
@@ -560,11 +620,122 @@ class _SplitPartnerCard extends StatelessWidget {
   }
 }
 
-// ── Traveller upgrade chain ────────────────────────────────────────────────
+class _PileCards extends ConsumerWidget {
+  final List<String> names;
 
-/// Displays the full traveller chain for [base], each step tappable to reveal
-/// the upgrade card's rules text. Uses [allCardsProvider] to look up text for
-/// the intermediate upgrade cards (Treasure Hunter, Warrior, etc.).
+  const _PileCards({required this.names});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final allAsync = ref.watch(allCardsProvider);
+    final cardByName = allAsync.whenData((all) {
+      return {for (final c in all) c.name.toLowerCase(): c};
+    });
+
+    return Column(
+      children: [
+        for (final name in names)
+          _PileCardRow(
+            name: name,
+            card: cardByName.whenOrNull(
+              data: (m) => m[name.toLowerCase()],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _PileCardRow extends StatelessWidget {
+  final String name;
+  final DominionCard? card;
+
+  const _PileCardRow({required this.name, required this.card});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = card == null
+        ? Theme.of(context).colorScheme.outline
+        : KingdomCardWidget._accentColor(card!.types);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(7),
+        child: InkWell(
+          onTap: card == null ? null : () => _showDetail(context),
+          borderRadius: BorderRadius.circular(7),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.06),
+              border: Border.all(color: accent.withValues(alpha: 0.25)),
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.style_rounded, size: 14, color: accent),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (card != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          card!.text,
+                          style: TextStyle(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 11,
+                            height: 1.35,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (card != null)
+                  Icon(Icons.open_in_full_rounded,
+                      size: 11, color: accent.withValues(alpha: 0.5)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDetail(BuildContext context) {
+    if (card == null) return;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CardDetailSheet(
+        card: card!,
+        accent: KingdomCardWidget._accentColor(card!.types),
+      ),
+    );
+  }
+}
+
+// ── Traveller/exchange chain ───────────────────────────────────────────────
+
+/// Displays the full set-aside chain for [base], each step tappable to reveal
+/// the chained card's rules text. Uses [allCardsProvider] to look up text for
+/// intermediate cards when they are present in the data file.
 class _TravellerChain extends ConsumerWidget {
   final DominionCard base;
   final List<String> chain;
@@ -580,25 +751,20 @@ class _TravellerChain extends ConsumerWidget {
       return {for (final c in all) c.name.toLowerCase(): c};
     });
 
-    // Full step list: [base, ...upgrades]
-    final names = [base.name, ...chain];
-
     return Column(
       children: [
-        for (var i = 0; i < names.length; i++) ...[
+        for (var i = 0; i < chain.length; i++) ...[
           _ChainStep(
-            name:     names[i],
+            name: chain[i],
             // Resolve the card object so we can show its text.
-            card:     i == 0
-                ? base
-                : cardByName.whenOrNull(
-                    data: (m) => m[names[i].toLowerCase()],
-                  ),
-            isBase:   i == 0,
-            isFinal:  i == names.length - 1,
-            accent:   _accentColor(i, names.length),
+            card: cardByName.whenOrNull(
+              data: (m) => m[chain[i].toLowerCase()],
+            ),
+            isBase: false,
+            isFinal: i == chain.length - 1,
+            accent: _accentColor(i + 1, chain.length + 1),
           ),
-          if (i < names.length - 1)
+          if (i < chain.length - 1)
             Builder(builder: (ctx) {
               final cs = Theme.of(ctx).colorScheme;
               return Padding(
@@ -619,18 +785,18 @@ class _TravellerChain extends ConsumerWidget {
   }
 
   static Color _accentColor(int index, int total) {
-    if (index == 0)          return const Color(0xFF26C6DA); // teal – base
-    if (index == total - 1)  return const Color(0xFFC49A0A); // gold – top
-    return const Color(0xFF7D8590);                          // dim – middle
+    if (index == 0) return const Color(0xFF26C6DA); // teal – base
+    if (index == total - 1) return const Color(0xFFC49A0A); // gold – top
+    return const Color(0xFF7D8590); // dim – middle
   }
 }
 
 class _ChainStep extends StatelessWidget {
-  final String        name;
-  final DominionCard? card;   // null while allCardsProvider is loading
-  final bool          isBase;
-  final bool          isFinal;
-  final Color         accent;
+  final String name;
+  final DominionCard? card; // null while allCardsProvider is loading
+  final bool isBase;
+  final bool isFinal;
+  final Color accent;
 
   const _ChainStep({
     required this.name,
@@ -646,84 +812,84 @@ class _ChainStep extends StatelessWidget {
       label: card != null ? '$name: ${card!.text}' : name,
       button: card != null,
       child: Material(
-        color:        Colors.transparent,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(7),
         child: InkWell(
-        onTap:        card != null ? () => _showUpgradeDetail(context) : null,
-        borderRadius: BorderRadius.circular(7),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color:        accent.withValues(alpha: isBase || isFinal ? 0.08 : 0.04),
-            border:       Border.all(color: accent.withValues(alpha: 0.3)),
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                isFinal
-                    ? Icons.star_rounded
-                    : isBase
-                        ? Icons.person_rounded
-                        : Icons.upgrade_rounded,
-                size:  14,
-                color: accent,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: TextStyle(
-                        color:      accent,
-                        fontSize:   13,
-                        fontWeight: isBase || isFinal
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
-                    ),
-                    if (card != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        card!.text,
-                        style: TextStyle(
-                          color:    accent.withValues(alpha: 0.65),
-                          fontSize: 11,
-                          height:   1.35,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
+          onTap: card != null ? () => _showUpgradeDetail(context) : null,
+          borderRadius: BorderRadius.circular(7),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: isBase || isFinal ? 0.08 : 0.04),
+              border: Border.all(color: accent.withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isFinal
+                      ? Icons.star_rounded
+                      : isBase
+                          ? Icons.person_rounded
+                          : Icons.upgrade_rounded,
+                  size: 14,
+                  color: accent,
                 ),
-              ),
-              const SizedBox(width: 6),
-              if (isBase)
-                _Badge(label: 'start', color: accent)
-              else if (isFinal)
-                _Badge(label: 'top', color: accent)
-              else if (card != null)
-                Icon(Icons.open_in_full_rounded,
-                    size: 11, color: accent.withValues(alpha: 0.5)),
-            ],
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 13,
+                          fontWeight: isBase || isFinal
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                      ),
+                      if (card != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          card!.text,
+                          style: TextStyle(
+                            color: accent.withValues(alpha: 0.65),
+                            fontSize: 11,
+                            height: 1.35,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                if (isBase)
+                  _Badge(label: 'start', color: accent)
+                else if (isFinal)
+                  _Badge(label: 'top', color: accent)
+                else if (card != null)
+                  Icon(Icons.open_in_full_rounded,
+                      size: 11, color: accent.withValues(alpha: 0.5)),
+              ],
+            ),
           ),
-        ),
-        ),  // InkWell
-      ),    // Material
+        ), // InkWell
+      ), // Material
     );
   }
 
   void _showUpgradeDetail(BuildContext context) {
     if (card == null) return;
     showModalBottomSheet<void>(
-      context:            context,
+      context: context,
       isScrollControlled: true,
-      backgroundColor:    Colors.transparent,
+      backgroundColor: Colors.transparent,
       builder: (_) => _CardDetailSheet(
-        card:   card!,
+        card: card!,
         accent: KingdomCardWidget._accentColor(card!.types),
       ),
     );
@@ -732,16 +898,16 @@ class _ChainStep extends StatelessWidget {
 
 class _Badge extends StatelessWidget {
   final String label;
-  final Color  color;
+  final Color color;
   const _Badge({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-    decoration: BoxDecoration(
-      color:        color.withValues(alpha: 0.15),
-      borderRadius: BorderRadius.circular(4),
-    ),
-    child: Text(label, style: TextStyle(color: color, fontSize: 11)),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(label, style: TextStyle(color: color, fontSize: 11)),
+      );
 }

@@ -5,29 +5,46 @@ enum ArchetypeKind {
   aggressiveControl,
   trashToVictory,
   altVictory,
-  mirrorMatch,   // heavily attack-mirrored kingdoms
+  extraTurns,
+  mirrorMatch, // heavily attack-mirrored kingdoms
 }
 
 extension ArchetypeKindExtension on ArchetypeKind {
   String get displayName {
     switch (this) {
-      case ArchetypeKind.engineBuilding:     return 'Engine Building';
-      case ArchetypeKind.bigMoney:           return 'Big Money / Slog';
-      case ArchetypeKind.aggressiveControl:  return 'Aggressive / Control';
-      case ArchetypeKind.trashToVictory:     return 'Trash-to-Victory';
-      case ArchetypeKind.altVictory:         return 'Alt-Victory Path';
-      case ArchetypeKind.mirrorMatch:        return 'Mirror Match';
+      case ArchetypeKind.engineBuilding:
+        return 'Engine Building';
+      case ArchetypeKind.bigMoney:
+        return 'Big Money / Slog';
+      case ArchetypeKind.aggressiveControl:
+        return 'Aggressive / Control';
+      case ArchetypeKind.trashToVictory:
+        return 'Trash-to-Victory';
+      case ArchetypeKind.altVictory:
+        return 'Alt-Victory Path';
+      case ArchetypeKind.extraTurns:
+        return 'Extra Turns';
+      case ArchetypeKind.mirrorMatch:
+        return 'Mirror Match';
     }
   }
 
   String get iconAsset {
     switch (this) {
-      case ArchetypeKind.engineBuilding:     return 'assets/images/archetype_engine.png';
-      case ArchetypeKind.bigMoney:           return 'assets/images/archetype_bigmoney.png';
-      case ArchetypeKind.aggressiveControl:  return 'assets/images/archetype_attack.png';
-      case ArchetypeKind.trashToVictory:     return 'assets/images/archetype_trash.png';
-      case ArchetypeKind.altVictory:         return 'assets/images/archetype_victory.png';
-      case ArchetypeKind.mirrorMatch:        return 'assets/images/archetype_mirror.png';
+      case ArchetypeKind.engineBuilding:
+        return 'assets/images/archetype_engine.png';
+      case ArchetypeKind.bigMoney:
+        return 'assets/images/archetype_bigmoney.png';
+      case ArchetypeKind.aggressiveControl:
+        return 'assets/images/archetype_attack.png';
+      case ArchetypeKind.trashToVictory:
+        return 'assets/images/archetype_trash.png';
+      case ArchetypeKind.altVictory:
+        return 'assets/images/archetype_victory.png';
+      case ArchetypeKind.extraTurns:
+        return 'assets/images/archetype_engine.png';
+      case ArchetypeKind.mirrorMatch:
+        return 'assets/images/archetype_mirror.png';
     }
   }
 }
@@ -61,23 +78,22 @@ class StrategyArchetype {
   });
 
   Map<String, dynamic> toJson() => {
-    'kind':         kind.name,
-    'headline':     headline,
-    'description':  description,
-    'tips':         tips,
-    'keyCardNames': keyCardNames,
-    'strength':     strength,
-  };
+        'kind': kind.name,
+        'headline': headline,
+        'description': description,
+        'tips': tips,
+        'keyCardNames': keyCardNames,
+        'strength': strength,
+      };
 
   factory StrategyArchetype.fromJson(Map<String, dynamic> json) =>
       StrategyArchetype(
-        kind:         ArchetypeKind.values.firstWhere(
-                        (e) => e.name == json['kind'],
-                        orElse: () => ArchetypeKind.bigMoney),
-        headline:     json['headline']    as String,
-        description:  json['description'] as String,
-        tips:         (json['tips'] as List).cast<String>(),
+        kind: ArchetypeKind.values.firstWhere((e) => e.name == json['kind'],
+            orElse: () => ArchetypeKind.bigMoney),
+        headline: json['headline'] as String,
+        description: json['description'] as String,
+        tips: (json['tips'] as List).cast<String>(),
         keyCardNames: (json['keyCardNames'] as List).cast<String>(),
-        strength:     (json['strength'] as num).toDouble(),
+        strength: (json['strength'] as num).toDouble(),
       );
 }

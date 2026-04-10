@@ -3,7 +3,7 @@ import '../models/dominion_card.dart';
 import '../models/setup_result.dart';
 import '../models/strategy_archetype.dart';
 
-/// Analyses a 10-card kingdom and emits ranked [StrategyArchetype] objects.
+/// Analyses a card pool and emits ranked [StrategyArchetype] objects.
 ///
 /// Scoring is tag-based: each tag on each card contributes a weighted point
 /// value toward one or more archetypes. Only archetypes that exceed their
@@ -24,6 +24,7 @@ class HeuristicEngine {
       _scoreAggressiveControl(profile),
       _scoreTrashToVictory(profile),
       _scoreAltVictory(profile),
+      _scoreExtraTurns(profile),
       _scoreMirrorMatch(profile),
     ].whereType<StrategyArchetype>().toList();
 
@@ -34,12 +35,17 @@ class HeuristicEngine {
   /// Convenience: fills the empty [SetupResult.archetypes] produced by
   /// [SetupEngine] and returns a new result with everything populated.
   SetupResult enrich(SetupResult result) {
+    final analysisCards = [
+      ...result.kingdomCards,
+      ...result.landscapeCards,
+    ];
+
     return SetupResult(
-      kingdomCards:   result.kingdomCards,
+      kingdomCards: result.kingdomCards,
       landscapeCards: result.landscapeCards,
-      archetypes:     analyze(result.kingdomCards),
-      setupNotes:     result.setupNotes,
-      generatedAt:    result.generatedAt,
+      archetypes: analyze(analysisCards),
+      setupNotes: result.setupNotes,
+      generatedAt: result.generatedAt,
     );
   }
 
@@ -57,7 +63,7 @@ class HeuristicEngine {
   // ===========================================================================
 
   static const double _engineThreshold = 5.0;
-  static const double _engineMax       = 14.0;
+  static const double _engineMax = 14.0;
 
   StrategyArchetype? _scoreEngineBuilding(_KingdomProfile p) {
     double score = 0;
@@ -80,9 +86,9 @@ class HeuristicEngine {
       }
 
       // Support roles
-      if (c.hasTag(CardTag.sifting))    score += 0.7;
-      if (c.hasTag(CardTag.coffers))    score += 0.5;
-      if (c.hasTag(CardTag.villagers))  score += 0.8;
+      if (c.hasTag(CardTag.sifting)) score += 0.7;
+      if (c.hasTag(CardTag.coffers)) score += 0.5;
+      if (c.hasTag(CardTag.villagers)) score += 0.8;
     }
 
     // Require at least one action-chainer AND one draw source for a true engine
@@ -91,12 +97,12 @@ class HeuristicEngine {
     if (score < _engineThreshold) return null;
 
     return StrategyArchetype(
-      kind:         ArchetypeKind.engineBuilding,
-      headline:     _engineHeadline(p),
-      description:  _engineDescription(p),
-      tips:         _engineTips(p),
+      kind: ArchetypeKind.engineBuilding,
+      headline: _engineHeadline(p),
+      description: _engineDescription(p),
+      tips: _engineTips(p),
       keyCardNames: _engineKeyCards(p),
-      strength:     (score / _engineMax).clamp(0.0, 1.0),
+      strength: (score / _engineMax).clamp(0.0, 1.0),
     );
   }
 
@@ -108,7 +114,7 @@ class HeuristicEngine {
 
   String _engineDescription(_KingdomProfile p) {
     final villages = p.cardsWithTag(CardTag.villageEffect).map((c) => c.name);
-    final draws    = p.drawCards.map((c) => c.name);
+    final draws = p.drawCards.map((c) => c.name);
 
     final villagePart = villages.isEmpty
         ? 'action chaining through ${p.cardsWithTag(CardTag.plusAction).map((c) => c.name).join(' and ')}'
@@ -129,43 +135,47 @@ class HeuristicEngine {
     final tips = <String>[];
 
     // Opening advice
-    if (p.trashCount > 0 && p.trashCards.any((c) => c.hasTag(CardTag.trashForBenefit))) {
-      final trasher = p.trashCards.firstWhere((c) => c.hasTag(CardTag.trashForBenefit));
+    if (p.trashCount > 0 &&
+        p.trashCards.any((c) => c.hasTag(CardTag.trashForBenefit))) {
+      final trasher =
+          p.trashCards.firstWhere((c) => c.hasTag(CardTag.trashForBenefit));
       tips.add('Open with ${trasher.name} to trash Copper and Estates — a lean '
-               '5-card deck churns through your engine far faster.');
+          '5-card deck churns through your engine far faster.');
     } else {
-      tips.add('Open Silver / Silver (or Silver + village) to hit \$5 consistently '
-               'before pivoting to engine pieces.');
+      tips.add(
+          'Open Silver / Silver (or Silver + village) to hit \$5 consistently '
+          'before pivoting to engine pieces.');
     }
 
     // Village advice
     if (p.villageCount >= 2) {
-      final vNames = p.cardsWithTag(CardTag.villageEffect).map((c) => c.name).join(' or ');
+      final vNames =
+          p.cardsWithTag(CardTag.villageEffect).map((c) => c.name).join(' or ');
       tips.add('Buy 2–3 copies of $vNames early — without sufficient Actions '
-               'your draw cards become dead terminals.');
+          'your draw cards become dead terminals.');
     }
 
     // Draw advice
     if (p.cardsWithTag(CardTag.drawToX).isNotEmpty) {
       final drawer = p.cardsWithTag(CardTag.drawToX).first;
       tips.add('${drawer.name} draws to a fixed hand size — it gets stronger '
-               'the smaller your deck is, so trash early and play it late.');
+          'the smaller your deck is, so trash early and play it late.');
     } else if (p.drawCards.isNotEmpty) {
       final drawer = p.drawCards.first;
       tips.add('${drawer.name} is your primary draw engine; aim for 2–3 copies '
-               'to ensure consistent cycling.');
+          'to ensure consistent cycling.');
     }
 
     // Sifting advice
     if (p.siftingCards.isNotEmpty) {
       tips.add('${p.siftingCards.first.name} helps filter your deck while '
-               'the engine is still coming together — use it early and often.');
+          'the engine is still coming together — use it early and often.');
     }
 
     // Greening window
     tips.add('Start buying Provinces when your engine reliably generates '
-             '\$8+. Greening too early interrupts the chain before you\'ve '
-             'built enough momentum.');
+        '\$8+. Greening too early interrupts the chain before you\'ve '
+        'built enough momentum.');
 
     return tips;
   }
@@ -188,21 +198,21 @@ class HeuristicEngine {
   // ===========================================================================
 
   static const double _bigMoneyThreshold = 2.0;
-  static const double _bigMoneyMax       = 12.0;
+  static const double _bigMoneyMax = 12.0;
 
   StrategyArchetype? _scoreBigMoney(_KingdomProfile p) {
     double score = 0;
 
     for (final c in p.kingdom) {
-      if (c.hasTag(CardTag.goldGain))    score += 2.0;
+      if (c.hasTag(CardTag.goldGain)) score += 2.0;
       if (c.hasTag(CardTag.gainTreasure)) score += 1.5;
-      if (c.hasTag(CardTag.silverGain))  score += 1.0;
-      if (c.hasTag(CardTag.plusCoin))    score += 0.8;
+      if (c.hasTag(CardTag.silverGain)) score += 1.0;
+      if (c.hasTag(CardTag.plusCoin)) score += 0.8;
     }
 
     // Bonus if the kingdom has weak action chaining
     if (p.villageCount == 0) score += 2.0;
-    if (p.drawCount <= 1)    score += 1.0;
+    if (p.drawCount <= 1) score += 1.0;
 
     // Terminal draw is a classic Big Money synergy
     if (p.terminalDrawCount > 0) score += 1.5;
@@ -210,12 +220,12 @@ class HeuristicEngine {
     if (score < _bigMoneyThreshold) return null;
 
     return StrategyArchetype(
-      kind:         ArchetypeKind.bigMoney,
-      headline:     _bigMoneyHeadline(p),
-      description:  _bigMoneyDescription(p),
-      tips:         _bigMoneyTips(p),
+      kind: ArchetypeKind.bigMoney,
+      headline: _bigMoneyHeadline(p),
+      description: _bigMoneyDescription(p),
+      tips: _bigMoneyTips(p),
       keyCardNames: _bigMoneyKeyCards(p),
-      strength:     (score / _bigMoneyMax).clamp(0.0, 1.0),
+      strength: (score / _bigMoneyMax).clamp(0.0, 1.0),
     );
   }
 
@@ -226,18 +236,21 @@ class HeuristicEngine {
   }
 
   String _bigMoneyDescription(_KingdomProfile p) {
-    final coinCards = p.kingdom.where((c) =>
-        c.hasTag(CardTag.goldGain) || c.hasTag(CardTag.gainTreasure) ||
-        c.hasTag(CardTag.plusCoin)).toList();
+    final coinCards = p.kingdom
+        .where((c) =>
+            c.hasTag(CardTag.goldGain) ||
+            c.hasTag(CardTag.gainTreasure) ||
+            c.hasTag(CardTag.plusCoin))
+        .toList();
 
     final coinNote = coinCards.isEmpty
         ? 'Focus on buying Gold and Silver from the base supply'
         : '${coinCards.map((c) => c.name).join(', ')} accelerate your '
-          'economy ahead of Province timing';
+            'economy ahead of Province timing';
 
     final engineNote = p.villageCount == 0
         ? ' With no Villages available, multi-terminal engines are risky — '
-          'limit yourself to 1–2 terminal Actions per deck cycle.'
+            'limit yourself to 1–2 terminal Actions per deck cycle.'
         : '';
 
     return '$coinNote.$engineNote '
@@ -250,37 +263,40 @@ class HeuristicEngine {
 
     // Open advice
     tips.add('Open Silver / Silver in most Big Money games — the early economy '
-             'snowball is more valuable than any \$3 Kingdom card.');
+        'snowball is more valuable than any \$3 Kingdom card.');
 
     // Terminal draw synergy
     if (p.terminalDrawCount > 0) {
       // Find the best draw card — may have drawToX (Library) rather than plusCard
       final terminal = p.kingdom.firstWhere(
-        (c) => (c.hasTag(CardTag.plusCard) || c.hasTag(CardTag.drawToX)) &&
-               !c.hasTag(CardTag.plusAction) && !c.hasTag(CardTag.villageEffect),
+        (c) =>
+            (c.hasTag(CardTag.plusCard) || c.hasTag(CardTag.drawToX)) &&
+            !c.hasTag(CardTag.plusAction) &&
+            !c.hasTag(CardTag.villageEffect),
         orElse: () => p.kingdom.first,
       );
       tips.add('${terminal.name} is your terminal draw engine. Buy 1–2 copies '
-               'maximum — too many collide and strand your turns without Actions.');
+          'maximum — too many collide and strand your turns without Actions.');
     }
 
     // Coin acceleration
-    final goldGainers = p.kingdom.where((c) => c.hasTag(CardTag.goldGain)).toList();
+    final goldGainers =
+        p.kingdom.where((c) => c.hasTag(CardTag.goldGain)).toList();
     if (goldGainers.isNotEmpty) {
       tips.add('${goldGainers.first.name} gains Gold directly — buy it early '
-               'to rapidly inflate your average hand value.');
+          'to rapidly inflate your average hand value.');
     }
 
     // Pile control
     tips.add('Watch your Province count carefully. In a Big Money game, '
-             'greening pressure sets in at 5–6 Provinces — plan your last '
-             'two turns to spike \$8 even with green cards diluting your deck.');
+        'greening pressure sets in at 5–6 Provinces — plan your last '
+        'two turns to spike \$8 even with green cards diluting your deck.');
 
     // Attack interaction
     if (p.attackCount > 0) {
       tips.add('Attacks hurt Big Money more than engine decks (you rely on '
-               'consistent hand size). If a Reaction is available, consider '
-               'buying one copy as insurance.');
+          'consistent hand size). If a Reaction is available, consider '
+          'buying one copy as insurance.');
     }
 
     return tips;
@@ -307,27 +323,27 @@ class HeuristicEngine {
   // ===========================================================================
 
   static const double _aggroThreshold = 4.0;
-  static const double _aggroMax       = 16.0;
+  static const double _aggroMax = 16.0;
 
   StrategyArchetype? _scoreAggressiveControl(_KingdomProfile p) {
     if (p.attackCount < 2) return null;
 
     double score = p.attackCount * 2.0;
-    score += p.discardAttackCount  * 0.8;
-    score += p.curseAttackCount    * 1.2;
-    score += p.junkingAttackCount  * 1.0;
-    score += p.topdeckAttackCount  * 0.6;
-    score += p.reactionCount       * 0.5; // reactions make mirroring interesting
+    score += p.discardAttackCount * 0.8;
+    score += p.curseAttackCount * 1.2;
+    score += p.junkingAttackCount * 1.0;
+    score += p.topdeckAttackCount * 0.6;
+    score += p.reactionCount * 0.5; // reactions make mirroring interesting
 
     if (score < _aggroThreshold) return null;
 
     return StrategyArchetype(
-      kind:         ArchetypeKind.aggressiveControl,
-      headline:     _aggroHeadline(p),
-      description:  _aggroDescription(p),
-      tips:         _aggroTips(p),
+      kind: ArchetypeKind.aggressiveControl,
+      headline: _aggroHeadline(p),
+      description: _aggroDescription(p),
+      tips: _aggroTips(p),
       keyCardNames: _aggroKeyCards(p),
-      strength:     (score / _aggroMax).clamp(0.0, 1.0),
+      strength: (score / _aggroMax).clamp(0.0, 1.0),
     );
   }
 
@@ -344,26 +360,28 @@ class HeuristicEngine {
 
     String flavour;
     if (p.curseAttackCount > 0) {
-      flavour = 'Curse-giving attacks (${p.attackCards.where((c) => c.hasTag(CardTag.curse)).map((c) => c.name).join(', ')}) '
-                'degrade opponents\' decks with unspendable Curses.';
+      flavour =
+          'Curse-giving attacks (${p.attackCards.where((c) => c.hasTag(CardTag.curse)).map((c) => c.name).join(', ')}) '
+          'degrade opponents\' decks with unspendable Curses.';
     } else if (p.discardAttackCount >= 2) {
-      flavour = 'Discard attacks force opponents to replay from a shrunken hand, '
-                'dramatically slowing their ability to hit price points.';
+      flavour =
+          'Discard attacks force opponents to replay from a shrunken hand, '
+          'dramatically slowing their ability to hit price points.';
     } else if (p.junkingAttackCount > 0) {
       flavour = 'Junking attacks load opponents\' decks with unwanted cards, '
-                'diluting their draw and slowing their economy.';
+          'diluting their draw and slowing their economy.';
     } else {
       flavour = 'Attacks ($attackNames) apply constant pressure that opponents '
-                'must react to or fall behind.';
+          'must react to or fall behind.';
     }
 
     final reactionNote = p.reactionCount > 0
         ? ' A Reaction card is available — holding it in hand creates a '
-          'meaningful tension between using hand space and blocking attacks.'
+            'meaningful tension between using hand space and blocking attacks.'
         : '';
 
     return '$flavour$reactionNote Race to play your attacks before opponents '
-           'can build a stable defence or race to end the game on their terms.';
+        'can build a stable defence or race to end the game on their terms.';
   }
 
   List<String> _aggroTips(_KingdomProfile p) {
@@ -372,36 +390,38 @@ class HeuristicEngine {
     // Priority buy
     final firstAttack = p.attackCards.first;
     tips.add('Prioritise ${firstAttack.name} early — Attacks compound in value '
-             'when played before opponents have stabilised their decks.');
+        'when played before opponents have stabilised their decks.');
 
     if (p.curseAttackCount > 0) {
-      final curser = p.attackCards.firstWhere(
-        (c) => c.hasTag(CardTag.curse), orElse: () => p.attackCards.first);
+      final curser = p.attackCards.firstWhere((c) => c.hasTag(CardTag.curse),
+          orElse: () => p.attackCards.first);
       tips.add('${curser.name} hands out Curses — watch the Curse pile. '
-               'If it empties, the game often ends on three-pile; plan around it.');
+          'If it empties, the game often ends on three-pile; plan around it.');
       tips.add('Distribute Curses as fast as possible before opponents can '
-               'buy Trashers. Every Curse in an opponent\'s deck is worth '
-               '-1 VP and a dead draw.');
+          'buy Trashers. Every Curse in an opponent\'s deck is worth '
+          '-1 VP and a dead draw.');
     }
 
     if (p.discardAttackCount > 0) {
       final discarder = p.attackCards.firstWhere(
-        (c) => c.hasTag(CardTag.discard), orElse: () => p.attackCards.first);
+          (c) => c.hasTag(CardTag.discard),
+          orElse: () => p.attackCards.first);
       tips.add('${discarder.name} disrupts hand size. Chain it with Actions '
-               'that benefit from opponents having fewer cards (e.g., reaction-less kingdoms).');
+          'that benefit from opponents having fewer cards (e.g., reaction-less kingdoms).');
     }
 
     if (p.reactionCount > 0) {
-      final reactor = p.kingdom.firstWhere(
-        (c) => c.hasTag(CardTag.reaction), orElse: () => p.kingdom.first);
+      final reactor = p.kingdom.firstWhere((c) => c.hasTag(CardTag.reaction),
+          orElse: () => p.kingdom.first);
       tips.add('${reactor.name} blocks attacks. In a mirror-match, buying '
-               'one copy is often correct; buying two is usually excessive.');
+          'one copy is often correct; buying two is usually excessive.');
     }
 
     // End-game note
-    tips.add('Aggressive decks can force early game-endings via pile depletion. '
-             'Track three-pile risk — empty the Curse pile + two cheap Kingdom '
-             'piles to end the game on your schedule.');
+    tips.add(
+        'Aggressive decks can force early game-endings via pile depletion. '
+        'Track three-pile risk — empty the Curse pile + two cheap Kingdom '
+        'piles to end the game on your schedule.');
 
     return tips;
   }
@@ -419,7 +439,7 @@ class HeuristicEngine {
   // ===========================================================================
 
   static const double _trashVicThreshold = 4.5;
-  static const double _trashVicMax       = 12.0;
+  static const double _trashVicMax = 12.0;
 
   StrategyArchetype? _scoreTrashToVictory(_KingdomProfile p) {
     double score = 0;
@@ -433,19 +453,19 @@ class HeuristicEngine {
       if (c.hasTag(CardTag.remodel)) {
         score += 1.2;
       }
-      if (c.hasTag(CardTag.altVictory))      score += 1.0;
-      if (c.hasTag(CardTag.gainVictory))     score += 0.8;
+      if (c.hasTag(CardTag.altVictory)) score += 1.0;
+      if (c.hasTag(CardTag.gainVictory)) score += 0.8;
     }
 
     if (score < _trashVicThreshold) return null;
 
     return StrategyArchetype(
-      kind:         ArchetypeKind.trashToVictory,
-      headline:     _trashVicHeadline(p),
-      description:  _trashVicDescription(p),
-      tips:         _trashVicTips(p),
+      kind: ArchetypeKind.trashToVictory,
+      headline: _trashVicHeadline(p),
+      description: _trashVicDescription(p),
+      tips: _trashVicTips(p),
       keyCardNames: _trashVicKeyCards(p),
-      strength:     (score / _trashVicMax).clamp(0.0, 1.0),
+      strength: (score / _trashVicMax).clamp(0.0, 1.0),
     );
   }
 
@@ -459,12 +479,13 @@ class HeuristicEngine {
   String _trashVicDescription(_KingdomProfile p) {
     final trashers = p.trashCards.map((c) => c.name).join(' and ');
 
-    final remodelCards = p.kingdom.where((c) => c.hasTag(CardTag.remodel)).toList();
-    final remodelNote  = remodelCards.isEmpty
+    final remodelCards =
+        p.kingdom.where((c) => c.hasTag(CardTag.remodel)).toList();
+    final remodelNote = remodelCards.isEmpty
         ? ''
         : ' ${remodelCards.map((c) => c.name).join(' and ')} can upgrade '
-          'Copper → Silver → Gold or Estate → Duchy → Province — '
-          'a slow but inevitably powerful progression.';
+            'Copper → Silver → Gold or Estate → Duchy → Province — '
+            'a slow but inevitably powerful progression.';
 
     return 'Aggressive trashing with $trashers strips starting Copper and '
         'Estates from your deck, leaving only high-value cards.$remodelNote '
@@ -484,31 +505,33 @@ class HeuristicEngine {
 
     if (mainTrasher != null) {
       tips.add('Open ${mainTrasher.name} / Silver. Use ${mainTrasher.name} '
-               'aggressively in the first 3–4 reshuffles — trash as many '
-               'Coppers and Estates as you can before pivoting to buys.');
+          'aggressively in the first 3–4 reshuffles — trash as many '
+          'Coppers and Estates as you can before pivoting to buys.');
     }
 
     // Remodelspecific
-    final remodelCards = p.kingdom.where((c) => c.hasTag(CardTag.remodel)).toList();
+    final remodelCards =
+        p.kingdom.where((c) => c.hasTag(CardTag.remodel)).toList();
     if (remodelCards.isNotEmpty) {
       tips.add('${remodelCards.first.name} upgrades cards by \$2 in cost. '
-               'Upgrade Estates → useful \$4 cards, then trash those → Provinces '
-               'in the late game for a devastating points burst.');
+          'Upgrade Estates → useful \$4 cards, then trash those → Provinces '
+          'in the late game for a devastating points burst.');
     }
 
     // Alt VP interaction
-    final altVPs = p.kingdom.where((c) => c.hasTag(CardTag.altVictory)).toList();
+    final altVPs =
+        p.kingdom.where((c) => c.hasTag(CardTag.altVictory)).toList();
     if (altVPs.isNotEmpty) {
       tips.add('${altVPs.first.name} offers an alternative point source — '
-               'evaluate whether racing it beats the Province pile outright.');
+          'evaluate whether racing it beats the Province pile outright.');
     }
 
     tips.add('Resist buying engine pieces until you have fewer than 8 cards '
-             'in your deck. A thin deck + Silver is often stronger than a '
-             'thick engine mid-build.');
+        'in your deck. A thin deck + Silver is often stronger than a '
+        'thick engine mid-build.');
 
     tips.add('Watch your opponent\'s trash pile. If they are also trashing, '
-             'the game can end faster than expected — keep an eye on three-pile risk.');
+        'the game can end faster than expected — keep an eye on three-pile risk.');
 
     return tips;
   }
@@ -528,10 +551,11 @@ class HeuristicEngine {
   // ===========================================================================
 
   static const double _altVicThreshold = 3.0;
-  static const double _altVicMax       = 8.0;
+  static const double _altVicMax = 8.0;
 
   StrategyArchetype? _scoreAltVictory(_KingdomProfile p) {
-    final altCards = p.kingdom.where((c) => c.hasTag(CardTag.altVictory)).toList();
+    final altCards =
+        p.kingdom.where((c) => c.hasTag(CardTag.altVictory)).toList();
     if (altCards.isEmpty) return null;
 
     double score = altCards.length * 3.0;
@@ -540,24 +564,26 @@ class HeuristicEngine {
     for (final alt in altCards) {
       // Gardens rewards large decks — more gainers = higher score
       if (alt.id == 'gardens') {
-        final gainers = p.kingdom.where((c) => c.hasTag(CardTag.gainCard)).length;
+        final gainers =
+            p.kingdom.where((c) => c.hasTag(CardTag.gainCard)).length;
         score += gainers * 0.5;
       }
       // Duke rewards Duchies — more coin = easier to buy Duchies
       if (alt.id == 'duke') {
-        score += p.kingdom.where((c) => c.hasTag(CardTag.plusCoin)).length * 0.4;
+        score +=
+            p.kingdom.where((c) => c.hasTag(CardTag.plusCoin)).length * 0.4;
       }
     }
 
     if (score < _altVicThreshold) return null;
 
     return StrategyArchetype(
-      kind:         ArchetypeKind.altVictory,
-      headline:     _altVicHeadline(altCards),
-      description:  _altVicDescription(p, altCards),
-      tips:         _altVicTips(p, altCards),
+      kind: ArchetypeKind.altVictory,
+      headline: _altVicHeadline(altCards),
+      description: _altVicDescription(p, altCards),
+      tips: _altVicTips(p, altCards),
       keyCardNames: altCards.map((c) => c.name).toList(),
-      strength:     (score / _altVicMax).clamp(0.0, 1.0),
+      strength: (score / _altVicMax).clamp(0.0, 1.0),
     );
   }
 
@@ -568,12 +594,15 @@ class HeuristicEngine {
 
   String _altVicDescription(_KingdomProfile p, List<DominionCard> altCards) {
     final paths = altCards.map((c) {
-      if (c.id == 'gardens')  return '${c.name} (1VP per 10 cards — buy lots)';
-      if (c.id == 'duke')     return '${c.name} (1VP per Duchy — stack Duchies early)';
-      if (c.id == 'harem')    return '${c.name} (\$2 + 2VP — strong economy)';
-      if (c.id == 'nobles')   return '${c.name} (flexible +Cards or +Actions + 2VP)';
-      if (c.id == 'mill')     return '${c.name} (1VP + situational +\$2)';
-      if (c.id == 'island')   return '${c.name} (set aside 2VP, removes junk from deck)';
+      if (c.id == 'gardens') return '${c.name} (1VP per 10 cards — buy lots)';
+      if (c.id == 'duke')
+        return '${c.name} (1VP per Duchy — stack Duchies early)';
+      if (c.id == 'harem') return '${c.name} (\$2 + 2VP — strong economy)';
+      if (c.id == 'nobles')
+        return '${c.name} (flexible +Cards or +Actions + 2VP)';
+      if (c.id == 'mill') return '${c.name} (1VP + situational +\$2)';
+      if (c.id == 'island')
+        return '${c.name} (set aside 2VP, removes junk from deck)';
       return c.name;
     }).join('; ');
 
@@ -589,27 +618,111 @@ class HeuristicEngine {
     for (final alt in altCards) {
       if (alt.id == 'gardens') {
         tips.add('Gardens: maximise deck size — buy Workshops, Ironworks, or '
-                 'cheap gainers to bloat your count. Every 10th card is 1 VP.');
-        tips.add('Do NOT trash cards if going for Gardens. Volume is the strategy.');
+            'cheap gainers to bloat your count. Every 10th card is 1 VP.');
+        tips.add(
+            'Do NOT trash cards if going for Gardens. Volume is the strategy.');
       }
       if (alt.id == 'duke') {
         tips.add('Duke + Duchy stack: aim to buy 4–5 Duchies. Each Duchy is '
-                 'then worth 3+4=7 VP with 4 Dukes — compare to 4 Provinces (16 VP) '
-                 'but Duchies cost only \$5 vs \$8.');
+            'then worth 3+4=7 VP with 4 Dukes — compare to 4 Provinces (16 VP) '
+            'but Duchies cost only \$5 vs \$8.');
       }
       if (alt.id == 'island') {
         tips.add('Island removes itself AND a card from your deck — '
-                 'use it to exile Estates or Coppers for both VP and deck thinning.');
+            'use it to exile Estates or Coppers for both VP and deck thinning.');
       }
     }
 
     tips.add('Force your opponents to split attention between blocking your '
-             'alt-VP and buying their own Provinces. Announcing the strategy '
-             'early (buying 2 copies quickly) escalates the pressure.');
+        'alt-VP and buying their own Provinces. Announcing the strategy '
+        'early (buying 2 copies quickly) escalates the pressure.');
 
     tips.add('Know when to abandon the alt path. If Provinces are going fast '
-             'and your alt-VP count lags, switch to Province buying — '
-             'do not be stubborn about the strategy.');
+        'and your alt-VP count lags, switch to Province buying — '
+        'do not be stubborn about the strategy.');
+
+    return tips;
+  }
+
+  // ===========================================================================
+  // Archetype: Extra Turns
+  //
+  // Triggered by: cards/events/projects/allies that create another turn.
+  // These effects often reward reliable setup more than raw speed, because the
+  // extra turn is strongest when the follow-up hand can convert immediately.
+  // Threshold: raw >= 3.5
+  // ===========================================================================
+
+  static const double _extraTurnThreshold = 3.5;
+  static const double _extraTurnMax = 10.0;
+
+  StrategyArchetype? _scoreExtraTurns(_KingdomProfile p) {
+    final extraTurnCards = p.extraTurnCards;
+    if (extraTurnCards.isEmpty) return null;
+
+    double score = extraTurnCards.length * 3.5;
+    score += p.drawCount * 0.4;
+    score += p.plusActionCount * 0.3;
+    score += p.siftingCards.length * 0.4;
+    score += p.cardsWithTag(CardTag.duration).length * 0.25;
+
+    if (score < _extraTurnThreshold) return null;
+
+    return StrategyArchetype(
+      kind: ArchetypeKind.extraTurns,
+      headline: _extraTurnHeadline(extraTurnCards),
+      description: _extraTurnDescription(p, extraTurnCards),
+      tips: _extraTurnTips(p, extraTurnCards),
+      keyCardNames: extraTurnCards.map((c) => c.name).toList(),
+      strength: (score / _extraTurnMax).clamp(0.0, 1.0),
+    );
+  }
+
+  String _extraTurnHeadline(List<DominionCard> cards) {
+    if (cards.length >= 2) return 'Extra-Turn Chain';
+    return 'Extra Turn: ${cards.first.name}';
+  }
+
+  String _extraTurnDescription(_KingdomProfile p, List<DominionCard> cards) {
+    final names = cards.map((c) => c.name).join(' and ');
+    final support = p.drawCount > 0 || p.siftingCards.isNotEmpty
+        ? ' The kingdom has draw or filtering support, so you can line up the '
+            'extra turn with a hand that actually converts into points or tempo.'
+        : ' Without much draw or filtering, timing matters: fire the extra turn '
+            'when your deck is about to deliver a strong hand.';
+
+    return '$names can create extra turns, turning one strong setup turn into '
+        'a tempo swing before opponents can respond.$support';
+  }
+
+  List<String> _extraTurnTips(_KingdomProfile p, List<DominionCard> cards) {
+    final tips = <String>[];
+    final primary = cards.first;
+
+    tips.add('Treat ${primary.name} as a timing tool, not just a payload card: '
+        'the extra turn is best when your next hand can immediately buy, '
+        'attack, or continue building.');
+
+    if (cards.any((c) => c.id == 'outpost')) {
+      tips.add('Outpost only draws 3 cards for the next hand and cannot create '
+          'a 3rd turn in a row, so use it after setting up economy or '
+          'Duration support rather than as a blind terminal.');
+    }
+
+    if (p.drawCount > 0) {
+      tips.add('Use draw support to recover from the tempo cost of setting up '
+          'the extra turn; empty extra turns are usually worse than a '
+          'normal high-value turn.');
+    }
+
+    if (p.siftingCards.isNotEmpty) {
+      tips.add('${p.siftingCards.first.name} can filter weak cards away before '
+          'the extra turn, making the follow-up hand more predictable.');
+    }
+
+    tips.add('Track pile pressure carefully. Extra turns can suddenly end the '
+        'game on Provinces or three piles before opponents get another '
+        'full response window.');
 
     return tips;
   }
@@ -624,43 +737,46 @@ class HeuristicEngine {
   // ===========================================================================
 
   static const double _mirrorThreshold = 5.0;
-  static const double _mirrorMax       = 10.0;
+  static const double _mirrorMax = 10.0;
 
   StrategyArchetype? _scoreMirrorMatch(_KingdomProfile p) {
     if (p.attackCount < 2 || p.reactionCount < 1) return null;
 
-    final score = (p.attackCount * 1.5) + (p.reactionCount * 2.0) +
-                  (p.discardAttackCount * 0.5);
+    final score = (p.attackCount * 1.5) +
+        (p.reactionCount * 2.0) +
+        (p.discardAttackCount * 0.5);
 
     if (score < _mirrorThreshold) return null;
 
-    final attackNames   = p.attackCards.map((c) => c.name).join(', ');
+    final attackNames = p.attackCards.map((c) => c.name).join(', ');
     final reactionNames = p.kingdom
         .where((c) => c.hasTag(CardTag.reaction))
         .map((c) => c.name)
         .join(', ');
 
     return StrategyArchetype(
-      kind:         ArchetypeKind.mirrorMatch,
-      headline:     'Mirror Match',
-      description:  'With $attackNames available and $reactionNames providing '
-                    'defence, this kingdom rewards the player who resolves the '
-                    '"attack vs. react" tension most efficiently. Holding a '
-                    'Reaction in hand is free insurance — the question is how '
-                    'many Action slots it costs you.',
+      kind: ArchetypeKind.mirrorMatch,
+      headline: 'Mirror Match',
+      description: 'With $attackNames available and $reactionNames providing '
+          'defence, this kingdom rewards the player who resolves the '
+          '"attack vs. react" tension most efficiently. Holding a '
+          'Reaction in hand is free insurance — the question is how '
+          'many Action slots it costs you.',
       tips: [
         'Buy one copy of $reactionNames early — it pays for itself if your '
-        'opponent attacks twice or more.',
+            'opponent attacks twice or more.',
         'Attackers win if the Reaction player wastes too many turns building '
-        'defence. Match attack buys with your opponent to avoid falling behind.',
+            'defence. Match attack buys with your opponent to avoid falling behind.',
         'In a mirror, the first player to pivot from attacks to Provinces usually '
-        'wins — do not over-commit to attacking past the mid-game.',
+            'wins — do not over-commit to attacking past the mid-game.',
         'If attacks cost more Actions than they return economy, pivot earlier '
-        'than instinct suggests.',
+            'than instinct suggests.',
       ],
       keyCardNames: [
         ...p.attackCards.map((c) => c.name).take(2),
-        ...p.kingdom.where((c) => c.hasTag(CardTag.reaction)).map((c) => c.name),
+        ...p.kingdom
+            .where((c) => c.hasTag(CardTag.reaction))
+            .map((c) => c.name),
       ],
       strength: (score / _mirrorMax).clamp(0.0, 1.0),
     );
@@ -686,41 +802,47 @@ class _KingdomProfile {
   List<DominionCard> cardsWithTag(CardTag tag) => _byTag[tag]!;
 
   // ── Action chaining ────────────────────────────────────────────────────────
-  int get villageCount     => cardsWithTag(CardTag.villageEffect).length;
-  int get plusActionCount  => cardsWithTag(CardTag.plusAction).length +
-                              cardsWithTag(CardTag.plusTwoActions).length;
+  int get villageCount => cardsWithTag(CardTag.villageEffect).length;
+  int get plusActionCount =>
+      cardsWithTag(CardTag.plusAction).length +
+      cardsWithTag(CardTag.plusTwoActions).length;
 
   // ── Draw ───────────────────────────────────────────────────────────────────
-  List<DominionCard> get drawCards =>
-      kingdom.where((c) => c.hasTag(CardTag.plusCard) || c.hasTag(CardTag.drawToX))
-             .toList();
+  List<DominionCard> get drawCards => kingdom
+      .where((c) => c.hasTag(CardTag.plusCard) || c.hasTag(CardTag.drawToX))
+      .toList();
   int get drawCount => drawCards.length;
 
   /// Draw cards that do NOT also give +Actions (terminals).
-  int get terminalDrawCount =>
-      kingdom.where((c) =>
+  int get terminalDrawCount => kingdom
+      .where((c) =>
           (c.hasTag(CardTag.plusCard) || c.hasTag(CardTag.drawToX)) &&
           !c.hasTag(CardTag.plusAction) &&
-          !c.hasTag(CardTag.villageEffect)).length;
+          !c.hasTag(CardTag.villageEffect))
+      .length;
 
   // ── Sifting ────────────────────────────────────────────────────────────────
   List<DominionCard> get siftingCards => cardsWithTag(CardTag.sifting);
 
+  // ── Extra turns ────────────────────────────────────────────────────────────
+  List<DominionCard> get extraTurnCards => cardsWithTag(CardTag.extraTurn);
+
   // ── Trashing ───────────────────────────────────────────────────────────────
-  List<DominionCard> get trashCards =>
-      kingdom.where((c) =>
+  List<DominionCard> get trashCards => kingdom
+      .where((c) =>
           c.hasTag(CardTag.trashCards) || c.hasTag(CardTag.trashForBenefit))
-             .toList();
+      .toList();
   int get trashCount => trashCards.length;
 
   // ── Attacks ────────────────────────────────────────────────────────────────
   List<DominionCard> get attackCards =>
       kingdom.where((c) => c.isAttack).toList();
-  int get attackCount        => attackCards.length;
+  int get attackCount => attackCards.length;
   int get discardAttackCount => cardsWithTag(CardTag.discard).length;
-  int get curseAttackCount   => cardsWithTag(CardTag.curse).length;
+  int get curseAttackCount => cardsWithTag(CardTag.curse).length;
   int get junkingAttackCount => cardsWithTag(CardTag.junking).length;
-  int get topdeckAttackCount => attackCards.where((c) => c.hasTag(CardTag.topdeck)).length;
+  int get topdeckAttackCount =>
+      attackCards.where((c) => c.hasTag(CardTag.topdeck)).length;
 
   // ── Reactions ─────────────────────────────────────────────────────────────
   int get reactionCount => cardsWithTag(CardTag.reaction).length;

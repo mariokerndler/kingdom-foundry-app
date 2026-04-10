@@ -37,12 +37,13 @@ typedef ExpansionStats = ({int kingdom, int landscape});
 final expansionStatsProvider =
     FutureProvider<Map<Expansion, ExpansionStats>>((ref) async {
   final all = await ref.read(cardDataServiceProvider).loadAll();
-  final map  = <Expansion, ({int kingdom, int landscape})>{};
+  final map = <Expansion, ({int kingdom, int landscape})>{};
   for (final c in all) {
+    if (c.isDisabled) continue;
     final prev = map[c.expansion] ?? (kingdom: 0, landscape: 0);
     map[c.expansion] = c.isKingdomCard
         ? (kingdom: prev.kingdom + 1, landscape: prev.landscape)
-        : (kingdom: prev.kingdom,     landscape: prev.landscape + 1);
+        : (kingdom: prev.kingdom, landscape: prev.landscape + 1);
   }
   return map;
 });

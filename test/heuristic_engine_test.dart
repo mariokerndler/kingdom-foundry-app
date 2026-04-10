@@ -5,24 +5,25 @@ import 'package:dominion_setup/models/card_tag.dart';
 import 'package:dominion_setup/models/card_type.dart';
 import 'package:dominion_setup/models/dominion_card.dart';
 import 'package:dominion_setup/models/expansion.dart';
+import 'package:dominion_setup/models/setup_result.dart';
 import 'package:dominion_setup/models/strategy_archetype.dart';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 DominionCard _card({
-  required String    id,
+  required String id,
   List<CardType> types = const [CardType.action],
-  List<CardTag>  tags  = const [],
-  int            cost  = 3,
+  List<CardTag> tags = const [],
+  int cost = 3,
 }) =>
     DominionCard(
-      id:        id,
-      name:      id,
+      id: id,
+      name: id,
       expansion: Expansion.baseSecondEdition,
-      types:     types,
-      tags:      tags,
-      cost:      cost,
-      text:      '',
+      types: types,
+      tags: tags,
+      cost: cost,
+      text: '',
     );
 
 /// Pads [cards] with generic action cards to reach exactly 10.
@@ -49,12 +50,18 @@ void main() {
   group('HeuristicEngine — Engine Building', () {
     test('detects engine with 3 villages + 3 draw cards', () {
       final kingdom = _kingdom([
-        _card(id: 'village_1', tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
-        _card(id: 'village_2', tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
-        _card(id: 'village_3', tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
-        _card(id: 'smithy_1',  tags: [CardTag.plusCard]),
-        _card(id: 'smithy_2',  tags: [CardTag.plusCard]),
-        _card(id: 'lab',       tags: [CardTag.plusCard, CardTag.plusAction]),
+        _card(
+            id: 'village_1',
+            tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
+        _card(
+            id: 'village_2',
+            tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
+        _card(
+            id: 'village_3',
+            tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
+        _card(id: 'smithy_1', tags: [CardTag.plusCard]),
+        _card(id: 'smithy_2', tags: [CardTag.plusCard]),
+        _card(id: 'lab', tags: [CardTag.plusCard, CardTag.plusAction]),
       ]);
       final results = _analyze(kingdom);
       final archetype = _find(results, ArchetypeKind.engineBuilding);
@@ -64,8 +71,10 @@ void main() {
 
     test('strength increases with more engine pieces', () {
       final weak = _kingdom([
-        _card(id: 'village', tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
-        _card(id: 'smithy',  tags: [CardTag.plusCard]),
+        _card(
+            id: 'village',
+            tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
+        _card(id: 'smithy', tags: [CardTag.plusCard]),
       ]);
       final strong = _kingdom([
         _card(id: 'v1', tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
@@ -75,8 +84,9 @@ void main() {
         _card(id: 'd2', tags: [CardTag.plusCard]),
         _card(id: 'd3', tags: [CardTag.drawToX]),
       ]);
-      final weakResult   = _find(_analyze(weak),   ArchetypeKind.engineBuilding);
-      final strongResult = _find(_analyze(strong),  ArchetypeKind.engineBuilding);
+      final weakResult = _find(_analyze(weak), ArchetypeKind.engineBuilding);
+      final strongResult =
+          _find(_analyze(strong), ArchetypeKind.engineBuilding);
       expect(strongResult, isNotNull);
       // strong engine may be present when weak is not — or strong > weak
       if (weakResult != null) {
@@ -117,9 +127,12 @@ void main() {
     });
 
     test('key cards list includes villages and draw cards', () {
-      final village = _card(id: 'village', tags: [CardTag.villageEffect, CardTag.plusTwoActions]);
-      final smithy  = _card(id: 'smithy',  tags: [CardTag.plusCard]);
-      final kingdom = _kingdom([village, smithy,
+      final village = _card(
+          id: 'village', tags: [CardTag.villageEffect, CardTag.plusTwoActions]);
+      final smithy = _card(id: 'smithy', tags: [CardTag.plusCard]);
+      final kingdom = _kingdom([
+        village,
+        smithy,
         _card(id: 'v2', tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.engineBuilding);
@@ -129,16 +142,19 @@ void main() {
   });
 
   group('HeuristicEngine — Big Money', () {
-    test('detects Big Money on a kingdom with gold gainers and no villages', () {
+    test('detects Big Money on a kingdom with gold gainers and no villages',
+        () {
       final kingdom = _kingdom([
         _card(id: 'adventurer', tags: [CardTag.goldGain]),
-        _card(id: 'mine',       tags: [CardTag.gainTreasure]),
+        _card(id: 'mine', tags: [CardTag.gainTreasure]),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.bigMoney);
       expect(archetype, isNotNull);
     });
 
-    test('always detects Big Money on a pure filler kingdom (no engine support)', () {
+    test(
+        'always detects Big Money on a pure filler kingdom (no engine support)',
+        () {
       // Even a kingdom with no special tags should trigger Big Money
       // because the "no villages" bonus fires.
       final kingdom = _kingdom([]);
@@ -152,7 +168,8 @@ void main() {
       expect(archetype?.headline, equals('Pure Big Money'));
     });
 
-    test('headline is Big Money + Terminal Draw when terminal draw present', () {
+    test('headline is Big Money + Terminal Draw when terminal draw present',
+        () {
       final kingdom = _kingdom([
         // plusCard WITHOUT plusAction = terminal draw
         _card(id: 'smithy', tags: [CardTag.plusCard]),
@@ -173,45 +190,77 @@ void main() {
   group('HeuristicEngine — Aggressive/Control', () {
     test('detects aggro with 2+ attack cards', () {
       final kingdom = _kingdom([
-        _card(id: 'militia', types: [CardType.action, CardType.attack], tags: [CardTag.discard]),
-        _card(id: 'witch',   types: [CardType.action, CardType.attack], tags: [CardTag.curse]),
+        _card(
+            id: 'militia',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.discard]),
+        _card(
+            id: 'witch',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.curse]),
       ]);
-      final archetype = _find(_analyze(kingdom), ArchetypeKind.aggressiveControl);
+      final archetype =
+          _find(_analyze(kingdom), ArchetypeKind.aggressiveControl);
       expect(archetype, isNotNull);
     });
 
     test('does NOT detect aggro with only 1 attack card', () {
       final kingdom = _kingdom([
-        _card(id: 'militia', types: [CardType.action, CardType.attack], tags: [CardTag.discard]),
+        _card(
+            id: 'militia',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.discard]),
       ]);
-      final archetype = _find(_analyze(kingdom), ArchetypeKind.aggressiveControl);
+      final archetype =
+          _find(_analyze(kingdom), ArchetypeKind.aggressiveControl);
       expect(archetype, isNull);
     });
 
     test('headline is Curse Slinging when curse attackers present', () {
       final kingdom = _kingdom([
-        _card(id: 'witch',   types: [CardType.action, CardType.attack], tags: [CardTag.curse]),
-        _card(id: 'sea_hag', types: [CardType.action, CardType.attack], tags: [CardTag.curse]),
+        _card(
+            id: 'witch',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.curse]),
+        _card(
+            id: 'sea_hag',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.curse]),
       ]);
-      final archetype = _find(_analyze(kingdom), ArchetypeKind.aggressiveControl);
+      final archetype =
+          _find(_analyze(kingdom), ArchetypeKind.aggressiveControl);
       expect(archetype?.headline, equals('Curse Slinging'));
     });
 
     test('headline is Hand Disruption with 2+ discard attackers', () {
       final kingdom = _kingdom([
-        _card(id: 'militia',  types: [CardType.action, CardType.attack], tags: [CardTag.discard]),
-        _card(id: 'minion',   types: [CardType.action, CardType.attack], tags: [CardTag.discard]),
+        _card(
+            id: 'militia',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.discard]),
+        _card(
+            id: 'minion',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.discard]),
       ]);
-      final archetype = _find(_analyze(kingdom), ArchetypeKind.aggressiveControl);
+      final archetype =
+          _find(_analyze(kingdom), ArchetypeKind.aggressiveControl);
       expect(archetype?.headline, equals('Hand Disruption'));
     });
 
     test('key cards list is the attack cards', () {
       final kingdom = _kingdom([
-        _card(id: 'militia', types: [CardType.action, CardType.attack], tags: [CardTag.discard]),
-        _card(id: 'witch',   types: [CardType.action, CardType.attack], tags: [CardTag.curse]),
+        _card(
+            id: 'militia',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.discard]),
+        _card(
+            id: 'witch',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.curse]),
       ]);
-      final archetype = _find(_analyze(kingdom), ArchetypeKind.aggressiveControl);
+      final archetype =
+          _find(_analyze(kingdom), ArchetypeKind.aggressiveControl);
       expect(archetype!.keyCardNames, containsAll(['militia', 'witch']));
     });
   });
@@ -220,7 +269,7 @@ void main() {
     test('detects trash-to-victory with trashForBenefit card', () {
       // Two trashForBenefit cards: 3.5 + 3.5 = 7.0 — above the 4.5 threshold.
       final kingdom = _kingdom([
-        _card(id: 'chapel',  tags: [CardTag.trashForBenefit]),
+        _card(id: 'chapel', tags: [CardTag.trashForBenefit]),
         _card(id: 'remodel', tags: [CardTag.trashForBenefit, CardTag.remodel]),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.trashToVictory);
@@ -246,8 +295,8 @@ void main() {
 
     test('strength does not exceed 1.0', () {
       final kingdom = _kingdom([
-        _card(id: 'chapel',  tags: [CardTag.trashForBenefit]),
-        _card(id: 'forge',   tags: [CardTag.trashForBenefit]),
+        _card(id: 'chapel', tags: [CardTag.trashForBenefit]),
+        _card(id: 'forge', tags: [CardTag.trashForBenefit]),
         _card(id: 'remodel', tags: [CardTag.trashForBenefit, CardTag.remodel]),
         _card(id: 'upgrade', tags: [CardTag.trashCards, CardTag.remodel]),
       ]);
@@ -259,7 +308,10 @@ void main() {
   group('HeuristicEngine — Alt-Victory', () {
     test('detects alt-victory with an altVictory card', () {
       final kingdom = _kingdom([
-        _card(id: 'gardens', types: [CardType.victory], tags: [CardTag.altVictory]),
+        _card(
+            id: 'gardens',
+            types: [CardType.victory],
+            tags: [CardTag.altVictory]),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.altVictory);
       expect(archetype, isNotNull);
@@ -273,8 +325,12 @@ void main() {
 
     test('key cards list is the altVictory cards', () {
       final kingdom = _kingdom([
-        _card(id: 'gardens', types: [CardType.victory], tags: [CardTag.altVictory]),
-        _card(id: 'duke',    types: [CardType.victory], tags: [CardTag.altVictory]),
+        _card(
+            id: 'gardens',
+            types: [CardType.victory],
+            tags: [CardTag.altVictory]),
+        _card(
+            id: 'duke', types: [CardType.victory], tags: [CardTag.altVictory]),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.altVictory);
       expect(archetype!.keyCardNames, containsAll(['gardens', 'duke']));
@@ -282,20 +338,73 @@ void main() {
 
     test('headline is Multi-Path Alt-Victory with 2+ alt cards', () {
       final kingdom = _kingdom([
-        _card(id: 'gardens', types: [CardType.victory], tags: [CardTag.altVictory]),
-        _card(id: 'duke',    types: [CardType.victory], tags: [CardTag.altVictory]),
+        _card(
+            id: 'gardens',
+            types: [CardType.victory],
+            tags: [CardTag.altVictory]),
+        _card(
+            id: 'duke', types: [CardType.victory], tags: [CardTag.altVictory]),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.altVictory);
       expect(archetype?.headline, equals('Multi-Path Alt-Victory'));
     });
   });
 
+  group('HeuristicEngine — Extra Turns', () {
+    test('detects extra-turn cards', () {
+      final kingdom = _kingdom([
+        _card(
+          id: 'outpost',
+          types: [CardType.action, CardType.duration],
+          tags: [CardTag.duration, CardTag.nextTurn, CardTag.extraTurn],
+          cost: 5,
+        ),
+      ]);
+
+      final archetype = _find(_analyze(kingdom), ArchetypeKind.extraTurns);
+      expect(archetype, isNotNull);
+      expect(archetype!.headline, equals('Extra Turn: outpost'));
+    });
+
+    test('does NOT detect without extraTurn tag', () {
+      final kingdom = _kingdom([
+        _card(
+          id: 'duration',
+          types: [CardType.action, CardType.duration],
+          tags: [CardTag.duration, CardTag.nextTurn],
+        ),
+      ]);
+
+      final archetype = _find(_analyze(kingdom), ArchetypeKind.extraTurns);
+      expect(archetype, isNull);
+    });
+
+    test('key cards list is the extra-turn cards', () {
+      final kingdom = _kingdom([
+        _card(id: 'outpost', tags: [CardTag.extraTurn]),
+        _card(id: 'voyage', tags: [CardTag.extraTurn]),
+      ]);
+
+      final archetype = _find(_analyze(kingdom), ArchetypeKind.extraTurns);
+      expect(archetype!.keyCardNames, containsAll(['outpost', 'voyage']));
+    });
+  });
+
   group('HeuristicEngine — Mirror Match', () {
     test('detects mirror match with 2+ attacks and 1+ reaction', () {
       final kingdom = _kingdom([
-        _card(id: 'militia', types: [CardType.action, CardType.attack],   tags: [CardTag.discard]),
-        _card(id: 'witch',   types: [CardType.action, CardType.attack],   tags: [CardTag.curse]),
-        _card(id: 'moat',    types: [CardType.action, CardType.reaction], tags: [CardTag.reaction]),
+        _card(
+            id: 'militia',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.discard]),
+        _card(
+            id: 'witch',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.curse]),
+        _card(
+            id: 'moat',
+            types: [CardType.action, CardType.reaction],
+            tags: [CardTag.reaction]),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.mirrorMatch);
       expect(archetype, isNotNull);
@@ -303,8 +412,14 @@ void main() {
 
     test('does NOT detect mirror match without a reaction card', () {
       final kingdom = _kingdom([
-        _card(id: 'militia', types: [CardType.action, CardType.attack], tags: [CardTag.discard]),
-        _card(id: 'witch',   types: [CardType.action, CardType.attack], tags: [CardTag.curse]),
+        _card(
+            id: 'militia',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.discard]),
+        _card(
+            id: 'witch',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.curse]),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.mirrorMatch);
       expect(archetype, isNull);
@@ -312,8 +427,14 @@ void main() {
 
     test('does NOT detect mirror match with only 1 attack', () {
       final kingdom = _kingdom([
-        _card(id: 'militia', types: [CardType.action, CardType.attack],   tags: [CardTag.discard]),
-        _card(id: 'moat',    types: [CardType.action, CardType.reaction], tags: [CardTag.reaction]),
+        _card(
+            id: 'militia',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.discard]),
+        _card(
+            id: 'moat',
+            types: [CardType.action, CardType.reaction],
+            tags: [CardTag.reaction]),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.mirrorMatch);
       expect(archetype, isNull);
@@ -329,8 +450,14 @@ void main() {
         _card(id: 'v2', tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
         _card(id: 'd1', tags: [CardTag.plusCard]),
         _card(id: 'd2', tags: [CardTag.plusCard]),
-        _card(id: 'militia', types: [CardType.action, CardType.attack], tags: [CardTag.discard]),
-        _card(id: 'witch',   types: [CardType.action, CardType.attack], tags: [CardTag.curse]),
+        _card(
+            id: 'militia',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.discard]),
+        _card(
+            id: 'witch',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.curse]),
       ]);
       final results = _analyze(kingdom);
       expect(results.length, greaterThan(1));
@@ -345,11 +472,23 @@ void main() {
     test('all strengths are in [0.0, 1.0]', () {
       final kingdom = _kingdom([
         _card(id: 'v1', tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
-        _card(id: 'militia', types: [CardType.action, CardType.attack], tags: [CardTag.discard]),
-        _card(id: 'witch',   types: [CardType.action, CardType.attack], tags: [CardTag.curse]),
-        _card(id: 'moat',    types: [CardType.action, CardType.reaction], tags: [CardTag.reaction]),
-        _card(id: 'chapel',  tags: [CardTag.trashForBenefit]),
-        _card(id: 'gardens', types: [CardType.victory], tags: [CardTag.altVictory]),
+        _card(
+            id: 'militia',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.discard]),
+        _card(
+            id: 'witch',
+            types: [CardType.action, CardType.attack],
+            tags: [CardTag.curse]),
+        _card(
+            id: 'moat',
+            types: [CardType.action, CardType.reaction],
+            tags: [CardTag.reaction]),
+        _card(id: 'chapel', tags: [CardTag.trashForBenefit]),
+        _card(
+            id: 'gardens',
+            types: [CardType.victory],
+            tags: [CardTag.altVictory]),
       ]);
       for (final a in _analyze(kingdom)) {
         expect(a.strength, inInclusiveRange(0.0, 1.0),
@@ -367,11 +506,42 @@ void main() {
 
     test('enrich populates archetypes on SetupResult', () {
       final kingdom = _kingdom([
-        _card(id: 'village', tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
-        _card(id: 'smithy',  tags: [CardTag.plusCard]),
+        _card(
+            id: 'village',
+            tags: [CardTag.villageEffect, CardTag.plusTwoActions]),
+        _card(id: 'smithy', tags: [CardTag.plusCard]),
       ]);
-      final before = _engine.analyze(kingdom);
-      expect(before, isNotEmpty);
+      final result = SetupResult(
+        kingdomCards: kingdom,
+        archetypes: const [],
+        setupNotes: const [],
+        generatedAt: DateTime(2026),
+      );
+
+      final enriched = _engine.enrich(result);
+      expect(enriched.archetypes, isNotEmpty);
+    });
+
+    test('enrich includes landscape cards in archetype analysis', () {
+      final result = SetupResult(
+        kingdomCards: _kingdom([]),
+        landscapeCards: [
+          _card(
+            id: 'seize_the_day',
+            types: [CardType.event],
+            tags: [CardTag.extraTurn],
+            cost: 4,
+          ),
+        ],
+        archetypes: const [],
+        setupNotes: const [],
+        generatedAt: DateTime(2026),
+      );
+
+      final enriched = _engine.enrich(result);
+      final archetype = _find(enriched.archetypes, ArchetypeKind.extraTurns);
+      expect(archetype, isNotNull);
+      expect(archetype!.keyCardNames, contains('seize_the_day'));
     });
   });
 }

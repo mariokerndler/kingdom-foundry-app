@@ -1,11 +1,30 @@
 import 'dart:math';
 
 import '../models/card_tag.dart';
+import '../models/card_type.dart';
 import '../models/dominion_card.dart';
 import '../models/expansion.dart';
 import '../models/setup_result.dart';
 import '../models/setup_rules.dart';
 import 'setup_exception.dart';
+
+const _plunderLootNames = {
+  'Amphora',
+  'Doubloons',
+  'Endless Chalice',
+  'Figurehead',
+  'Hammer',
+  'Insignia',
+  'Jewels',
+  'Orb',
+  'Prize Goat',
+  'Puzzle Box',
+  'Sextant',
+  'Shield',
+  'Spell Scroll',
+  'Staff',
+  'Sword',
+};
 
 /// Orchestrates the four-step kingdom generation pipeline.
 ///
@@ -35,7 +54,7 @@ class SetupEngine {
     required SetupRules rules,
   }) {
     // ── Step A ── Expansion filter ──────────────────────────────────────────
-    final pool      = _stepAKingdomPool(allCards, ownedExpansions);
+    final pool = _stepAKingdomPool(allCards, ownedExpansions);
     final landscape = _stepALandscapePool(allCards, ownedExpansions);
 
     // ── Step B ── Manual exclusions ─────────────────────────────────────────
@@ -65,19 +84,23 @@ class SetupEngine {
     }
 
     // ── Step E ── Landscape cards ────────────────────────────────────────────
-    final landscapeResult = rules.includeLandscape
-        ? _stepESelectLandscape(landscape, ownedExpansions, rules)
-        : const <DominionCard>[];
+    final landscapeResult = _stepESelectLandscape(
+      landscape,
+      kingdom,
+      ownedExpansions,
+      rules,
+    );
 
     // ── Supplement ── Setup notes ────────────────────────────────────────────
-    final notes = _generateSetupNotes(kingdom, landscapeResult, ownedExpansions);
+    final notes =
+        _generateSetupNotes(kingdom, landscapeResult, ownedExpansions);
 
     return SetupResult(
-      kingdomCards:   kingdom,
+      kingdomCards: kingdom,
       landscapeCards: landscapeResult,
-      archetypes:     const [],   // populated later by HeuristicEngine
-      setupNotes:     notes,
-      generatedAt:    DateTime.now(),
+      archetypes: const [], // populated later by HeuristicEngine
+      setupNotes: notes,
+      generatedAt: DateTime.now(),
     );
   }
 
@@ -92,9 +115,7 @@ class SetupEngine {
     List<DominionCard> all,
     Set<Expansion> owned,
   ) =>
-      all
-          .where((c) => owned.contains(c.expansion) && c.isKingdomCard)
-          .toList();
+      all.where((c) => owned.contains(c.expansion) && c.isKingdomCard).toList();
 
   /// Landscape pool: owned, non-kingdom (Events, Landmarks, Projects, Ways, Allies).
   List<DominionCard> _stepALandscapePool(
@@ -119,12 +140,12 @@ class SetupEngine {
 
   void _stepCApplyRules(List<DominionCard> pool, SetupRules rules) {
     pool.removeWhere((c) {
-      if (rules.noAttacks    && c.isAttack)           return true;
-      if (rules.noDuration   && c.isDuration)          return true;
-      if (rules.noPotions    && c.potionCost)          return true;
-      if (rules.noDebt       && c.debtCost != null)    return true;
-      if (rules.noCursers    && c.hasTag(CardTag.curse)) return true;
-      if (rules.noTravellers && c.isTraveller)         return true;
+      if (rules.noAttacks && c.isAttack) return true;
+      if (rules.noDuration && c.isDuration) return true;
+      if (rules.noPotions && c.potionCost) return true;
+      if (rules.noDebt && c.debtCost != null) return true;
+      if (rules.noCursers && c.hasTag(CardTag.curse)) return true;
+      if (rules.noTravellers && c.isTraveller) return true;
       if (rules.maxCost != null && c.cost > rules.maxCost!) return true;
       return false;
     });
@@ -142,7 +163,7 @@ class SetupEngine {
     // Each unique pile id becomes one "slot". Within a slot, all member cards
     // are always selected together.
     final splitGroups = <String, List<DominionCard>>{};
-    final singles     = <DominionCard>[];
+    final singles = <DominionCard>[];
 
     for (final c in pool) {
       if (c.splitPileId != null) {
@@ -162,7 +183,7 @@ class SetupEngine {
     ]..shuffle(_rng);
 
     final kingdom = <DominionCard>[];
-    final locked  = <DominionCard>[];
+    final locked = <DominionCard>[];
 
     // Track slots filled (each split pile counts as 1 slot regardless of how
     // many individual cards it adds to [kingdom]).
@@ -193,7 +214,8 @@ class SetupEngine {
 
     reserveSlot(
       rules.requireVillage,
-      (c) => c.hasTag(CardTag.villageEffect) || c.hasTag(CardTag.plusTwoActions),
+      (c) =>
+          c.hasTag(CardTag.villageEffect) || c.hasTag(CardTag.plusTwoActions),
       'Require Village',
     );
     reserveSlot(
@@ -218,7 +240,7 @@ class SetupEngine {
 
     for (final rep in pileReps) {
       if (slotsSelected >= 10) break;
-      final pileCards    = _allCardsForRep(rep, splitGroups);
+      final pileCards = _allCardsForRep(rep, splitGroups);
       final pileIsAttack = pileCards.any((c) => c.isAttack);
       if (rules.maxAttacks != null &&
           pileIsAttack &&
@@ -241,22 +263,26 @@ class SetupEngine {
     // ── Phase 3: expansion variety ──────────────────────────────────────────
 
     // Count locked slots (each split pile = 1 slot even if it has 2 cards).
-    final lockedSlots = locked
-        .map((c) => c.splitPileId ?? c.id)
-        .toSet()
-        .length;
+    final lockedSlots = locked.map((c) => c.splitPileId ?? c.id).toSet().length;
 
     if (rules.minExpansionVariety > 1) {
       final ownedCount = pool.map((c) => c.expansion).toSet().length;
       _enforceExpansionVariety(
-        kingdom:    kingdom,
-        locked:     locked,
-        remainder:  pileReps.skip(10 - lockedSlots).toList(),
+        kingdom: kingdom,
+        locked: locked,
+        remainder: pileReps.skip(10 - lockedSlots).toList(),
         splitGroups: splitGroups,
         minVariety: rules.minExpansionVariety,
         ownedCount: ownedCount,
       );
     }
+
+    _enforceAlchemyCluster(
+      kingdom: kingdom,
+      locked: locked,
+      candidates: pileReps,
+      splitGroups: splitGroups,
+    );
 
     // Sort by cost (ascending) for natural display order.
     kingdom.sort((a, b) {
@@ -297,6 +323,97 @@ class SetupEngine {
     return singleCount + splitIds.length;
   }
 
+  /// Alchemy is designed to appear in clusters: a single Potion-cost card often
+  /// asks players to buy Potions for too little payoff. When a mixed kingdom
+  /// already includes Alchemy, gently steer it toward 3-5 Alchemy slots.
+  void _enforceAlchemyCluster({
+    required List<DominionCard> kingdom,
+    required List<DominionCard> locked,
+    required List<DominionCard> candidates,
+    required Map<String, List<DominionCard>> splitGroups,
+  }) {
+    final kingdomExpansions = kingdom.map((c) => c.expansion).toSet();
+    if (!kingdomExpansions.contains(Expansion.alchemy)) return;
+
+    // If Alchemy is the only selected expansion, there is nothing sensible to
+    // swap against; all-Alchemy games are allowed.
+    if (kingdomExpansions.length == 1) return;
+
+    final lockedSlots = locked.map(_slotId).toSet();
+
+    int alchemySlots() => kingdom
+        .where((c) => c.expansion == Expansion.alchemy)
+        .map(_slotId)
+        .toSet()
+        .length;
+
+    final candidatePool = candidates
+        .where((c) => !kingdom.any((k) => _slotId(k) == _slotId(c)))
+        .toList()
+      ..shuffle(_rng);
+
+    while (alchemySlots() < 3) {
+      final incoming = candidatePool.cast<DominionCard?>().firstWhere(
+            (c) => c!.expansion == Expansion.alchemy,
+            orElse: () => null,
+          );
+      if (incoming == null) break;
+
+      final outgoing = kingdom.cast<DominionCard?>().firstWhere(
+            (c) =>
+                c!.expansion != Expansion.alchemy &&
+                !lockedSlots.contains(_slotId(c)),
+            orElse: () => null,
+          );
+      if (outgoing == null) break;
+
+      _replacePile(
+        outgoing: outgoing,
+        incoming: incoming,
+        splitGroups: splitGroups,
+        kingdom: kingdom,
+      );
+      candidatePool.remove(incoming);
+    }
+
+    while (alchemySlots() > 5) {
+      final incoming = candidatePool.cast<DominionCard?>().firstWhere(
+            (c) => c!.expansion != Expansion.alchemy,
+            orElse: () => null,
+          );
+      if (incoming == null) break;
+
+      final outgoing = kingdom.cast<DominionCard?>().firstWhere(
+            (c) =>
+                c!.expansion == Expansion.alchemy &&
+                !lockedSlots.contains(_slotId(c)),
+            orElse: () => null,
+          );
+      if (outgoing == null) break;
+
+      _replacePile(
+        outgoing: outgoing,
+        incoming: incoming,
+        splitGroups: splitGroups,
+        kingdom: kingdom,
+      );
+      candidatePool.remove(incoming);
+    }
+  }
+
+  void _replacePile({
+    required DominionCard outgoing,
+    required DominionCard incoming,
+    required Map<String, List<DominionCard>> splitGroups,
+    required List<DominionCard> kingdom,
+  }) {
+    final outgoingSlot = _slotId(outgoing);
+    kingdom.removeWhere((c) => _slotId(c) == outgoingSlot);
+    _addPile(incoming, splitGroups, kingdom);
+  }
+
+  String _slotId(DominionCard card) => card.splitPileId ?? card.id;
+
   // ===========================================================================
   // Step F — Auto-reaction swap
   // ===========================================================================
@@ -312,22 +429,30 @@ class SetupEngine {
     if (kingdom.any((c) => c.isReaction)) return;
 
     final kingdomIds = kingdom.map((c) => c.id).toSet();
-    final reactions  = filteredPool
+    final reactions = filteredPool
         .where((c) => c.isReaction && !kingdomIds.contains(c.id))
         .toList()
       ..shuffle(_rng);
 
     if (reactions.isEmpty) return;
 
-    final lockedIds  = locked.map((c) => c.id).toSet();
-    final swappable  = kingdom
+    final lockedIds = locked.map((c) => c.id).toSet();
+    final alchemySlots = kingdom
+        .where((c) => c.expansion == Expansion.alchemy)
+        .map(_slotId)
+        .toSet()
+        .length;
+    final swappable = kingdom
         .where((c) => !lockedIds.contains(c.id) && !c.isAttack)
         .toList()
       ..shuffle(_rng);
+    final preferredSwappable = alchemySlots <= 3
+        ? swappable.where((c) => c.expansion != Expansion.alchemy).toList()
+        : swappable;
 
-    if (swappable.isEmpty) return;
+    if (preferredSwappable.isEmpty) return;
 
-    kingdom.remove(swappable.first);
+    kingdom.remove(preferredSwappable.first);
     kingdom.add(reactions.first);
   }
 
@@ -338,12 +463,13 @@ class SetupEngine {
   /// Draws landscape cards according to per-type counts in [rules].
   List<DominionCard> _stepESelectLandscape(
     List<DominionCard> pool,
+    List<DominionCard> kingdom,
     Set<Expansion> owned,
     SetupRules rules,
   ) {
     if (pool.isEmpty) return const [];
 
-    final result   = <DominionCard>[];
+    final result = <DominionCard>[];
     final shuffled = [...pool]..shuffle(_rng);
 
     void draw(bool Function(DominionCard) filter, int count) {
@@ -352,11 +478,27 @@ class SetupEngine {
       result.addAll(candidates.take(count.clamp(0, candidates.length)));
     }
 
-    draw((c) => c.isEvent,    rules.landscapeEvents);
-    draw((c) => c.isLandmark, rules.landscapeLandmarks);
-    draw((c) => c.isProject,  rules.landscapeProjects);
-    draw((c) => c.isAlly,     rules.landscapeAllies);
-    draw((c) => c.isWay,      rules.landscapeWays);
+    if (rules.includeLandscape) {
+      draw((c) => c.isEvent, rules.landscapeEvents);
+      draw((c) => c.isLandmark, rules.landscapeLandmarks);
+      draw((c) => c.isProject, rules.landscapeProjects);
+      draw((c) => c.isWay, rules.landscapeWays);
+      draw((c) => c.isTrait, rules.landscapeTraits);
+    }
+
+    if (kingdom.any((c) => c.isOmen)) {
+      result.removeWhere((c) => c.isProphecy);
+      final prophecies = shuffled.where((c) => c.isProphecy).toList();
+      if (prophecies.isNotEmpty) result.add(prophecies.first);
+    }
+
+    // Allies are not optional landscapes when Liaisons are present: a game with
+    // one or more Liaisons uses exactly one Ally, separate from other landscapes.
+    if (kingdom.any((c) => c.isLiaison)) {
+      result.removeWhere((c) => c.isAlly);
+      final allies = shuffled.where((c) => c.isAlly).toList();
+      if (allies.isNotEmpty) result.add(allies.first);
+    }
 
     return result;
   }
@@ -389,14 +531,14 @@ class SetupEngine {
       if (present.length >= minVariety) break;
 
       final candidate = remainder.cast<DominionCard?>().firstWhere(
-        (c) => !present.contains(c!.expansion),
-        orElse: () => null,
-      );
+            (c) => !present.contains(c!.expansion),
+            orElse: () => null,
+          );
       if (candidate == null) break;
 
-      final overExp    = _mostRepresentedExpansion(kingdom, locked);
-      final evictPool  = swappable.where((c) => c.expansion == overExp).toList();
-      final evict      = evictPool.isNotEmpty
+      final overExp = _mostRepresentedExpansion(kingdom, locked);
+      final evictPool = swappable.where((c) => c.expansion == overExp).toList();
+      final evict = evictPool.isNotEmpty
           ? evictPool[_rng.nextInt(evictPool.length)]
           : swappable[_rng.nextInt(swappable.length)];
 
@@ -432,9 +574,10 @@ class SetupEngine {
     List<DominionCard> landscape,
     Set<Expansion> owned,
   ) {
-    final notes            = <String>[];
-    final kingdomExp       = kingdom.map((c) => c.expansion).toSet();
-    final allPresent       = {...kingdomExp, ...landscape.map((c) => c.expansion)};
+    final notes = <String>[];
+    final kingdomExp = kingdom.map((c) => c.expansion).toSet();
+    final allPresent = {...kingdomExp, ...landscape.map((c) => c.expansion)};
+    final setupCards = [...kingdom, ...landscape];
 
     // Prosperity: optional Platinum & Colony
     if (allPresent.any((e) =>
@@ -447,14 +590,237 @@ class SetupEngine {
 
     // Alchemy: Potion supply pile
     if (kingdom.any((c) => c.potionCost)) {
-      notes.add('Potion-cost cards present: add the Potion supply pile (\$4).');
+      notes.add(
+        'Potion-cost cards present: add the Potion Supply pile. Use all 16 '
+        'Potions; each costs \$4, produces 1 Potion when played, and counts '
+        'as a Supply pile if emptied.',
+      );
     }
 
     // Empires / debt cards
-    if (kingdom.any((c) => c.debtCost != null)) {
+    if (setupCards.any((c) => c.debtCost != null || c.hasTag(CardTag.debt))) {
       notes.add(
         'Debt cards present: prepare the Debt token supply '
         '(the coin-shaped cardboard tokens).',
+      );
+    }
+
+    if (setupCards.any((c) => c.hasTag(CardTag.coffers))) {
+      notes.add(
+        'Coffers present: prepare Coin tokens and Coffers mats. '
+        'Each player starts with 0 Coffers unless Baker is present.',
+      );
+    }
+
+    if (setupCards.any((c) => c.hasTag(CardTag.villagers))) {
+      notes.add(
+        'Villagers present: prepare Villager mats and tokens. Each player '
+        'starts with 0 Villagers.',
+      );
+    }
+
+    if (kingdom.any((c) => c.name == 'Baker')) {
+      notes.add(
+        'Baker present: each player starts with 1 Coffers on their mat.',
+      );
+    }
+
+    if (kingdom.any((c) => c.name == 'Footpad')) {
+      notes.add(
+        'Footpad present: for the whole game, whenever a player gains a card '
+        'during an Action phase, that player draws a card.',
+      );
+    }
+
+    if (kingdom.any((c) => c.name == 'Ferryman')) {
+      notes.add(
+        'Ferryman present: choose an unused Kingdom pile costing \$3 or \$4 '
+        'and set it near the Supply; gaining Ferryman also gains one of those cards.',
+      );
+    }
+
+    if (kingdom.any((c) => c.name == 'Joust')) {
+      notes.add(
+        'Joust present: set out the Rewards. Use one of each for 2 players, '
+        'or two of each for 3-6 players.',
+      );
+    }
+
+    final plunderCards = setupCards
+        .where((c) => c.expansion == Expansion.plunder)
+        .toList(growable: false);
+    final usesLootPile = plunderCards.any((c) =>
+        c.isLoot ||
+        c.pileCards.any((pileCard) => _plunderLootNames.contains(pileCard)));
+    if (usesLootPile) {
+      notes.add(
+        'Loot pile present: set aside two copies of each Loot and shuffle '
+        'them face down. When a Loot is gained, reveal the top card; if the '
+        'pile is empty, shuffle discarded Loot to make a new pile.',
+      );
+    }
+
+    if (landscape.any((c) => c.isTrait)) {
+      notes.add(
+        'Trait setup: assign each Trait to a random Action/Treasure Kingdom '
+        'pile, with no pile receiving more than one Trait. On split piles, '
+        'the Trait applies to every card in that pile.',
+      );
+    }
+
+    if (kingdom.any((c) => c.isShadow)) {
+      notes.add(
+        'Shadow cards present: when shuffling Shadow cards, put them on the '
+        'bottom of your deck. You may play Shadow cards from your deck as if '
+        'they were in your hand whenever you could normally play an Action.',
+      );
+    }
+
+    final selectedProphecy = landscape.cast<DominionCard?>().firstWhere(
+          (c) => c!.isProphecy,
+          orElse: () => null,
+        );
+    if (selectedProphecy != null) {
+      notes.add(
+        'Prophecy present (${selectedProphecy.name}): use one Prophecy for the '
+        'game and put Sun tokens on it based on player count '
+        '(5 for 2p, 8 for 3p, 10 for 4p, 12 for 5p, 13 for 6p). '
+        'Each +1 Sun removes one token; when the last token is removed, the '
+        'Prophecy text becomes active for the rest of the game.',
+      );
+      if (selectedProphecy.name == 'Approaching Army') {
+        notes.add(
+          'Approaching Army setup: add an unused Attack Kingdom pile to the '
+          'Supply, in addition to the normal 10 Kingdom piles.',
+        );
+      }
+    }
+
+    if (kingdom.any((c) => c.name == 'Riverboat')) {
+      notes.add(
+        'Riverboat present: set aside an unused non-Duration Action card '
+        'costing exactly \$5 before play; Riverboat will play that card at the '
+        'start of your next turn, leaving it set aside.',
+      );
+    }
+
+    if (kingdom.any((c) => c.name == 'Young Witch')) {
+      notes.add(
+        'Young Witch present: add an extra Kingdom pile costing \$2 or \$3 '
+        'to the Supply as the Bane pile.',
+      );
+    }
+
+    final adventureCards = [
+      ...kingdom.where((c) => c.expansion == Expansion.adventures),
+      ...landscape.where((c) => c.expansion == Expansion.adventures),
+    ];
+    if (adventureCards.any((c) => c.types.contains(CardType.reserve))) {
+      notes.add(
+        'Reserve cards present: each player needs a Tavern mat for called '
+        'and set-aside Reserve cards.',
+      );
+    }
+
+    if (kingdom.any((c) => c.name == 'Port')) {
+      notes.add('Port present: use all 12 Ports in its Supply pile.');
+    }
+
+    if (adventureCards.any((c) =>
+        c.name == 'Ranger' || c.name == 'Giant' || c.name == 'Pilgrimage')) {
+      notes.add(
+        'Journey token present: each player starts with their Journey token '
+        'face up.',
+      );
+    }
+
+    if (adventureCards.any((c) => c.hasTag(CardTag.tokens))) {
+      notes.add(
+        'Adventures tokens present: prepare the player tokens used by this '
+        'set, such as -1 Card, -\$1, -\$2 cost, Estate, Trashing, +1 Card, '
+        '+1 Action, +1 Buy, and +\$1 tokens as needed.',
+      );
+    }
+
+    final renaissanceCards = setupCards
+        .where((c) => c.expansion == Expansion.renaissance)
+        .toList(growable: false);
+    if (renaissanceCards.any((c) => c.isProject)) {
+      notes.add(
+        'Projects present: set out Project cards with player cubes; each '
+        'player marks Projects they buy with one of their cubes.',
+      );
+    }
+
+    final artifacts = <String>{
+      if (kingdom.any((c) => c.name == 'Flag Bearer')) 'Flag',
+      if (kingdom.any((c) => c.name == 'Border Guard')) 'Lantern/Horn',
+      if (kingdom.any((c) => c.name == 'Treasurer')) 'Key',
+      if (kingdom.any((c) => c.name == 'Swashbuckler')) 'Treasure Chest',
+    };
+    if (artifacts.isNotEmpty) {
+      notes.add(
+        'Artifacts present: set aside ${artifacts.join(', ')}. These move to '
+        'the player currently holding them.',
+      );
+    }
+
+    final menagerieCards = setupCards
+        .where((c) => c.expansion == Expansion.menagerie)
+        .toList(growable: false);
+    if (menagerieCards.any((c) => c.hasTag(CardTag.exile))) {
+      notes.add(
+        'Exile effects present: each player needs an Exile mat. When gaining '
+        'a card, players may discard matching cards from their Exile mat.',
+      );
+    }
+
+    if (menagerieCards.any((c) =>
+        c.pileCards.contains('Horse') ||
+        c.name == 'Way of the Horse' ||
+        c.name == 'Ride')) {
+      notes.add(
+        'Horse gainers present: set aside the Horse pile; Horses are not in '
+        'the Supply and return to their pile when played.',
+      );
+    }
+
+    if (landscape.any((c) => c.name == 'Way of the Mouse')) {
+      notes.add(
+        'Way of the Mouse present: set aside an unused non-Duration Action '
+        'card costing \$2 or \$3 before play.',
+      );
+    }
+
+    final empiresCards = setupCards
+        .where((c) => c.expansion == Expansion.empires)
+        .toList(growable: false);
+    if (empiresCards.any((c) => c.hasTag(CardTag.pointTokens))) {
+      notes.add(
+        'Empires VP tokens present: prepare the Victory Point token supply.',
+      );
+    }
+
+    if (kingdom.any((c) => c.name == 'Castles')) {
+      notes.add(
+        'Castles present: sort the Castle pile by cost with Humble Castle on '
+        'top and King\'s Castle on the bottom. Use one of each Castle for '
+        '2 players, or all 12 Castle cards with more players.',
+      );
+    }
+
+    if (kingdom.any((c) => c.types.contains(CardType.gathering))) {
+      notes.add(
+        'Gathering pile present: VP tokens on Farmers\' Market, Temple, or '
+        'Wild Hunt stay on their Supply pile until a card effect removes them.',
+      );
+    }
+
+    if (landscape.any((c) =>
+        c.expansion == Expansion.empires && c.hasTag(CardTag.pointTokens))) {
+      notes.add(
+        'Empires Landmark VP tokens: follow each Landmark\'s setup text for '
+        'placing VP tokens before play.',
       );
     }
 
@@ -466,35 +832,142 @@ class SetupEngine {
       );
     }
 
-    // Nocturne: Heirlooms
-    if (kingdomExp.contains(Expansion.nocturne)) {
+    if (kingdom.any((c) => c.isLooter)) {
       notes.add(
-        'Nocturne cards present: check whether any kingdom card replaces '
-        'a starting Copper with its paired Heirloom.',
+        'Looter present: prepare and shuffle the Ruins pile '
+        '(10 Ruins per player after the first), with the top card face up.',
       );
     }
 
-    // Traveller chains
+    if (kingdom.any((c) => c.name == 'Knights')) {
+      notes.add(
+        'Knights present: shuffle the 10 Knights into one Supply pile and '
+        'place the top Knight face up.',
+      );
+    }
+
+    final specialPiles = <String>{
+      if (kingdom.any((c) =>
+          c.name == 'Bandit Camp' ||
+          c.name == 'Marauder' ||
+          c.name == 'Pillage'))
+        'Spoils',
+      if (kingdom.any((c) => c.name == 'Hermit')) 'Madman',
+      if (kingdom.any((c) => c.name == 'Urchin')) 'Mercenary',
+    };
+    if (specialPiles.isNotEmpty) {
+      notes.add(
+        'Dark Ages non-Supply pile${specialPiles.length == 1 ? '' : 's'}: '
+        'set aside ${specialPiles.join(', ')}.',
+      );
+    }
+
+    final nocturneCards = kingdom
+        .where((c) => c.expansion == Expansion.nocturne)
+        .toList(growable: false);
+    if (nocturneCards.isNotEmpty) {
+      notes.add(
+        'Nocturne present: play an Action phase, then Buy phase, then Night '
+        'phase each turn.',
+      );
+    }
+
+    final heirloomPairs = <String, String>{
+      'Cemetery': 'Haunted Mirror',
+      'Fool': 'Lucky Coin',
+      'Pixie': 'Goat',
+      'Pooka': 'Cursed Gold',
+      'Secret Cave': 'Magic Lamp',
+      'Shepherd': 'Pasture',
+      'Tracker': 'Pouch',
+    };
+    final activeHeirlooms = heirloomPairs.entries
+        .where((entry) => kingdom.any((c) => c.name == entry.key))
+        .map((entry) => '${entry.key}: ${entry.value}')
+        .toList(growable: false);
+    if (activeHeirlooms.isNotEmpty) {
+      notes.add(
+        'Nocturne Heirlooms: replace one starting Copper for each matching '
+        'Kingdom card (${activeHeirlooms.join(', ')}).',
+      );
+    }
+
+    if (nocturneCards.any((c) => c.types.contains(CardType.fate))) {
+      notes.add(
+        'Fate cards present: shuffle the Boon deck and set out the '
+        'Will-o\'-Wisp pile.',
+      );
+    }
+
+    if (kingdom.any((c) => c.name == 'Druid')) {
+      notes.add(
+        'Druid present: set aside the top 3 Boons face up; Druid chooses '
+        'from those instead of the Boon deck.',
+      );
+    }
+
+    if (nocturneCards.any((c) => c.types.contains(CardType.doom))) {
+      notes.add(
+        'Doom cards present: shuffle the Hex deck and set out the State cards '
+        '(Deluded/Envious, Miserable/Twice Miserable).',
+      );
+    }
+
+    final nocturnePiles = <String>{
+      if (kingdom.any((c) => c.name == 'Necromancer'))
+        'the 3 Zombies in the trash',
+      if (kingdom.any((c) => c.name == 'Exorcist')) 'Spirit piles',
+      if (kingdom.any((c) => c.name == 'Vampire')) 'Bat pile',
+      if (kingdom.any((c) => c.name == 'Fool')) 'Lost in the Woods State',
+      if (kingdom.any((c) => c.name == 'Leprechaun' || c.name == 'Secret Cave'))
+        'Wish pile',
+      if (kingdom
+          .any((c) => c.name == 'Devil\'s Workshop' || c.name == 'Tormentor'))
+        'Imp pile',
+      if (kingdom.any((c) => c.name == 'Cemetery')) 'Ghost pile',
+    };
+    if (nocturnePiles.isNotEmpty) {
+      notes.add(
+        'Nocturne non-Supply cards: set aside ${nocturnePiles.join(', ')}.',
+      );
+    }
+
+    // Traveller/exchange chains
     for (final c in kingdom.where((c) => c.isTraveller)) {
       final chain = c.travellerChain.join(' → ');
       notes.add(
-        '${c.name} is a Traveller: have the full upgrade chain available '
+        '${c.name} has an exchange chain: have the set-aside card(s) available '
         '($chain) and set those cards aside before play.',
       );
     }
 
-    // Split piles — remind players to set both halves out
-    final splitIds = kingdom
-        .where((c) => c.isSplitPile)
-        .map((c) => c.splitPileId!)
-        .toSet();
+    // Allies / Favors
+    if (kingdom.any((c) => c.isLiaison)) {
+      final allyNames = landscape.where((c) => c.isAlly).map((c) => c.name);
+      final startingFavors = kingdom.any((c) => c.name == 'Importer') ? 5 : 1;
+      notes.add(
+        'Liaison setup: set out ${allyNames.isEmpty ? 'one Ally' : allyNames.join(' / ')}, '
+        'give each player a Favors mat, and start each player with '
+        '$startingFavors Favor token${startingFavors == 1 ? '' : 's'}.',
+      );
+    }
+
+    // Split piles — remind players to set the shared pile out
+    final splitIds =
+        kingdom.where((c) => c.isSplitPile).map((c) => c.splitPileId!).toSet();
     for (final id in splitIds) {
-      final pair = kingdom.where((c) => c.splitPileId == id).toList()
+      final pile = kingdom.where((c) => c.splitPileId == id).toList()
         ..sort((a, b) => a.cost.compareTo(b.cost));
-      if (pair.length >= 2) {
+      if (pile.length > 2) {
         notes.add(
-          'Split pile: ${pair.map((c) => c.name).join(' / ')} — place both '
-          'halves in a single supply pile, lower-cost (${pair.first.name}) on top.',
+          'Rotating pile: ${pile.map((c) => c.name).join(' / ')} — place all '
+          'cards in one Supply pile in cost order with ${pile.first.name} on top, '
+          'and rotate it when instructed.',
+        );
+      } else if (pile.length == 2) {
+        notes.add(
+          'Split pile: ${pile.map((c) => c.name).join(' / ')} — place both '
+          'halves in a single Supply pile, lower-cost (${pile.first.name}) on top.',
         );
       }
     }
@@ -510,7 +983,8 @@ class SetupEngine {
     // Curses with no trashing
     if (kingdom.any((c) => c.hasTag(CardTag.curse)) &&
         !kingdom.any((c) =>
-            c.hasTag(CardTag.trashCards) || c.hasTag(CardTag.trashForBenefit))) {
+            c.hasTag(CardTag.trashCards) ||
+            c.hasTag(CardTag.trashForBenefit))) {
       notes.add(
         'Curse-giving Attacks present with no Trashing — consider prioritising '
         'Province timing to end the game before Curses pile up.',

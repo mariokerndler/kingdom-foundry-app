@@ -9,9 +9,9 @@ import '../services/config_persistence_service.dart';
 
 class ConfigState {
   final Set<Expansion> ownedExpansions;
-  final SetupRules     rules;
-  final Set<String>    disabledCardIds;
-  final int            playerCount; // 2–6
+  final SetupRules rules;
+  final Set<String> disabledCardIds;
+  final int playerCount; // 2–6
 
   const ConfigState({
     required this.ownedExpansions,
@@ -21,19 +21,19 @@ class ConfigState {
   });
 
   bool isExpansionOwned(Expansion e) => ownedExpansions.contains(e);
-  bool isCardDisabled(String id)     => disabledCardIds.contains(id);
+  bool isCardDisabled(String id) => disabledCardIds.contains(id);
 
   ConfigState copyWith({
     Set<Expansion>? ownedExpansions,
-    SetupRules?     rules,
-    Set<String>?    disabledCardIds,
-    int?            playerCount,
+    SetupRules? rules,
+    Set<String>? disabledCardIds,
+    int? playerCount,
   }) {
     return ConfigState(
       ownedExpansions: ownedExpansions ?? this.ownedExpansions,
-      rules:           rules           ?? this.rules,
+      rules: rules ?? this.rules,
       disabledCardIds: disabledCardIds ?? this.disabledCardIds,
-      playerCount:     playerCount     ?? this.playerCount,
+      playerCount: playerCount ?? this.playerCount,
     );
   }
 }
@@ -66,8 +66,7 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
   void selectAllExpansions(Set<Expansion> available) =>
       state = state.copyWith(ownedExpansions: Set.from(available));
 
-  void clearExpansions() =>
-      state = state.copyWith(ownedExpansions: {});
+  void clearExpansions() => state = state.copyWith(ownedExpansions: {});
 
   // ── Rules ─────────────────────────────────────────────────────────────────
 
@@ -107,14 +106,13 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
   void setRequireDraw(bool v) =>
       state = state.copyWith(rules: state.rules.copyWith(requireDraw: v));
 
-  void setRequireReactionIfAttacks(bool v) =>
-      state = state.copyWith(
-          rules: state.rules.copyWith(requireReactionIfAttacks: v));
+  void setRequireReactionIfAttacks(bool v) => state =
+      state.copyWith(rules: state.rules.copyWith(requireReactionIfAttacks: v));
 
   void setMaxAttacks(int? count) {
     state = state.copyWith(
-      rules: state.rules.copyWith(
-          maxAttacks: count, clearMaxAttacks: count == null),
+      rules: state.rules
+          .copyWith(maxAttacks: count, clearMaxAttacks: count == null),
     );
   }
 
@@ -127,14 +125,17 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
   void setLandscapeProjects(int v) =>
       state = state.copyWith(rules: state.rules.copyWith(landscapeProjects: v));
 
-  void setLandscapeLandmarks(int v) =>
-      state = state.copyWith(rules: state.rules.copyWith(landscapeLandmarks: v));
+  void setLandscapeLandmarks(int v) => state =
+      state.copyWith(rules: state.rules.copyWith(landscapeLandmarks: v));
 
   void setLandscapeWays(int v) =>
       state = state.copyWith(rules: state.rules.copyWith(landscapeWays: v));
 
   void setLandscapeAllies(int v) =>
       state = state.copyWith(rules: state.rules.copyWith(landscapeAllies: v));
+
+  void setLandscapeTraits(int v) =>
+      state = state.copyWith(rules: state.rules.copyWith(landscapeTraits: v));
 
   void resetRules() => state = state.copyWith(rules: const SetupRules());
 
@@ -155,8 +156,7 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
     state = state.copyWith(disabledCardIds: current);
   }
 
-  void enableAllCards() =>
-      state = state.copyWith(disabledCardIds: {});
+  void enableAllCards() => state = state.copyWith(disabledCardIds: {});
 }
 
 // ── Providers ─────────────────────────────────────────────────────────────

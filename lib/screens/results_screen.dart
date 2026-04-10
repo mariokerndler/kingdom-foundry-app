@@ -16,13 +16,12 @@ import '../widgets/cards/kingdom_card_widget.dart';
 import '../widgets/common/section_header.dart';
 
 /// Groups a flat kingdom card list into display slots.
-/// Cards sharing a splitPileId collapse into a single (primary, partner) slot.
+/// Cards sharing a splitPileId collapse into a single pile slot.
 /// The lower-cost card is the primary (shown on the tile).
-List<(DominionCard, DominionCard?)> _splitPileSlots(
-    List<DominionCard> cards) {
-  final seen    = <String>{};
-  final slots   = <(DominionCard, DominionCard?)>[];
-  final byPile  = <String, List<DominionCard>>{};
+List<_KingdomSlot> _splitPileSlots(List<DominionCard> cards) {
+  final seen = <String>{};
+  final slots = <_KingdomSlot>[];
+  final byPile = <String, List<DominionCard>>{};
 
   for (final c in cards) {
     if (c.splitPileId != null) {
@@ -32,22 +31,36 @@ List<(DominionCard, DominionCard?)> _splitPileSlots(
 
   for (final c in cards) {
     if (c.splitPileId == null) {
-      slots.add((c, null));
+      slots.add(_KingdomSlot(c, const []));
     } else if (!seen.contains(c.splitPileId)) {
       seen.add(c.splitPileId!);
-      final pair    = byPile[c.splitPileId!]!;
-      final primary = pair.reduce((a, b) => a.cost <= b.cost ? a : b);
-      final partner = pair.firstWhere((x) => x.id != primary.id);
-      slots.add((primary, partner));
+      final pile = byPile[c.splitPileId!]!
+        ..sort((a, b) {
+          final cmp = a.cost.compareTo(b.cost);
+          return cmp != 0 ? cmp : a.name.compareTo(b.name);
+        });
+      slots.add(_KingdomSlot(pile.first, pile.skip(1).toList()));
     }
   }
   return slots;
 }
 
+class _KingdomSlot {
+  final DominionCard primary;
+  final List<DominionCard> splitPileCards;
+
+  const _KingdomSlot(this.primary, this.splitPileCards);
+
+  String get label => [
+        primary.name,
+        ...splitPileCards.map((c) => c.name),
+      ].join(' / ');
+}
+
 /// Public route builder — shared by ConfigurationScreen and HistorySheet.
 Route<void> buildResultsRoute() => PageRouteBuilder<void>(
-      pageBuilder:               (_, __, ___) => const ResultsScreen(),
-      transitionDuration:        const Duration(milliseconds: 340),
+      pageBuilder: (_, __, ___) => const ResultsScreen(),
+      transitionDuration: const Duration(milliseconds: 340),
       reverseTransitionDuration: const Duration(milliseconds: 260),
       transitionsBuilder: (_, animation, __, child) => FadeTransition(
         opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -65,8 +78,8 @@ class ResultsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final result         = ref.watch(setupResultProvider);
-    final status         = ref.watch(generationStatusProvider);
+    final result = ref.watch(setupResultProvider);
+    final status = ref.watch(generationStatusProvider);
     final isRegenerating = status == GenerationStatus.loading;
 
     if (result == null) {
@@ -78,10 +91,10 @@ class ResultsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: _ResultsAppBar(
-        result:         result,
+        result: result,
         isRegenerating: isRegenerating,
-        onRegenerate:   () => _regenerate(context, ref),
-        onCopy:         () => _copyKingdom(context, result),
+        onRegenerate: () => _regenerate(context, ref),
+        onCopy: () => _copyKingdom(context, result),
       ),
       body: isRegenerating
           ? const _RegeneratingOverlay()
@@ -96,9 +109,9 @@ class ResultsScreen extends ConsumerWidget {
       final error = ref.read(generationErrorProvider) ?? 'Unknown error.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:         Text(error),
+          content: Text(error),
           backgroundColor: AppColors.errorRed,
-          behavior:        SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -106,22 +119,14 @@ class ResultsScreen extends ConsumerWidget {
 
   void _copyKingdom(BuildContext context, SetupResult result) {
     final slots = _splitPileSlots(result.kingdomCards);
-    final lines = slots
-        .asMap()
-        .entries
-        .map((e) {
-          final primary = e.value.$1;
-          final partner = e.value.$2;
-          final label   = partner != null
-              ? '${primary.name} / ${partner.name}'
-              : primary.name;
-          return '${e.key + 1}. $label (${primary.costString})';
-        })
-        .join('\n');
+    final lines = slots.asMap().entries.map((e) {
+      final slot = e.value;
+      return '${e.key + 1}. ${slot.label} (${slot.primary.costString})';
+    }).join('\n');
     Clipboard.setData(ClipboardData(text: lines));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content:  Text('Kingdom copied to clipboard'),
+        content: Text('Kingdom copied to clipboard'),
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: 2),
       ),
@@ -132,8 +137,8 @@ class ResultsScreen extends ConsumerWidget {
 // ── App bar ────────────────────────────────────────────────────────────────
 
 class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final SetupResult  result;
-  final bool         isRegenerating;
+  final SetupResult result;
+  final bool isRegenerating;
   final VoidCallback onRegenerate;
   final VoidCallback onCopy;
 
@@ -156,34 +161,37 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize:       MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text('Kingdom Board', style: tt.titleLarge),
           const SizedBox(height: 2),
           Text(
             '10 cards · $expansionCount expansion${expansionCount == 1 ? '' : 's'}',
             style: tt.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
             ),
           ),
         ],
       ),
       actions: [
         IconButton(
-          tooltip:   'Copy kingdom list',
+          tooltip: 'Copy kingdom list',
           onPressed: isRegenerating ? null : onCopy,
           icon: Icon(Icons.copy_rounded,
               color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         IconButton(
-          tooltip:   'Regenerate kingdom',
+          tooltip: 'Regenerate kingdom',
           onPressed: isRegenerating ? null : onRegenerate,
           icon: isRegenerating
               ? SizedBox(
-                  width: 18, height: 18,
+                  width: 18,
+                  height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor:  AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary),
+                    valueColor: AlwaysStoppedAnimation(
+                        Theme.of(context).colorScheme.primary),
                   ),
                 )
               : Icon(Icons.casino_rounded,
@@ -202,17 +210,18 @@ class _RegeneratingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.primary)),
-        const SizedBox(height: 20),
-        Text('Drawing a new kingdom…',
-            style: Theme.of(context).textTheme.bodyMedium),
-      ],
-    ),
-  );
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation(
+                    Theme.of(context).colorScheme.primary)),
+            const SizedBox(height: 20),
+            Text('Drawing a new kingdom…',
+                style: Theme.of(context).textTheme.bodyMedium),
+          ],
+        ),
+      );
 }
 
 // ── Main scrollable body ───────────────────────────────────────────────────
@@ -224,7 +233,7 @@ class _ResultsBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playerCount = ref.watch(playerCountProvider);
-    final genKey      = result.generatedAt.millisecondsSinceEpoch;
+    final genKey = result.generatedAt.millisecondsSinceEpoch;
 
     return CustomScrollView(
       slivers: [
@@ -235,7 +244,7 @@ class _ResultsBody extends ConsumerWidget {
         // ── Kingdom board header ──────────────────────────────────────────
         const SliverToBoxAdapter(
           child: SectionHeader(
-            title:    'Kingdom Board',
+            title: 'Kingdom Board',
             subtitle: 'Tap a card to see its full rules text.',
           ),
         ),
@@ -246,26 +255,25 @@ class _ResultsBody extends ConsumerWidget {
           sliver: SliverGrid(
             delegate: SliverChildBuilderDelegate(
               (_, i) {
-                final slots   = _splitPileSlots(result.kingdomCards);
-                final primary = slots[i].$1;
-                final partner = slots[i].$2;
+                final slots = _splitPileSlots(result.kingdomCards);
+                final slot = slots[i];
                 return _StaggeredEntry(
-                  key:   ValueKey('${genKey}_$i'),
+                  key: ValueKey('${genKey}_$i'),
                   index: i,
                   child: KingdomCardWidget(
-                    card:         primary,
-                    splitPartner: partner,
-                    index:        i + 1,
+                    card: slot.primary,
+                    splitPileCards: slot.splitPileCards,
+                    index: i + 1,
                   ),
                 );
               },
               childCount: _splitPileSlots(result.kingdomCards).length,
             ),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount:   2,
-              mainAxisExtent:   180,
+              crossAxisCount: 2,
+              mainAxisExtent: 180,
               crossAxisSpacing: 8,
-              mainAxisSpacing:  8,
+              mainAxisSpacing: 8,
             ),
           ),
         ),
@@ -291,7 +299,7 @@ class _ResultsBody extends ConsumerWidget {
         if (result.archetypes.isNotEmpty) ...[
           const SliverToBoxAdapter(
             child: SectionHeader(
-              title:    'Strategy Guide',
+              title: 'Strategy Guide',
               subtitle: 'Heuristic archetypes detected for this kingdom.',
             ),
           ),
@@ -315,7 +323,7 @@ class _ResultsBody extends ConsumerWidget {
 // ── Staggered entrance ─────────────────────────────────────────────────────
 
 class _StaggeredEntry extends StatefulWidget {
-  final int    index;
+  final int index;
   final Widget child;
   const _StaggeredEntry({super.key, required this.index, required this.child});
 
@@ -335,7 +343,7 @@ class _StaggeredEntryState extends State<_StaggeredEntry>
     _ctrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 380));
     _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slide   = Tween(begin: const Offset(0, 0.07), end: Offset.zero)
+    _slide = Tween(begin: const Offset(0, 0.07), end: Offset.zero)
         .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     Future.delayed(Duration(milliseconds: widget.index * 50), () {
       if (mounted) _ctrl.forward();
@@ -343,13 +351,16 @@ class _StaggeredEntryState extends State<_StaggeredEntry>
   }
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => FadeTransition(
-    opacity: _opacity,
-    child:   SlideTransition(position: _slide, child: widget.child),
-  );
+        opacity: _opacity,
+        child: SlideTransition(position: _slide, child: widget.child),
+      );
 }
 
 // ── Landscape section ──────────────────────────────────────────────────────
@@ -395,17 +406,19 @@ class _LandscapeSection extends StatelessWidget {
   }
 
   static String _landscapeLabel(DominionCard c) {
-    if (c.isEvent)    return 'Events';
+    if (c.isEvent) return 'Events';
     if (c.isLandmark) return 'Landmarks';
-    if (c.isProject)  return 'Projects';
-    if (c.isWay)      return 'Ways';
-    if (c.isAlly)     return 'Allies';
+    if (c.isProject) return 'Projects';
+    if (c.isWay) return 'Ways';
+    if (c.isAlly) return 'Allies';
+    if (c.isProphecy) return 'Prophecies';
+    if (c.isTrait) return 'Traits';
     return 'Landscape';
   }
 }
 
 class _LandscapeGroup extends StatelessWidget {
-  final String             label;
+  final String label;
   final List<DominionCard> cards;
   const _LandscapeGroup({required this.label, required this.cards});
 
@@ -419,55 +432,63 @@ class _LandscapeGroup extends StatelessWidget {
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ),
         ...cards.map((c) => Semantics(
-          label: '${c.name}: ${c.text}',
-          child: Container(
-            margin:     const EdgeInsets.only(bottom: 6),
-            padding:    const EdgeInsets.fromLTRB(14, 10, 14, 10),
-            decoration: BoxDecoration(
-              color:        Theme.of(context).colorScheme.surfaceContainer,
-              border:       Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 4,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color:        AppColors.landscapeAccent,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+              label: '${c.name}: ${c.text}',
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(c.name,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color:      Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          )),
-                      const SizedBox(height: 3),
-                      Text(c.text,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            height: 1.4,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.landscapeAccent,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(c.name,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  )),
+                          const SizedBox(height: 3),
+                          Text(c.text,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    height: 1.4,
+                                  ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        )),
+              ),
+            )),
         const SizedBox(height: 8),
       ],
     );
@@ -485,12 +506,15 @@ class _RandomFirstPlayer extends StatefulWidget {
 }
 
 class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
-  int?  _picked;
-  bool  _rolling = false;
+  int? _picked;
+  bool _rolling = false;
 
   Future<void> _roll() async {
     HapticFeedback.mediumImpact();
-    setState(() { _rolling = true; _picked = null; });
+    setState(() {
+      _rolling = true;
+      _picked = null;
+    });
 
     // Quick slot-machine flicker: cycle through values 4×
     for (var i = 0; i < widget.playerCount * 4; i++) {
@@ -503,7 +527,10 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
     final result = Random().nextInt(widget.playerCount) + 1;
     await Future.delayed(const Duration(milliseconds: 80));
     if (!mounted) return;
-    setState(() { _picked = result; _rolling = false; });
+    setState(() {
+      _picked = result;
+      _rolling = false;
+    });
     HapticFeedback.heavyImpact();
   }
 
@@ -512,10 +539,11 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
       child: Container(
-        padding:    const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
-          color:        Theme.of(context).colorScheme.surfaceContainer,
-          border:       Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          border:
+              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -541,12 +569,17 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
                         : Text(
                             'Player $_picked goes first!',
                             key: ValueKey(_picked),
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color:      _rolling
-                                  ? Theme.of(context).colorScheme.onSurfaceVariant
-                                  : Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyLarge
+                                ?.copyWith(
+                                  color: _rolling
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant
+                                      : Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
                   ),
                 ],
@@ -555,35 +588,45 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
 
             // Roll button
             Semantics(
-              label:  'Pick random first player',
+              label: 'Pick random first player',
               button: true,
               child: Material(
-                color:        Colors.transparent,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
                 child: InkWell(
-                  onTap:        _rolling ? null : _roll,
+                  onTap: _rolling ? null : _roll,
                   borderRadius: BorderRadius.circular(10),
-                  splashColor:  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16),
+                  splashColor: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.16),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
-                    width: 48, height: 48,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      color:        _rolling
-                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)
+                      color: _rolling
+                          ? Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.7)
                           : Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     alignment: Alignment.center,
                     child: _rolling
                         ? SizedBox(
-                            width: 20, height: 20,
+                            width: 20,
+                            height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:  AlwaysStoppedAnimation(Theme.of(context).colorScheme.onPrimary),
+                              valueColor: AlwaysStoppedAnimation(
+                                  Theme.of(context).colorScheme.onPrimary),
                             ),
                           )
                         : Icon(Icons.casino_rounded,
-                            color: Theme.of(context).colorScheme.onPrimary, size: 22),
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            size: 22),
                   ),
                 ),
               ),
@@ -603,19 +646,19 @@ class _ArchetypeBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary     = result.archetypes.first;
+    final primary = result.archetypes.first;
     final secondaries = result.archetypes.skip(1).toList();
 
     return Semantics(
       label: 'Primary strategy: ${primary.headline}. '
-             '${secondaries.isNotEmpty ? 'Also: ${secondaries.map((a) => a.headline).join(', ')}.' : ''}',
+          '${secondaries.isNotEmpty ? 'Also: ${secondaries.map((a) => a.headline).join(', ')}.' : ''}',
       child: Container(
-        margin:  const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin:  Alignment.topLeft,
-            end:    Alignment.bottomRight,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
               Theme.of(context).colorScheme.surfaceContainer,
               ArchetypeUtils.color(primary.kind).withValues(alpha: 0.12),
@@ -638,8 +681,8 @@ class _ArchetypeBanner extends StatelessWidget {
                 Text(
                   primary.headline,
                   style: TextStyle(
-                    color:      Theme.of(context).colorScheme.onSurface,
-                    fontSize:   13,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -647,25 +690,25 @@ class _ArchetypeBanner extends StatelessWidget {
                 Text(
                   'PRIMARY',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
-                  ),
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                      ),
                 ),
               ],
             ),
             if (secondaries.isNotEmpty) ...[
               const SizedBox(height: 8),
               Wrap(
-                spacing:    6,
+                spacing: 6,
                 runSpacing: 6,
                 children: secondaries.map((a) {
                   final c = ArchetypeUtils.color(a.kind);
                   return Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color:        Theme.of(context).colorScheme.surface,
-                      border:       Border.all(color: c.withValues(alpha: 0.55)),
+                      color: Theme.of(context).colorScheme.surface,
+                      border: Border.all(color: c.withValues(alpha: 0.55)),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -677,7 +720,9 @@ class _ArchetypeBanner extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(a.headline,
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12)),
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 12)),
                       ],
                     ),
                   );
@@ -693,7 +738,6 @@ class _ArchetypeBanner extends StatelessWidget {
       ),
     );
   }
-
 }
 
 // ── Stat strip ─────────────────────────────────────────────────────────────
@@ -708,13 +752,13 @@ class _StatStrip extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _Stat(
-          icon:  Icons.local_fire_department_rounded,
+          icon: Icons.local_fire_department_rounded,
           label: 'Attacks',
           value: result.kingdomCards.where((c) => c.isAttack).length,
           color: AppColors.statAttack,
         ),
         _Stat(
-          icon:  Icons.delete_sweep_rounded,
+          icon: Icons.delete_sweep_rounded,
           label: 'Trashers',
           value: result.kingdomCards
               .where((c) =>
@@ -724,13 +768,13 @@ class _StatStrip extends StatelessWidget {
           color: AppColors.statTrasher,
         ),
         _Stat(
-          icon:  Icons.hourglass_empty_rounded,
+          icon: Icons.hourglass_empty_rounded,
           label: 'Duration',
           value: result.kingdomCards.where((c) => c.isDuration).length,
           color: AppColors.statDuration,
         ),
         _Stat(
-          icon:  Icons.emoji_events_rounded,
+          icon: Icons.emoji_events_rounded,
           label: 'Alt-VP',
           value: result.victoryCount,
           color: AppColors.statAltVP,
@@ -742,9 +786,9 @@ class _StatStrip extends StatelessWidget {
 
 class _Stat extends StatelessWidget {
   final IconData icon;
-  final String   label;
-  final int      value;
-  final Color    color;
+  final String label;
+  final int value;
+  final Color color;
   const _Stat({
     required this.icon,
     required this.label,
@@ -762,19 +806,23 @@ class _Stat extends StatelessWidget {
         children: [
           ExcludeSemantics(
             child: Icon(icon,
-                color: active ? color : Theme.of(context).colorScheme.outlineVariant, size: 18),
+                color: active
+                    ? color
+                    : Theme.of(context).colorScheme.outlineVariant,
+                size: 18),
           ),
           const SizedBox(height: 2),
           Text(
             '$value',
             style: TextStyle(
-              color:      active ? color : Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize:   16,
+              color: active
+                  ? color
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
           ),
-          Text(label,
-              style: Theme.of(context).textTheme.labelSmall),
+          Text(label, style: Theme.of(context).textTheme.labelSmall),
         ],
       ),
     );
@@ -804,9 +852,13 @@ class _SetupNotesSection extends StatelessWidget {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color:        Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
-              border:       Border.all(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+              border: Border.all(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.4)),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
@@ -823,16 +875,19 @@ class _SetupNotesSection extends StatelessWidget {
                           children: [
                             ExcludeSemantics(
                               child: Icon(Icons.info_outline_rounded,
-                                  color: Theme.of(context).colorScheme.primary, size: 15),
+                                  color: Theme.of(context).colorScheme.primary,
+                                  size: 15),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 entry.value,
                                 style: TextStyle(
-                                  color:    Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                                   fontSize: 13,
-                                  height:   1.45,
+                                  height: 1.45,
                                 ),
                               ),
                             ),
