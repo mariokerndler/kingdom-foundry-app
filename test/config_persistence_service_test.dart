@@ -36,6 +36,7 @@ void main() {
       final loaded = service.load();
 
       expect(loaded.rules.costCurve.enabled, isTrue);
+      expect(loaded.rules.showStrategyTips, isTrue);
       expect(loaded.rules.costCurve.bucketCounts, {
         '<=2': 2,
         '3': 1,
@@ -46,6 +47,24 @@ void main() {
       expect(loaded.ownedExpansions, state.ownedExpansions);
       expect(loaded.disabledCardIds, state.disabledCardIds);
       expect(loaded.playerCount, 3);
+    });
+
+    test('round-trips hidden strategy tips setting', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final service = ConfigPersistenceService(prefs);
+
+      const state = ConfigState(
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: SetupRules(showStrategyTips: false),
+        disabledCardIds: {},
+        playerCount: 2,
+      );
+
+      await service.save(state);
+      final loaded = service.load();
+
+      expect(loaded.rules.showStrategyTips, isFalse);
     });
   });
 }

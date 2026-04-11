@@ -233,12 +233,13 @@ class _ResultsBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playerCount = ref.watch(playerCountProvider);
+    final showStrategyTips = ref.watch(configProvider).rules.showStrategyTips;
     final genKey = result.generatedAt.millisecondsSinceEpoch;
 
     return CustomScrollView(
       slivers: [
         // ── Archetype summary banner ──────────────────────────────────────
-        if (result.archetypes.isNotEmpty)
+        if (showStrategyTips && result.archetypes.isNotEmpty)
           SliverToBoxAdapter(child: _ArchetypeBanner(result: result)),
 
         // ── Kingdom board header ──────────────────────────────────────────
@@ -296,7 +297,7 @@ class _ResultsBody extends ConsumerWidget {
         ),
 
         // ── Strategy guide ────────────────────────────────────────────────
-        if (result.archetypes.isNotEmpty) ...[
+        if (showStrategyTips && result.archetypes.isNotEmpty) ...[
           const SliverToBoxAdapter(
             child: SectionHeader(
               title: 'Strategy Guide',

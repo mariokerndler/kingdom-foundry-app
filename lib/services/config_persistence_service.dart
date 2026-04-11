@@ -19,6 +19,7 @@ const _kMaxCost = 'cfg_max_cost';
 const _kDisabledCards = 'cfg_disabled_cards';
 const _kPlayerCount = 'cfg_player_count';
 const _kIncludeLandscape = 'cfg_include_landscape';
+const _kShowStrategyTips = 'cfg_show_strategy_tips';
 const _kNoCursers = 'cfg_no_cursers';
 const _kNoTravellers = 'cfg_no_travellers';
 const _kRequireDraw = 'cfg_require_draw';
@@ -68,6 +69,7 @@ class ConfigPersistenceService {
       maxCost: maxCostVal,
       maxAttacks: maxAttacksVal,
       includeLandscape: _prefs.getBool(_kIncludeLandscape) ?? true,
+      showStrategyTips: _prefs.getBool(_kShowStrategyTips) ?? true,
       landscapeEvents: _prefs.getInt(_kLandscapeEvents) ?? 2,
       landscapeProjects: _prefs.getInt(_kLandscapeProjects) ?? 2,
       landscapeLandmarks: _prefs.getInt(_kLandscapeLandmarks) ?? 1,
@@ -117,6 +119,7 @@ class ConfigPersistenceService {
         ),
         _prefs.setInt(_kPlayerCount, state.playerCount),
         _prefs.setBool(_kIncludeLandscape, state.rules.includeLandscape),
+        _prefs.setBool(_kShowStrategyTips, state.rules.showStrategyTips),
         _prefs.setInt(_kLandscapeEvents, state.rules.landscapeEvents),
         _prefs.setInt(_kLandscapeProjects, state.rules.landscapeProjects),
         _prefs.setInt(_kLandscapeLandmarks, state.rules.landscapeLandmarks),

@@ -236,6 +236,22 @@ class _RulesTabState extends ConsumerState<RulesTab>
           onSixPlusChanged: notifier.setCostCurveSixPlusCount,
         ),
 
+        const _Divider(),
+        const SectionHeader(
+          title: 'Display',
+          subtitle:
+              'Control what extra guidance appears on the results screen.',
+        ),
+
+        _RuleTile(
+          icon: Icons.lightbulb_outline_rounded,
+          label: 'Show strategy tips',
+          detail:
+              'Display heuristic archetypes and strategy guidance on results.',
+          value: rules.showStrategyTips,
+          onChange: notifier.setShowStrategyTips,
+        ),
+
         // Active rules summary
         if (hasRules) ...[
           const _Divider(),

@@ -54,6 +54,9 @@ class SetupRules {
   /// will be drawn even if the owned expansions contain them.
   final bool includeLandscape;
 
+  /// When false, hide heuristic archetype strategy tips on the results screen.
+  final bool showStrategyTips;
+
   /// How many of each landscape type to draw (0 = none).
   /// Defaults reflect the standard rule suggestions.
   final int landscapeEvents;
@@ -80,6 +83,7 @@ class SetupRules {
     this.maxAttacks,
     this.minExpansionVariety = 1,
     this.includeLandscape = true,
+    this.showStrategyTips = true,
     this.landscapeEvents = 2,
     this.landscapeProjects = 2,
     this.landscapeLandmarks = 1,
@@ -105,6 +109,7 @@ class SetupRules {
     int? maxAttacks,
     int? minExpansionVariety,
     bool? includeLandscape,
+    bool? showStrategyTips,
     int? landscapeEvents,
     int? landscapeProjects,
     int? landscapeLandmarks,
@@ -132,6 +137,7 @@ class SetupRules {
       maxAttacks: clearMaxAttacks ? null : (maxAttacks ?? this.maxAttacks),
       minExpansionVariety: minExpansionVariety ?? this.minExpansionVariety,
       includeLandscape: includeLandscape ?? this.includeLandscape,
+      showStrategyTips: showStrategyTips ?? this.showStrategyTips,
       landscapeEvents: landscapeEvents ?? this.landscapeEvents,
       landscapeProjects: landscapeProjects ?? this.landscapeProjects,
       landscapeLandmarks: landscapeLandmarks ?? this.landscapeLandmarks,
@@ -164,6 +170,7 @@ class SetupRules {
       rules.add('At least $minExpansionVariety expansions');
     }
     if (!includeLandscape) rules.add('No landscape cards');
+    if (!showStrategyTips) rules.add('Hide strategy tips');
     if (landscapeEvents != 2) rules.add('Events: $landscapeEvents');
     if (landscapeProjects != 2) rules.add('Projects: $landscapeProjects');
     if (landscapeLandmarks != 1) rules.add('Landmarks: $landscapeLandmarks');

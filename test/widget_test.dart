@@ -3,11 +3,33 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:kingdom_foundry/models/expansion.dart';
+import 'package:kingdom_foundry/models/setup_result.dart';
+import 'package:kingdom_foundry/models/setup_rules.dart';
+import 'package:kingdom_foundry/models/strategy_archetype.dart';
 import 'package:kingdom_foundry/providers/config_provider.dart';
+import 'package:kingdom_foundry/providers/generation_provider.dart';
+import 'package:kingdom_foundry/screens/results_screen.dart';
 import 'package:kingdom_foundry/widgets/screens/rules_section.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  const sampleArchetype = StrategyArchetype(
+    kind: ArchetypeKind.bigMoney,
+    headline: 'Big Money',
+    description: 'Buy treasure and score points.',
+    tips: ['Buy Silver early.'],
+    keyCardNames: ['Market'],
+    strength: 0.7,
+  );
+
+  final sampleResult = SetupResult(
+    kingdomCards: [],
+    archetypes: const [sampleArchetype],
+    setupNotes: const ['Potion Supply pile present.'],
+    generatedAt: DateTime(2026, 4, 11),
+  );
 
   Future<void> pumpRulesTab(WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
@@ -90,6 +112,54 @@ void main() {
         find.text('Finish assigning all 10 kingdom slots before generating.'),
         findsNothing,
       );
+    });
+  });
+
+  group('Strategy tips rule', () {
+    testWidgets('rule toggle is shown and defaults to enabled', (tester) async {
+      await pumpRulesTab(tester);
+
+      await tester.scrollUntilVisible(
+        find.text('Show strategy tips'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Show strategy tips'), findsOneWidget);
+      expect(find.text('Hide strategy tips'), findsNothing);
+    });
+
+    testWidgets('results screen hides archetype tips when rule is off',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            configProvider.overrideWith(
+              (ref) => ConfigNotifier(ref.watch(configPersistenceProvider))
+                ..state = const ConfigState(
+                  ownedExpansions: {Expansion.baseSecondEdition},
+                  rules: SetupRules(showStrategyTips: false),
+                  disabledCardIds: {},
+                  playerCount: 2,
+                ),
+            ),
+            setupResultProvider.overrideWith((ref) => sampleResult),
+          ],
+          child: const MaterialApp(
+            home: ResultsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Strategy Guide'), findsNothing);
+      expect(find.text('Big Money'), findsNothing);
+      expect(find.text('Potion Supply pile present.'), findsOneWidget);
     });
   });
 }

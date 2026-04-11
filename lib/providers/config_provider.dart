@@ -119,6 +119,9 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
   void setIncludeLandscape(bool v) =>
       state = state.copyWith(rules: state.rules.copyWith(includeLandscape: v));
 
+  void setShowStrategyTips(bool v) =>
+      state = state.copyWith(rules: state.rules.copyWith(showStrategyTips: v));
+
   void setLandscapeEvents(int v) =>
       state = state.copyWith(rules: state.rules.copyWith(landscapeEvents: v));
 
