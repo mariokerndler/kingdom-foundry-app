@@ -24,16 +24,26 @@ void main() {
 
     test('extracts correct card names', () {
       final names = parseKingdomText(validInput);
-      expect(names, containsAll([
-        'Village', 'Smithy', 'Chapel', 'Witch', 'Market',
-        'Laboratory', 'Cellar', 'Moat', 'Militia', 'Festival',
-      ]));
+      expect(
+          names,
+          containsAll([
+            'Village',
+            'Smithy',
+            'Chapel',
+            'Witch',
+            'Market',
+            'Laboratory',
+            'Cellar',
+            'Moat',
+            'Militia',
+            'Festival',
+          ]));
     });
 
     test('preserves order', () {
       final names = parseKingdomText(validInput);
       expect(names.first, equals('Village'));
-      expect(names.last,  equals('Festival'));
+      expect(names.last, equals('Festival'));
     });
 
     test('handles Windows-style CRLF line endings', () {

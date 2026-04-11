@@ -41,20 +41,19 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
   Widget build(BuildContext context) {
     super.build(context);
     final cardsByExpAsync = ref.watch(cardsByExpansionProvider);
-    final config          = ref.watch(configProvider);
-    final disabledCount   = config.disabledCardIds.length;
+    final config = ref.watch(configProvider);
+    final disabledCount = config.disabledCardIds.length;
 
     return cardsByExpAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error:   (e, _) => _ErrorState(
+      error: (e, _) => _ErrorState(
         message: 'Could not load card list.',
         onRetry: () => ref.invalidate(cardsByExpansionProvider),
       ),
       data: (cardsByExp) {
         // Filter to only owned expansions
         final owned = Map.fromEntries(
-          cardsByExp.entries
-              .where((e) => config.isExpansionOwned(e.key)),
+          cardsByExp.entries.where((e) => config.isExpansionOwned(e.key)),
         );
 
         if (owned.isEmpty) {
@@ -69,16 +68,16 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
           children: [
             // Search bar + clear-all
             _SearchBar(
-              controller:    _searchCtrl,
+              controller: _searchCtrl,
               disabledCount: disabledCount,
-              onClearAll:    () => ref
-                  .read(configProvider.notifier)
-                  .enableAllCards(),
+              onClearAll: () =>
+                  ref.read(configProvider.notifier).enableAllCards(),
             ),
 
             SectionHeader(
-              title:    'Kingdom Cards',
-              subtitle: '$totalOwned cards from ${owned.length} expansion${owned.length == 1 ? '' : 's'}',
+              title: 'Kingdom Cards',
+              subtitle:
+                  '$totalOwned cards from ${owned.length} expansion${owned.length == 1 ? '' : 's'}',
             ),
 
             // Grouped list
@@ -86,8 +85,8 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
               child: filtered.isEmpty
                   ? _NoResults(query: _query)
                   : ListView.builder(
-                      padding:     const EdgeInsets.only(bottom: 100),
-                      itemCount:   _flatItemCount(filtered),
+                      padding: const EdgeInsets.only(bottom: 100),
+                      itemCount: _flatItemCount(filtered),
                       itemBuilder: (ctx, i) =>
                           _buildItem(ctx, i, filtered, config, ref),
                     ),
@@ -134,17 +133,17 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
     int cursor = 0;
     for (final entry in grouped.entries) {
       if (index == cursor) {
-        return _ExpansionHeader(expansion: entry.key, count: entry.value.length);
+        return _ExpansionHeader(
+            expansion: entry.key, count: entry.value.length);
       }
       cursor++;
       final cardIndex = index - cursor;
       if (cardIndex < entry.value.length) {
         final card = entry.value[cardIndex];
         return _CardRow(
-          card:       card,
+          card: card,
           isDisabled: config.isCardDisabled(card.id),
-          onToggle:   () =>
-              ref.read(configProvider.notifier).toggleCard(card.id),
+          onToggle: () => ref.read(configProvider.notifier).toggleCard(card.id),
         );
       }
       cursor += entry.value.length;
@@ -157,8 +156,8 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
 
 class _SearchBar extends StatelessWidget {
   final TextEditingController controller;
-  final int                   disabledCount;
-  final VoidCallback          onClearAll;
+  final int disabledCount;
+  final VoidCallback onClearAll;
 
   const _SearchBar({
     required this.controller,
@@ -176,7 +175,7 @@ class _SearchBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               decoration: const InputDecoration(
-                hintText:   'Search cards...',
+                hintText: 'Search cards...',
                 prefixIcon: Icon(Icons.search_rounded),
               ),
             ),
@@ -185,7 +184,7 @@ class _SearchBar extends StatelessWidget {
             const SizedBox(width: 8),
             TextButton.icon(
               onPressed: onClearAll,
-              icon:  const Icon(Icons.restore, size: 16),
+              icon: const Icon(Icons.restore, size: 16),
               label: Text('Enable all ($disabledCount)',
                   style: const TextStyle(fontSize: 12)),
               style: TextButton.styleFrom(
@@ -203,7 +202,7 @@ class _SearchBar extends StatelessWidget {
 
 class _ExpansionHeader extends StatelessWidget {
   final Expansion expansion;
-  final int       count;
+  final int count;
 
   const _ExpansionHeader({required this.expansion, required this.count});
 
@@ -236,7 +235,7 @@ class _ExpansionHeader extends StatelessWidget {
 
 class _CardRow extends StatelessWidget {
   final KingdomCard card;
-  final bool         isDisabled;
+  final bool isDisabled;
   final VoidCallback onToggle;
 
   const _CardRow({
@@ -249,21 +248,21 @@ class _CardRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Semantics(
-      label:  '${card.name}, ${isDisabled ? "banned" : "available"}',
-      hint:   'Double tap to ${isDisabled ? "enable" : "ban"}',
+      label: '${card.name}, ${isDisabled ? "banned" : "available"}',
+      hint: 'Double tap to ${isDisabled ? "enable" : "ban"}',
       button: true,
       excludeSemantics: true,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 200),
-        opacity:  isDisabled ? 0.45 : 1.0,
+        opacity: isDisabled ? 0.45 : 1.0,
         child: InkWell(
           onTap: onToggle,
           child: Container(
-            margin:  const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color:        cs.surfaceContainer,
-              border:       Border.all(color: cs.outlineVariant),
+              color: cs.surfaceContainer,
+              border: Border.all(color: cs.outlineVariant),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -277,15 +276,18 @@ class _CardRow extends StatelessWidget {
                       Text(
                         card.name,
                         style: TextStyle(
-                          color:      isDisabled ? cs.onSurfaceVariant : cs.onSurface,
-                          fontSize:   14,
+                          color:
+                              isDisabled ? cs.onSurfaceVariant : cs.onSurface,
+                          fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          decoration: isDisabled ? TextDecoration.lineThrough : null,
+                          decoration:
+                              isDisabled ? TextDecoration.lineThrough : null,
                         ),
                       ),
                       Text(
                         card.typeString,
-                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+                        style:
+                            TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
                       ),
                     ],
                   ),
@@ -310,7 +312,8 @@ class _CostBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      width: 28, height: 28,
+      width: 28,
+      height: 28,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: cs.primary,
@@ -319,8 +322,8 @@ class _CostBadge extends StatelessWidget {
       child: Text(
         '$cost',
         style: TextStyle(
-          color:      cs.onPrimary,
-          fontSize:   13,
+          color: cs.onPrimary,
+          fontSize: 13,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -366,8 +369,7 @@ class _NoResults extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // ignore: prefer_const_constructors
-          Icon(Icons.search_off_rounded,
-              size: 40, color: cs.onSurfaceVariant),
+          Icon(Icons.search_off_rounded, size: 40, color: cs.onSurfaceVariant),
           const SizedBox(height: 12),
           Text('No cards match "$query"',
               style: Theme.of(context).textTheme.bodyMedium),
@@ -380,7 +382,7 @@ class _NoResults extends StatelessWidget {
 // ── Error state ──────────────────────────────────────────────────────────────
 
 class _ErrorState extends ConsumerWidget {
-  final String       message;
+  final String message;
   final VoidCallback onRetry;
 
   const _ErrorState({required this.message, required this.onRetry});
@@ -393,14 +395,13 @@ class _ErrorState extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // ignore: prefer_const_constructors
-          Icon(Icons.error_outline_rounded,
-              size: 48, color: cs.error),
+          Icon(Icons.error_outline_rounded, size: 48, color: cs.error),
           const SizedBox(height: 16),
           Text(message, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 12),
           TextButton.icon(
             onPressed: onRetry,
-            icon:  const Icon(Icons.refresh_rounded, size: 16),
+            icon: const Icon(Icons.refresh_rounded, size: 16),
             label: const Text('Retry'),
             style: TextButton.styleFrom(foregroundColor: cs.primary),
           ),

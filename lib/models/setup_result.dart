@@ -31,14 +31,14 @@ class SetupResult {
 
   // ── Convenience helpers ────────────────────────────────────────────────────
 
-  bool get hasAttacks   => kingdomCards.any((c) => c.isAttack);
-  bool get hasTrashing  => kingdomCards.any((c) => c.hasTag(CardTag.trashCards));
-  bool get hasDuration  => kingdomCards.any((c) => c.isDuration);
+  bool get hasAttacks => kingdomCards.any((c) => c.isAttack);
+  bool get hasTrashing => kingdomCards.any((c) => c.hasTag(CardTag.trashCards));
+  bool get hasDuration => kingdomCards.any((c) => c.isDuration);
   bool get hasLandscape => landscapeCards.isNotEmpty;
 
-  int get actionCount   => kingdomCards.where((c) => c.isAction).length;
+  int get actionCount => kingdomCards.where((c) => c.isAction).length;
   int get treasureCount => kingdomCards.where((c) => c.isTreasure).length;
-  int get victoryCount  => kingdomCards.where((c) => c.isVictory).length;
+  int get victoryCount => kingdomCards.where((c) => c.isVictory).length;
 
   StrategyArchetype? get primaryArchetype =>
       archetypes.isEmpty ? null : archetypes.first;
@@ -46,12 +46,12 @@ class SetupResult {
   // ── Serialisation (for history) ────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
-    'kingdomCards':  kingdomCards.map((c) => c.toJson()).toList(),
-    'landscapeCards': landscapeCards.map((c) => c.toJson()).toList(),
-    'archetypes':    archetypes.map((a) => a.toJson()).toList(),
-    'setupNotes':    setupNotes,
-    'generatedAt':   generatedAt.toIso8601String(),
-  };
+        'kingdomCards': kingdomCards.map((c) => c.toJson()).toList(),
+        'landscapeCards': landscapeCards.map((c) => c.toJson()).toList(),
+        'archetypes': archetypes.map((a) => a.toJson()).toList(),
+        'setupNotes': setupNotes,
+        'generatedAt': generatedAt.toIso8601String(),
+      };
 
   factory SetupResult.fromJson(Map<String, dynamic> json) {
     return SetupResult(
@@ -64,7 +64,7 @@ class SetupResult {
       archetypes: (json['archetypes'] as List)
           .map((a) => StrategyArchetype.fromJson(a as Map<String, dynamic>))
           .toList(),
-      setupNotes:  (json['setupNotes'] as List).cast<String>(),
+      setupNotes: (json['setupNotes'] as List).cast<String>(),
       generatedAt: DateTime.parse(json['generatedAt'] as String),
     );
   }

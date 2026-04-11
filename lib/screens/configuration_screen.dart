@@ -22,8 +22,8 @@ class ConfigurationScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final config   = ref.watch(configProvider);
-    final status   = ref.watch(generationStatusProvider);
+    final config = ref.watch(configProvider);
+    final status = ref.watch(generationStatusProvider);
     final isLoading = status == GenerationStatus.loading;
 
     return DefaultTabController(
@@ -33,12 +33,12 @@ class ConfigurationScreen extends ConsumerWidget {
           title: const _AppTitle(),
           actions: [
             IconButton(
-              icon:    const Icon(Icons.history_rounded),
+              icon: const Icon(Icons.history_rounded),
               tooltip: 'Kingdom history',
               onPressed: () => showHistorySheet(context, ref),
             ),
             IconButton(
-              icon:    const Icon(Icons.paste_rounded),
+              icon: const Icon(Icons.paste_rounded),
               tooltip: 'Import kingdom from clipboard',
               onPressed: () => _showImportDialog(context, ref),
             ),
@@ -47,12 +47,11 @@ class ConfigurationScreen extends ConsumerWidget {
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.library_books_outlined), text: 'Expansions'),
-              Tab(icon: Icon(Icons.tune_rounded),           text: 'Rules'),
-              Tab(icon: Icon(Icons.block_rounded),          text: 'Ban Cards'),
+              Tab(icon: Icon(Icons.tune_rounded), text: 'Rules'),
+              Tab(icon: Icon(Icons.block_rounded), text: 'Ban Cards'),
             ],
           ),
         ),
-
         body: const Column(
           children: [
             PlayerCountBar(),
@@ -67,12 +66,11 @@ class ConfigurationScreen extends ConsumerWidget {
             ),
           ],
         ),
-
         floatingActionButton: _GenerateFab(
-          isLoading:       isLoading,
-          ownedCount:      config.ownedExpansions.length,
+          isLoading: isLoading,
+          ownedCount: config.ownedExpansions.length,
           activeRuleCount: config.rules.activeRuleDescriptions.length,
-          onGenerate:      () => _generate(context, ref),
+          onGenerate: () => _generate(context, ref),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
@@ -86,9 +84,21 @@ class ConfigurationScreen extends ConsumerWidget {
     if (config.ownedExpansions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content:         Text('Select at least one expansion first.'),
+          content: Text('Select at least one expansion first.'),
           backgroundColor: AppColors.errorRed,
-          behavior:        SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    if (config.rules.costCurve.enabled && !config.rules.costCurve.isValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Complete the cost curve so it assigns exactly 10 kingdom slots.',
+          ),
+          backgroundColor: AppColors.errorRed,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -102,7 +112,7 @@ class ConfigurationScreen extends ConsumerWidget {
     if (success) {
       Navigator.of(context).push(buildResultsRoute());
     } else {
-      final error  = ref.read(generationErrorProvider) ?? 'Unknown error.';
+      final error = ref.read(generationErrorProvider) ?? 'Unknown error.';
       final reason = ref.read(generationFailureReasonProvider);
       _showErrorDialog(context, error, reason);
     }
@@ -126,7 +136,7 @@ class ConfigurationScreen extends ConsumerWidget {
     if (success) {
       Navigator.of(context).push(buildResultsRoute());
     } else {
-      final error  = ref.read(generationErrorProvider) ?? 'Unknown error.';
+      final error = ref.read(generationErrorProvider) ?? 'Unknown error.';
       final reason = ref.read(generationFailureReasonProvider);
       _showErrorDialog(context, error, reason);
     }
@@ -156,17 +166,17 @@ class _AppTitle extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize:       MainAxisSize.min,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text('Kingdom Foundry',
             style: TextStyle(
-              color:      cs.onSurface,
-              fontSize:   18,
+              color: cs.onSurface,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
             )),
         Text('Kingdom Generator',
             style: TextStyle(
-              color:    cs.primary.withValues(alpha: 0.8),
+              color: cs.primary.withValues(alpha: 0.8),
               fontSize: 11,
             )),
       ],
@@ -177,9 +187,9 @@ class _AppTitle extends StatelessWidget {
 // ── Generate FAB ───────────────────────────────────────────────────────────
 
 class _GenerateFab extends StatelessWidget {
-  final bool         isLoading;
-  final int          ownedCount;
-  final int          activeRuleCount;
+  final bool isLoading;
+  final int ownedCount;
+  final int activeRuleCount;
   final VoidCallback onGenerate;
 
   const _GenerateFab({
@@ -193,25 +203,24 @@ class _GenerateFab extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return FloatingActionButton.extended(
-      onPressed:       isLoading ? null : onGenerate,
-      backgroundColor: isLoading
-          ? cs.primary.withValues(alpha: 0.6)
-          : cs.primary,
+      onPressed: isLoading ? null : onGenerate,
+      backgroundColor:
+          isLoading ? cs.primary.withValues(alpha: 0.6) : cs.primary,
       label: isLoading
           ? Row(
               children: [
                 SizedBox(
-                  width: 18, height: 18,
+                  width: 18,
+                  height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor:  AlwaysStoppedAnimation(cs.onPrimary),
+                    valueColor: AlwaysStoppedAnimation(cs.onPrimary),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Text('Generating...',
                     style: TextStyle(
-                        color:      cs.onPrimary,
-                        fontWeight: FontWeight.w700)),
+                        color: cs.onPrimary, fontWeight: FontWeight.w700)),
               ],
             )
           : Row(
@@ -223,10 +232,10 @@ class _GenerateFab extends StatelessWidget {
                 if (activeRuleCount > 0) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color:        Colors.black.withValues(alpha: 0.20),
+                      color: Colors.black.withValues(alpha: 0.20),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -251,7 +260,7 @@ class _ImportDialog extends StatefulWidget {
 }
 
 class _ImportDialogState extends State<_ImportDialog> {
-  final _ctrl   = TextEditingController();
+  final _ctrl = TextEditingController();
   List<String> _parsed = [];
 
   @override
@@ -284,16 +293,17 @@ class _ImportDialogState extends State<_ImportDialog> {
 
     return AlertDialog(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      titlePadding:    const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      contentPadding:  const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       title: Row(
         children: [
-          Icon(Icons.paste_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+          Icon(Icons.paste_rounded,
+              color: Theme.of(context).colorScheme.primary, size: 20),
           const SizedBox(width: 8),
           Text('Import Kingdom',
               style: TextStyle(
-                color:      Theme.of(context).colorScheme.onSurface,
-                fontSize:   17,
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 17,
                 fontWeight: FontWeight.w700,
               )),
         ],
@@ -301,21 +311,23 @@ class _ImportDialogState extends State<_ImportDialog> {
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
-          mainAxisSize:       MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Paste a kingdom list shared from another player\'s device.',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 13),
             ),
             const SizedBox(height: 12),
 
             // Text area
             TextField(
               controller: _ctrl,
-              maxLines:   12,
-              minLines:   5,
-              autofocus:  true,
+              maxLines: 12,
+              minLines: 5,
+              autofocus: true,
               style: const TextStyle(fontSize: 12, height: 1.6),
               decoration: const InputDecoration(
                 hintText: '1. Village (\$3)\n2. Smithy (\$4)\n…',
@@ -337,14 +349,17 @@ class _ImportDialogState extends State<_ImportDialog> {
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text('Cancel',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ),
         TextButton(
           onPressed: isValid ? () => Navigator.pop(context, _ctrl.text) : null,
           child: Text(
             'Import Kingdom',
             style: TextStyle(
-              color:      isValid ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant,
+              color: isValid
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.outlineVariant,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -358,7 +373,7 @@ class _ImportDialogState extends State<_ImportDialog> {
 
 class _ParsePreview extends StatelessWidget {
   final List<String> parsed;
-  final bool         isValid;
+  final bool isValid;
 
   const _ParsePreview({required this.parsed, required this.isValid});
 
@@ -368,11 +383,11 @@ class _ParsePreview extends StatelessWidget {
     final count = parsed.length;
 
     return AnimatedContainer(
-      duration:    const Duration(milliseconds: 200),
-      padding:     const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      decoration:  BoxDecoration(
-        color:        color.withValues(alpha: 0.08),
-        border:       Border.all(color: color.withValues(alpha: 0.45)),
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -385,7 +400,7 @@ class _ParsePreview extends StatelessWidget {
                     ? Icons.check_circle_outline_rounded
                     : Icons.info_outline_rounded,
                 color: color,
-                size:  15,
+                size: 15,
               ),
               const SizedBox(width: 8),
               Text(
@@ -393,8 +408,8 @@ class _ParsePreview extends StatelessWidget {
                     ? '$count cards found — ready to import'
                     : '$count of 10 cards found',
                 style: TextStyle(
-                  color:      color,
-                  fontSize:   12,
+                  color: color,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -405,9 +420,9 @@ class _ParsePreview extends StatelessWidget {
             Text(
               parsed.join(' · '),
               style: TextStyle(
-                color:    color.withValues(alpha: 0.75),
+                color: color.withValues(alpha: 0.75),
                 fontSize: 11,
-                height:   1.5,
+                height: 1.5,
               ),
             ),
           ],
@@ -420,7 +435,7 @@ class _ParsePreview extends StatelessWidget {
 // ── Contextual error dialog ────────────────────────────────────────────────
 
 class _SetupErrorDialog extends StatelessWidget {
-  final String              message;
+  final String message;
   final SetupFailureReason? reason;
 
   const _SetupErrorDialog({required this.message, required this.reason});
@@ -431,8 +446,8 @@ class _SetupErrorDialog extends StatelessWidget {
 
     return AlertDialog(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      titlePadding:    const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      contentPadding:  const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       title: Row(
         children: [
           Icon(icon, color: AppColors.errorRed, size: 22),
@@ -441,8 +456,8 @@ class _SetupErrorDialog extends StatelessWidget {
             child: Text(
               title,
               style: TextStyle(
-                color:      Theme.of(context).colorScheme.onSurface,
-                fontSize:   16,
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -450,19 +465,26 @@ class _SetupErrorDialog extends StatelessWidget {
         ],
       ),
       content: Column(
-        mainAxisSize:       MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
           Text(message,
               style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5)),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 13,
+                  height: 1.5)),
           const SizedBox(height: 12),
           Container(
-            padding:    const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             decoration: BoxDecoration(
-              color:        Theme.of(context).colorScheme.primary.withValues(alpha: 0.07),
-              border:       Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.07),
+              border: Border.all(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.4)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -475,7 +497,9 @@ class _SetupErrorDialog extends StatelessWidget {
                   child: Text(
                     suggestion,
                     style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12, height: 1.5),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                        height: 1.5),
                   ),
                 ),
               ],
@@ -487,7 +511,8 @@ class _SetupErrorDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('OK', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          child: Text('OK',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary)),
         ),
       ],
     );

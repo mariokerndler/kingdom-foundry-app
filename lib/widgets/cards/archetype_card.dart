@@ -5,7 +5,7 @@ import '../../utils/archetype_utils.dart';
 
 class ArchetypeCard extends StatefulWidget {
   final StrategyArchetype archetype;
-  final bool              isPrimary;
+  final bool isPrimary;
 
   const ArchetypeCard({
     super.key,
@@ -18,8 +18,8 @@ class ArchetypeCard extends StatefulWidget {
 }
 
 class _ArchetypeCardState extends State<ArchetypeCard> {
-  bool   _tipsExpanded      = false;
-  double _animatedStrength  = 0;
+  bool _tipsExpanded = false;
+  double _animatedStrength = 0;
 
   @override
   void initState() {
@@ -35,16 +35,16 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
   @override
   Widget build(BuildContext context) {
     final color = ArchetypeUtils.color(widget.archetype.kind);
-    final icon  = ArchetypeUtils.icon(widget.archetype.kind);
-    final pct   = (widget.archetype.strength * 100).round();
+    final icon = ArchetypeUtils.icon(widget.archetype.kind);
+    final pct = (widget.archetype.strength * 100).round();
     final cs = Theme.of(context).colorScheme;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color:        cs.surfaceContainer,
+        color: cs.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
-        border:       Border.all(
+        border: Border.all(
           color: widget.isPrimary ? color : cs.outlineVariant,
           width: widget.isPrimary ? 1.5 : 1,
         ),
@@ -55,19 +55,21 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
           // ── Header ────────────────────────────────────────────────────────
           Container(
             decoration: BoxDecoration(
-              color:        color.withValues(alpha: widget.isPrimary ? 0.18 : 0.10),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+              color: color.withValues(alpha: widget.isPrimary ? 0.18 : 0.10),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(11)),
             ),
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Row(
               children: [
                 // Icon
                 Container(
-                  width: 36, height: 36,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color:        color.withValues(alpha: 0.2),
+                    color: color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
-                    border:       Border.all(color: color.withValues(alpha: 0.4)),
+                    border: Border.all(color: color.withValues(alpha: 0.4)),
                   ),
                   child: Icon(icon, color: color, size: 19),
                 ),
@@ -82,18 +84,18 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                         Text(
                           'PRIMARY STRATEGY',
                           style: TextStyle(
-                            color:         cs.onSurface,
-                            fontSize:      11,
-                            fontWeight:    FontWeight.w700,
+                            color: cs.onSurface,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
                             letterSpacing: 1.2,
                           ),
                         ),
                       Text(
                         widget.archetype.headline,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: cs.onSurface,
-                          fontSize: widget.isPrimary ? 17 : 15,
-                        ),
+                              color: cs.onSurface,
+                              fontSize: widget.isPrimary ? 17 : 15,
+                            ),
                       ),
                     ],
                   ),
@@ -101,16 +103,17 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
 
                 // Strength badge — solid fill so white text always reads
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color:        color,
+                    color: color,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '$pct%',
                     style: const TextStyle(
-                      color:      Colors.white,
-                      fontSize:   12,
+                      color: Colors.white,
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -126,9 +129,9 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                 Container(height: 3, color: cs.outlineVariant),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 700),
-                  curve:    Curves.easeOut,
-                  height:   3,
-                  width:    constraints.maxWidth * _animatedStrength,
+                  curve: Curves.easeOut,
+                  height: 3,
+                  width: constraints.maxWidth * _animatedStrength,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -152,7 +155,7 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                 Text(
                   widget.archetype.description,
                   style: TextStyle(
-                    color:  cs.onSurfaceVariant,
+                    color: cs.onSurfaceVariant,
                     fontSize: 13,
                     height: 1.55,
                   ),
@@ -167,23 +170,23 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                   ),
                   const SizedBox(height: 6),
                   Wrap(
-                    spacing:    5,
+                    spacing: 5,
                     runSpacing: 5,
                     children: widget.archetype.keyCardNames
                         .map((name) => Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 9, vertical: 4),
                               decoration: BoxDecoration(
-                                color:        color.withValues(alpha: 0.12),
-                                border:       Border.all(
+                                color: color.withValues(alpha: 0.12),
+                                border: Border.all(
                                     color: color.withValues(alpha: 0.35)),
                                 borderRadius: BorderRadius.circular(5),
                               ),
                               child: Text(
                                 name,
                                 style: TextStyle(
-                                  color:      cs.onSurface,
-                                  fontSize:   11,
+                                  color: cs.onSurface,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -199,48 +202,48 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
                     label: _tipsExpanded ? 'Collapse tips' : 'Expand tips',
                     button: true,
                     child: InkWell(
-                    onTap: () =>
-                        setState(() => _tipsExpanded = !_tipsExpanded),
-                    borderRadius: BorderRadius.circular(6),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Row(
-                        children: [
-                          Text(
-                            'TIPS',
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                          const SizedBox(width: 6),
-                          AnimatedRotation(
-                            turns:    _tipsExpanded ? 0.5 : 0,
-                            duration: const Duration(milliseconds: 200),
-                            child: Icon(
-                              Icons.expand_more_rounded,
-                              color: cs.primary,
-                              size:  16,
+                      onTap: () =>
+                          setState(() => _tipsExpanded = !_tipsExpanded),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          children: [
+                            Text(
+                              'TIPS',
+                              style: Theme.of(context).textTheme.labelMedium,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            AnimatedRotation(
+                              turns: _tipsExpanded ? 0.5 : 0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Icon(
+                                Icons.expand_more_rounded,
+                                color: cs.primary,
+                                size: 16,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  ),  // Semantics
+                  ), // Semantics
                   AnimatedCrossFade(
-                    duration:     const Duration(milliseconds: 250),
+                    duration: const Duration(milliseconds: 250),
                     crossFadeState: _tipsExpanded
                         ? CrossFadeState.showSecond
                         : CrossFadeState.showFirst,
-                    firstChild:  const SizedBox.shrink(),
+                    firstChild: const SizedBox.shrink(),
                     secondChild: Column(
                       children: [
                         const SizedBox(height: 4),
                         ...widget.archetype.tips.asMap().entries.map(
-                          (e) => _TipRow(
-                            number: e.key + 1,
-                            text:   e.value,
-                            color:  color,
-                          ),
-                        ),
+                              (e) => _TipRow(
+                                number: e.key + 1,
+                                text: e.value,
+                                color: color,
+                              ),
+                            ),
                       ],
                     ),
                   ),
@@ -254,15 +257,14 @@ class _ArchetypeCardState extends State<ArchetypeCard> {
       ),
     );
   }
-
 }
 
 // ── Numbered tip row ───────────────────────────────────────────────────────
 
 class _TipRow extends StatelessWidget {
-  final int    number;
+  final int number;
   final String text;
-  final Color  color;
+  final Color color;
 
   const _TipRow({
     required this.number,
@@ -278,26 +280,28 @@ class _TipRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 20, height: 20,
+            width: 20,
+            height: 20,
             margin: const EdgeInsets.only(top: 1, right: 10),
             decoration: BoxDecoration(
-              shape:  BoxShape.circle,
-              color:  color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              color: color.withValues(alpha: 0.15),
               border: Border.all(color: color.withValues(alpha: 0.35)),
             ),
             alignment: Alignment.center,
             child: Text(
               '$number',
-              style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                  color: color, fontSize: 11, fontWeight: FontWeight.w700),
             ),
           ),
           Expanded(
             child: Text(
               text,
               style: TextStyle(
-                color:    Theme.of(context).colorScheme.onSurfaceVariant,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 13,
-                height:   1.45,
+                height: 1.45,
               ),
             ),
           ),

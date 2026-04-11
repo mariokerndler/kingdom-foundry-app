@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/cost_curve_rule.dart';
 import '../models/expansion.dart';
 import '../models/setup_rules.dart';
 import '../providers/config_provider.dart';
@@ -29,6 +30,7 @@ const _kLandscapeLandmarks = 'cfg_landscape_landmarks';
 const _kLandscapeWays = 'cfg_landscape_ways';
 const _kLandscapeAllies = 'cfg_landscape_allies';
 const _kLandscapeTraits = 'cfg_landscape_traits';
+const _kCostCurve = 'cfg_cost_curve';
 
 class ConfigPersistenceService {
   final SharedPreferences _prefs;
@@ -49,6 +51,7 @@ class ConfigPersistenceService {
 
     final maxCostVal = _prefs.getInt(_kMaxCost);
     final maxAttacksVal = _prefs.getInt(_kMaxAttacks);
+    final rawCostCurve = _prefs.getString(_kCostCurve);
     final rules = SetupRules(
       noAttacks: _prefs.getBool(_kNoAttacks) ?? false,
       noDuration: _prefs.getBool(_kNoDuration) ?? false,
@@ -71,6 +74,9 @@ class ConfigPersistenceService {
       landscapeWays: _prefs.getInt(_kLandscapeWays) ?? 1,
       landscapeAllies: _prefs.getInt(_kLandscapeAllies) ?? 1,
       landscapeTraits: _prefs.getInt(_kLandscapeTraits) ?? 1,
+      costCurve: rawCostCurve == null
+          ? const CostCurveRule()
+          : CostCurveRule.fromJsonString(rawCostCurve),
     );
 
     final bannedJson = _prefs.getString(_kDisabledCards);
@@ -117,6 +123,7 @@ class ConfigPersistenceService {
         _prefs.setInt(_kLandscapeWays, state.rules.landscapeWays),
         _prefs.setInt(_kLandscapeAllies, state.rules.landscapeAllies),
         _prefs.setInt(_kLandscapeTraits, state.rules.landscapeTraits),
+        _prefs.setString(_kCostCurve, state.rules.costCurve.toJsonString()),
       ]);
       if (state.rules.maxCost != null) {
         await _prefs.setInt(_kMaxCost, state.rules.maxCost!);

@@ -137,6 +137,54 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
   void setLandscapeTraits(int v) =>
       state = state.copyWith(rules: state.rules.copyWith(landscapeTraits: v));
 
+  void setCostCurveEnabled(bool v) => state = state.copyWith(
+          rules: state.rules.copyWith(
+              costCurve: state.rules.costCurve.copyWith(
+        enabled: v,
+      )));
+
+  void setCostCurveCheapCount(int v) => state = state.copyWith(
+          rules: state.rules.copyWith(
+              costCurve: state.rules.costCurve.copyWith(
+        cheapCount: v,
+      )));
+
+  void setCostCurveThreeCount(int v) => state = state.copyWith(
+          rules: state.rules.copyWith(
+              costCurve: state.rules.costCurve.copyWith(
+        threeCount: v,
+      )));
+
+  void setCostCurveFourCount(int v) => state = state.copyWith(
+          rules: state.rules.copyWith(
+              costCurve: state.rules.costCurve.copyWith(
+        fourCount: v,
+      )));
+
+  void setCostCurveFiveCount(int v) => state = state.copyWith(
+          rules: state.rules.copyWith(
+              costCurve: state.rules.costCurve.copyWith(
+        fiveCount: v,
+      )));
+
+  void setCostCurveSixPlusCount(int v) => state = state.copyWith(
+          rules: state.rules.copyWith(
+              costCurve: state.rules.costCurve.copyWith(
+        sixPlusCount: v,
+      )));
+
+  void resetCostCurve() => state = state.copyWith(
+        rules: state.rules.copyWith(
+          costCurve: state.rules.costCurve.copyWith(
+            cheapCount: 1,
+            threeCount: 2,
+            fourCount: 3,
+            fiveCount: 3,
+            sixPlusCount: 1,
+          ),
+        ),
+      );
+
   void resetRules() => state = state.copyWith(rules: const SetupRules());
 
   // ── Player count ──────────────────────────────────────────────────────────

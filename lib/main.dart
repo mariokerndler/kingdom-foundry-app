@@ -33,12 +33,12 @@ class KingdomFoundryApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title:                      'Kingdom Foundry',
+      title: 'Kingdom Foundry',
       debugShowCheckedModeBanner: false,
-      theme:                      buildLightTheme(),
-      darkTheme:                  buildDarkTheme(),
-      themeMode:                  ThemeMode.system,
-      home:                       const ConfigurationScreen(),
+      theme: buildLightTheme(),
+      darkTheme: buildDarkTheme(),
+      themeMode: ThemeMode.system,
+      home: const ConfigurationScreen(),
     );
   }
 }

@@ -20,7 +20,7 @@ enum GenerationStatus { idle, loading, error }
 final _generationStatusProvider =
     StateProvider<GenerationStatus>((ref) => GenerationStatus.idle);
 
-final _generationErrorProvider  = StateProvider<String?>((ref) => null);
+final _generationErrorProvider = StateProvider<String?>((ref) => null);
 final _generationReasonProvider =
     StateProvider<SetupFailureReason?>((ref) => null);
 
@@ -32,13 +32,13 @@ final generationErrorProvider =
     Provider<String?>((ref) => ref.watch(_generationErrorProvider));
 
 /// The typed [SetupFailureReason] for the last error, if any.
-final generationFailureReasonProvider =
-    Provider<SetupFailureReason?>((ref) => ref.watch(_generationReasonProvider));
+final generationFailureReasonProvider = Provider<SetupFailureReason?>(
+    (ref) => ref.watch(_generationReasonProvider));
 
 // ── Shared engine singletons ──────────────────────────────────────────────
 
 /// Singletons reused across calls — both are stateless.
-final _setupEngine     = SetupEngine();
+final _setupEngine = SetupEngine();
 final _heuristicEngine = HeuristicEngine();
 
 // ── Generate action ───────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ final _heuristicEngine = HeuristicEngine();
 /// Updates [setupResultProvider] and [generationStatusProvider] reactively.
 Future<bool> generateKingdom(WidgetRef ref) async {
   ref.read(_generationStatusProvider.notifier).state = GenerationStatus.loading;
-  ref.read(_generationErrorProvider.notifier).state  = null;
+  ref.read(_generationErrorProvider.notifier).state = null;
   ref.read(_generationReasonProvider.notifier).state = null;
 
   try {
@@ -58,30 +58,29 @@ Future<bool> generateKingdom(WidgetRef ref) async {
 
     // Stamp disabled flags from the ban list onto card objects
     final cards = allRaw
-        .map((c) => config.isCardDisabled(c.id)
-            ? c.copyWith(isDisabled: true)
-            : c)
+        .map((c) =>
+            config.isCardDisabled(c.id) ? c.copyWith(isDisabled: true) : c)
         .toList();
 
     final result = _setupEngine.generate(
-      allCards:        cards,
+      allCards: cards,
       ownedExpansions: config.ownedExpansions,
-      rules:           config.rules,
+      rules: config.rules,
     );
 
     final enriched = _heuristicEngine.enrich(result);
 
-    ref.read(setupResultProvider.notifier).state       = enriched;
+    ref.read(setupResultProvider.notifier).state = enriched;
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
     ref.read(historyProvider.notifier).push(enriched); // fire-and-forget
     return true;
   } on SetupException catch (e) {
-    ref.read(_generationErrorProvider.notifier).state  = e.message;
+    ref.read(_generationErrorProvider.notifier).state = e.message;
     ref.read(_generationReasonProvider.notifier).state = e.reason;
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
     return false;
   } catch (e) {
-    ref.read(_generationErrorProvider.notifier).state  =
+    ref.read(_generationErrorProvider.notifier).state =
         'Unexpected error: ${e.toString()}';
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
     return false;
@@ -97,7 +96,7 @@ Future<bool> generateKingdom(WidgetRef ref) async {
 /// returns `false`.
 Future<bool> importKingdom(WidgetRef ref, String rawText) async {
   ref.read(_generationStatusProvider.notifier).state = GenerationStatus.loading;
-  ref.read(_generationErrorProvider.notifier).state  = null;
+  ref.read(_generationErrorProvider.notifier).state = null;
   ref.read(_generationReasonProvider.notifier).state = null;
 
   try {
@@ -107,18 +106,19 @@ Future<bool> importKingdom(WidgetRef ref, String rawText) async {
       ref.read(_generationErrorProvider.notifier).state =
           'Need exactly 10 cards but found ${names.length}. '
           'Make sure you paste the complete kingdom list.';
-      ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
+      ref.read(_generationStatusProvider.notifier).state =
+          GenerationStatus.error;
       return false;
     }
 
     final allCards = await ref.read(allCardsProvider.future);
-    final kingdom  = <KingdomCard>[];
+    final kingdom = <KingdomCard>[];
     final notFound = <String>[];
 
     for (final name in names) {
       final card = allCards
-          .where((c) => c.isKingdomCard &&
-              c.name.toLowerCase() == name.toLowerCase())
+          .where((c) =>
+              c.isKingdomCard && c.name.toLowerCase() == name.toLowerCase())
           .firstOrNull;
       if (card != null) {
         kingdom.add(card);
@@ -132,23 +132,24 @@ Future<bool> importKingdom(WidgetRef ref, String rawText) async {
       ref.read(_generationErrorProvider.notifier).state =
           'Could not find in the card database: $missing.\n\n'
           'The app may not have data for that expansion yet.';
-      ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
+      ref.read(_generationStatusProvider.notifier).state =
+          GenerationStatus.error;
       return false;
     }
 
     final baseResult = SetupResult(
       kingdomCards: kingdom,
-      archetypes:   [],
-      setupNotes:   [],
-      generatedAt:  DateTime.now(),
+      archetypes: [],
+      setupNotes: [],
+      generatedAt: DateTime.now(),
     );
     final enriched = _heuristicEngine.enrich(baseResult);
 
-    ref.read(setupResultProvider.notifier).state       = enriched;
+    ref.read(setupResultProvider.notifier).state = enriched;
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
     return true;
   } catch (e) {
-    ref.read(_generationErrorProvider.notifier).state  =
+    ref.read(_generationErrorProvider.notifier).state =
         'Import failed: ${e.toString()}';
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
     return false;
@@ -184,7 +185,7 @@ List<String> parseKingdomText(String text) {
 /// Used to warn the user if they have fewer than 10 selectable cards.
 final availableCardCountProvider = Provider<AsyncValue<int>>((ref) {
   final allAsync = ref.watch(allCardsProvider);
-  final config   = ref.watch(configProvider);
+  final config = ref.watch(configProvider);
 
   return allAsync.whenData((all) => all
       .where((c) =>

@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import '../models/card_tag.dart';
+import '../models/cost_curve_rule.dart';
 import '../models/card_type.dart';
 import '../models/kingdom_card.dart';
 import '../models/expansion.dart';
@@ -40,6 +41,7 @@ const _plunderLootNames = {
 ///
 /// Throws [SetupException] when a valid kingdom cannot be produced.
 class SetupEngine {
+  static const int _costCurveSearchBudget = 100;
   final Random _rng;
 
   SetupEngine({Random? random}) : _rng = random ?? Random();
@@ -75,13 +77,8 @@ class SetupEngine {
       );
     }
 
-    // ── Step D ── Selection algorithm ────────────────────────────────────────
-    final (kingdom, locked) = _stepDSelect(pool, rules);
-
-    // ── Step F ── Auto-reaction swap ─────────────────────────────────────────
-    if (rules.requireReactionIfAttacks) {
-      _stepFAutoReaction(kingdom, locked, pool);
-    }
+    // ── Step D/F ── Kingdom selection and post-processing ───────────────────
+    final kingdom = _selectKingdomForRules(pool, rules);
 
     // ── Step E ── Landscape cards ────────────────────────────────────────────
     final landscapeResult = _stepESelectLandscape(
@@ -94,6 +91,14 @@ class SetupEngine {
     // ── Supplement ── Setup notes ────────────────────────────────────────────
     final notes =
         _generateSetupNotes(kingdom, landscapeResult, ownedExpansions);
+    if (rules.costCurve.enabled && rules.costCurve.isValid) {
+      final actual = _costBucketCounts(kingdom);
+      notes.add(
+        'Cost curve target ${CostCurveRule.describeBucketCounts(rules.costCurve.bucketCounts)}; '
+        'actual ${CostCurveRule.describeBucketCounts(actual)}; '
+        'matched ${_matchedCurveSlots(rules.costCurve, actual)}/${CostCurveRule.targetSlotCount} slots.',
+      );
+    }
 
     return SetupResult(
       kingdomCards: kingdom,
@@ -102,6 +107,34 @@ class SetupEngine {
       setupNotes: notes,
       generatedAt: DateTime.now(),
     );
+  }
+
+  List<KingdomCard> _selectKingdomForRules(
+    List<KingdomCard> pool,
+    SetupRules rules,
+  ) {
+    if (!rules.costCurve.enabled || !rules.costCurve.isValid) {
+      final (kingdom, locked) = _stepDSelect(pool, rules);
+      if (rules.requireReactionIfAttacks) {
+        _stepFAutoReaction(kingdom, locked, pool);
+      }
+      return kingdom;
+    }
+
+    _CurveCandidate? best;
+    for (var i = 0; i < _costCurveSearchBudget; i++) {
+      final (kingdom, locked) = _stepDSelect(pool, rules);
+      if (rules.requireReactionIfAttacks) {
+        _stepFAutoReaction(kingdom, locked, pool);
+      }
+      final score = _scoreCostCurve(kingdom, rules.costCurve);
+      final candidate = _CurveCandidate(kingdom: kingdom, score: score);
+      if (best == null || score.isBetterThan(best.score)) {
+        best = candidate;
+      }
+    }
+
+    return best!.kingdom;
   }
 
   // ===========================================================================
@@ -413,6 +446,69 @@ class SetupEngine {
   }
 
   String _slotId(KingdomCard card) => card.splitPileId ?? card.id;
+
+  Map<String, int> _costBucketCounts(List<KingdomCard> kingdom) {
+    final slots = <String, int>{};
+    for (final card in kingdom) {
+      final slotId = _slotId(card);
+      final current = slots[slotId];
+      if (current == null || card.cost < current) {
+        slots[slotId] = card.cost;
+      }
+    }
+
+    final counts = <String, int>{
+      '<=2': 0,
+      '3': 0,
+      '4': 0,
+      '5': 0,
+      '6+': 0,
+    };
+
+    for (final cost in slots.values) {
+      if (cost <= 2) {
+        counts['<=2'] = counts['<=2']! + 1;
+      } else if (cost == 3) {
+        counts['3'] = counts['3']! + 1;
+      } else if (cost == 4) {
+        counts['4'] = counts['4']! + 1;
+      } else if (cost == 5) {
+        counts['5'] = counts['5']! + 1;
+      } else {
+        counts['6+'] = counts['6+']! + 1;
+      }
+    }
+
+    return counts;
+  }
+
+  _CurveScore _scoreCostCurve(List<KingdomCard> kingdom, CostCurveRule rule) {
+    final actual = _costBucketCounts(kingdom);
+    final target = rule.bucketCounts;
+    var penalty = 0;
+    var exactBuckets = 0;
+
+    for (final key in target.keys) {
+      final diff = (target[key]! - (actual[key] ?? 0)).abs();
+      penalty += diff;
+      if (diff == 0) exactBuckets++;
+    }
+
+    return _CurveScore(
+      penalty: penalty,
+      exactBuckets: exactBuckets,
+      matchedSlots: _matchedCurveSlots(rule, actual),
+    );
+  }
+
+  int _matchedCurveSlots(CostCurveRule rule, Map<String, int> actual) {
+    final target = rule.bucketCounts;
+    var matched = 0;
+    for (final key in target.keys) {
+      matched += min(target[key]!, actual[key] ?? 0);
+    }
+    return matched;
+  }
 
   // ===========================================================================
   // Step F — Auto-reaction swap
@@ -1000,5 +1096,38 @@ class SetupEngine {
     }
 
     return notes;
+  }
+}
+
+class _CurveCandidate {
+  final List<KingdomCard> kingdom;
+  final _CurveScore score;
+
+  _CurveCandidate({
+    required this.kingdom,
+    required this.score,
+  });
+}
+
+class _CurveScore {
+  final int penalty;
+  final int exactBuckets;
+  final int matchedSlots;
+
+  const _CurveScore({
+    required this.penalty,
+    required this.exactBuckets,
+    required this.matchedSlots,
+  });
+
+  bool isBetterThan(_CurveScore other) {
+    if (penalty != other.penalty) return penalty < other.penalty;
+    if (exactBuckets != other.exactBuckets) {
+      return exactBuckets > other.exactBuckets;
+    }
+    if (matchedSlots != other.matchedSlots) {
+      return matchedSlots > other.matchedSlots;
+    }
+    return false;
   }
 }

@@ -1,3 +1,5 @@
+import 'cost_curve_rule.dart';
+
 /// Global rule modifiers that act as filter switches in the Setup Engine.
 /// The user toggles these on the Configuration screen.
 class SetupRules {
@@ -60,6 +62,7 @@ class SetupRules {
   final int landscapeWays;
   final int landscapeAllies;
   final int landscapeTraits;
+  final CostCurveRule costCurve;
 
   const SetupRules({
     this.noAttacks = false,
@@ -83,6 +86,7 @@ class SetupRules {
     this.landscapeWays = 1,
     this.landscapeAllies = 1,
     this.landscapeTraits = 1,
+    this.costCurve = const CostCurveRule(),
   });
 
   SetupRules copyWith({
@@ -107,6 +111,7 @@ class SetupRules {
     int? landscapeWays,
     int? landscapeAllies,
     int? landscapeTraits,
+    CostCurveRule? costCurve,
     bool clearMaxCost = false,
     bool clearMaxAttacks = false,
   }) {
@@ -133,6 +138,7 @@ class SetupRules {
       landscapeWays: landscapeWays ?? this.landscapeWays,
       landscapeAllies: landscapeAllies ?? this.landscapeAllies,
       landscapeTraits: landscapeTraits ?? this.landscapeTraits,
+      costCurve: costCurve ?? this.costCurve,
     );
   }
 
@@ -164,6 +170,7 @@ class SetupRules {
     if (landscapeWays != 1) rules.add('Ways: $landscapeWays');
     if (landscapeAllies != 1) rules.add('Allies: $landscapeAllies');
     if (landscapeTraits != 1) rules.add('Traits: $landscapeTraits');
+    if (costCurve.enabled) rules.add(costCurve.targetDescription);
     return rules;
   }
 

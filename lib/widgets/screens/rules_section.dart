@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../models/cost_curve_rule.dart';
 import '../../providers/config_provider.dart';
 import '../../utils/app_theme.dart';
 import '../common/section_header.dart';
@@ -210,6 +211,31 @@ class _RulesTabState extends ConsumerState<RulesTab>
           onChange: notifier.setMaxAttacks,
         ),
 
+        const _Divider(),
+        SectionHeader(
+          title: 'Cost Curve',
+          subtitle: 'Prefer kingdoms that match your target cost spread.',
+          trailing: rules.costCurve.enabled
+              ? TextButton(
+                  onPressed: notifier.resetCostCurve,
+                  child: const Text(
+                    'Reset curve',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                )
+              : null,
+        ),
+
+        _CostCurveEditor(
+          rule: rules.costCurve,
+          onEnabledChanged: notifier.setCostCurveEnabled,
+          onCheapChanged: notifier.setCostCurveCheapCount,
+          onThreeChanged: notifier.setCostCurveThreeCount,
+          onFourChanged: notifier.setCostCurveFourCount,
+          onFiveChanged: notifier.setCostCurveFiveCount,
+          onSixPlusChanged: notifier.setCostCurveSixPlusCount,
+        ),
+
         // Active rules summary
         if (hasRules) ...[
           const _Divider(),
@@ -274,6 +300,183 @@ class _RuleTile extends StatelessWidget {
 }
 
 // ── Max cost slider row ────────────────────────────────────────────────────
+
+class _CostCurveEditor extends StatelessWidget {
+  final CostCurveRule rule;
+  final ValueChanged<bool> onEnabledChanged;
+  final ValueChanged<int> onCheapChanged;
+  final ValueChanged<int> onThreeChanged;
+  final ValueChanged<int> onFourChanged;
+  final ValueChanged<int> onFiveChanged;
+  final ValueChanged<int> onSixPlusChanged;
+
+  const _CostCurveEditor({
+    required this.rule,
+    required this.onEnabledChanged,
+    required this.onCheapChanged,
+    required this.onThreeChanged,
+    required this.onFourChanged,
+    required this.onFiveChanged,
+    required this.onSixPlusChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final active = rule.enabled;
+    final total = rule.totalSlots;
+    final canIncrease = total < CostCurveRule.targetSlotCount;
+    final isValid = rule.isValid;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          color:
+              active ? cs.primary.withValues(alpha: 0.08) : cs.surfaceContainer,
+          border: Border.all(color: active ? cs.primary : cs.outlineVariant),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SwitchListTile(
+              secondary: Icon(Icons.show_chart_rounded,
+                  size: 20, color: active ? cs.primary : cs.onSurfaceVariant),
+              title: Text(
+                'Prefer a cost curve',
+                style: TextStyle(
+                  color: active ? cs.onSurface : cs.onSurfaceVariant,
+                  fontWeight: active ? FontWeight.w500 : FontWeight.w400,
+                  fontSize: 14,
+                ),
+              ),
+              subtitle: Text(
+                'Bias generation toward cheap, mid-cost, and expensive slots you choose.',
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+              ),
+              value: active,
+              onChanged: onEnabledChanged,
+              dense: true,
+            ),
+            if (active) ...[
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              _CostCurveBucketRow(
+                label: '<=2',
+                value: rule.cheapCount,
+                canIncrease: canIncrease,
+                onChange: onCheapChanged,
+              ),
+              _CostCurveBucketRow(
+                label: '3',
+                value: rule.threeCount,
+                canIncrease: canIncrease,
+                onChange: onThreeChanged,
+              ),
+              _CostCurveBucketRow(
+                label: '4',
+                value: rule.fourCount,
+                canIncrease: canIncrease,
+                onChange: onFourChanged,
+              ),
+              _CostCurveBucketRow(
+                label: '5',
+                value: rule.fiveCount,
+                canIncrease: canIncrease,
+                onChange: onFiveChanged,
+              ),
+              _CostCurveBucketRow(
+                label: '6+',
+                value: rule.sixPlusCount,
+                canIncrease: canIncrease,
+                onChange: onSixPlusChanged,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+                child: Text(
+                  'Assigned $total / ${CostCurveRule.targetSlotCount} slots',
+                  style: TextStyle(
+                    color: isValid ? cs.onSurface : AppColors.errorRed,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (!isValid)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  child: Text(
+                    'Finish assigning all 10 kingdom slots before generating.',
+                    style: TextStyle(
+                      color: AppColors.errorRed,
+                      fontSize: 12,
+                    ),
+                  ),
+                )
+              else
+                const SizedBox(height: 10),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CostCurveBucketRow extends StatelessWidget {
+  final String label;
+  final int value;
+  final bool canIncrease;
+  final ValueChanged<int> onChange;
+
+  const _CostCurveBucketRow({
+    required this.label,
+    required this.value,
+    required this.canIncrease,
+    required this.onChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 44,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: cs.onSurface,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              'Target slots',
+              style: TextStyle(
+                color: cs.onSurfaceVariant,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          _Stepper(
+            value: value,
+            min: 0,
+            max: CostCurveRule.targetSlotCount,
+            canIncrease: canIncrease,
+            onChange: onChange,
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _MaxCostRow extends StatelessWidget {
   final int? currentMax;
@@ -428,12 +631,14 @@ class _Stepper extends StatelessWidget {
   final int value;
   final int min;
   final int max;
+  final bool canIncrease;
   final ValueChanged<int> onChange;
 
   const _Stepper({
     required this.value,
     required this.min,
     required this.max,
+    this.canIncrease = true,
     required this.onChange,
   });
 
@@ -463,7 +668,7 @@ class _Stepper extends StatelessWidget {
         ),
         _StepBtn(
           icon: Icons.add_rounded,
-          enabled: value < max,
+          enabled: value < max && canIncrease,
           onPressed: () => onChange(value + 1),
         ),
       ],

@@ -6,6 +6,7 @@ import 'package:kingdom_foundry/controllers/setup_engine.dart';
 import 'package:kingdom_foundry/controllers/setup_exception.dart';
 import 'package:kingdom_foundry/models/card_tag.dart';
 import 'package:kingdom_foundry/models/card_type.dart';
+import 'package:kingdom_foundry/models/cost_curve_rule.dart';
 import 'package:kingdom_foundry/models/kingdom_card.dart';
 import 'package:kingdom_foundry/models/expansion.dart';
 import 'package:kingdom_foundry/models/setup_rules.dart';
@@ -50,6 +51,33 @@ List<KingdomCard> _pool(
 
 /// Engine with a fixed seed for reproducibility.
 SetupEngine _seededEngine([int seed = 42]) => SetupEngine(random: Random(seed));
+
+Map<String, int> _bucketCounts(List<KingdomCard> kingdom) {
+  final slots = <String, int>{};
+  for (final card in kingdom) {
+    final slotId = card.splitPileId ?? card.id;
+    final current = slots[slotId];
+    if (current == null || card.cost < current) {
+      slots[slotId] = card.cost;
+    }
+  }
+
+  final counts = {'<=2': 0, '3': 0, '4': 0, '5': 0, '6+': 0};
+  for (final cost in slots.values) {
+    if (cost <= 2) {
+      counts['<=2'] = counts['<=2']! + 1;
+    } else if (cost == 3) {
+      counts['3'] = counts['3']! + 1;
+    } else if (cost == 4) {
+      counts['4'] = counts['4']! + 1;
+    } else if (cost == 5) {
+      counts['5'] = counts['5']! + 1;
+    } else {
+      counts['6+'] = counts['6+']! + 1;
+    }
+  }
+  return counts;
+}
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 
@@ -375,6 +403,200 @@ void main() {
       );
       final ids = result.kingdomCards.map((c) => c.id).toList();
       expect(ids.toSet().length, equals(ids.length));
+    });
+  });
+
+  group('SetupEngine — cost curve', () {
+    test('disabled cost curve preserves normal generation behavior', () {
+      final pool = [
+        ...List.generate(12, (i) => _card(id: 'cheap_$i', cost: 2)),
+        ...List.generate(12, (i) => _card(id: 'mid_$i', cost: 4)),
+        ...List.generate(12, (i) => _card(id: 'high_$i', cost: 6)),
+      ];
+
+      final base = SetupEngine(random: Random(17)).generate(
+        allCards: pool,
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: const SetupRules(),
+      );
+      final curveDisabled = SetupEngine(random: Random(17)).generate(
+        allCards: pool,
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: const SetupRules(
+          costCurve: CostCurveRule(
+            enabled: false,
+            cheapCount: 4,
+            threeCount: 0,
+            fourCount: 3,
+            fiveCount: 0,
+            sixPlusCount: 3,
+          ),
+        ),
+      );
+
+      expect(
+        curveDisabled.kingdomCards.map((c) => c.id).toList(),
+        equals(base.kingdomCards.map((c) => c.id).toList()),
+      );
+    });
+
+    test('enabled cost curve prefers the requested bucket distribution', () {
+      final pool = [
+        ...List.generate(6, (i) => _card(id: 'cheap_$i', cost: 2)),
+        ...List.generate(4, (i) => _card(id: 'three_$i', cost: 3)),
+        ...List.generate(4, (i) => _card(id: 'four_$i', cost: 4)),
+        ...List.generate(4, (i) => _card(id: 'five_$i', cost: 5)),
+        ...List.generate(6, (i) => _card(id: 'six_$i', cost: 6)),
+      ];
+
+      final result = SetupEngine(random: Random(9)).generate(
+        allCards: pool,
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: const SetupRules(
+          costCurve: CostCurveRule(
+            enabled: true,
+            cheapCount: 2,
+            threeCount: 2,
+            fourCount: 2,
+            fiveCount: 2,
+            sixPlusCount: 2,
+          ),
+        ),
+      );
+
+      expect(_bucketCounts(result.kingdomCards), {
+        '<=2': 2,
+        '3': 2,
+        '4': 2,
+        '5': 2,
+        '6+': 2,
+      });
+    });
+
+    test('split piles count as one slot for cost curve matching', () {
+      final sauna = _card(
+        id: 'sauna',
+        name: 'Sauna',
+        cost: 2,
+        splitPileId: 'split_a',
+      );
+      final avanto = _card(
+        id: 'avanto',
+        name: 'Avanto',
+        cost: 6,
+        splitPileId: 'split_a',
+      );
+
+      final result = SetupEngine(random: Random(4)).generate(
+        allCards: [
+          ...List.generate(9, (i) => _card(id: 'five_$i', cost: 5)),
+          sauna,
+          avanto,
+        ],
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: const SetupRules(
+          costCurve: CostCurveRule(
+            enabled: true,
+            cheapCount: 1,
+            threeCount: 0,
+            fourCount: 0,
+            fiveCount: 9,
+            sixPlusCount: 0,
+          ),
+        ),
+      );
+
+      expect(_bucketCounts(result.kingdomCards), {
+        '<=2': 1,
+        '3': 0,
+        '4': 0,
+        '5': 9,
+        '6+': 0,
+      });
+    });
+
+    test('hard rules still win over curve preference', () {
+      final result = SetupEngine(random: Random(8)).generate(
+        allCards: [
+          _card(id: 'village', cost: 4, tags: [CardTag.villageEffect]),
+          ...List.generate(12, (i) => _card(id: 'cheap_$i', cost: 2)),
+          ...List.generate(12, (i) => _card(id: 'five_$i', cost: 5)),
+        ],
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: const SetupRules(
+          requireVillage: true,
+          costCurve: CostCurveRule(
+            enabled: true,
+            cheapCount: 5,
+            threeCount: 0,
+            fourCount: 0,
+            fiveCount: 5,
+            sixPlusCount: 0,
+          ),
+        ),
+      );
+
+      expect(
+        result.kingdomCards.any((c) => c.hasTag(CardTag.villageEffect)),
+        isTrue,
+      );
+    });
+
+    test(
+        'impossible curves choose the closest valid kingdom instead of failing',
+        () {
+      final result = SetupEngine(random: Random(3)).generate(
+        allCards: [
+          ...List.generate(14, (i) => _card(id: 'four_$i', cost: 4)),
+          ...List.generate(14, (i) => _card(id: 'five_$i', cost: 5)),
+        ],
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: const SetupRules(
+          costCurve: CostCurveRule(
+            enabled: true,
+            cheapCount: 10,
+            threeCount: 0,
+            fourCount: 0,
+            fiveCount: 0,
+            sixPlusCount: 0,
+          ),
+        ),
+      );
+
+      expect(result.kingdomCards, hasLength(10));
+      expect(
+        result.setupNotes.any((note) => note.contains('Cost curve target')),
+        isTrue,
+      );
+    });
+
+    test('enabled cost curve emits target vs actual setup note', () {
+      final result = SetupEngine(random: Random(11)).generate(
+        allCards: [
+          ...List.generate(4, (i) => _card(id: 'cheap_$i', cost: 2)),
+          ...List.generate(4, (i) => _card(id: 'three_$i', cost: 3)),
+          ...List.generate(4, (i) => _card(id: 'four_$i', cost: 4)),
+          ...List.generate(4, (i) => _card(id: 'five_$i', cost: 5)),
+          ...List.generate(4, (i) => _card(id: 'six_$i', cost: 6)),
+        ],
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: const SetupRules(
+          costCurve: CostCurveRule(
+            enabled: true,
+            cheapCount: 2,
+            threeCount: 2,
+            fourCount: 2,
+            fiveCount: 2,
+            sixPlusCount: 2,
+          ),
+        ),
+      );
+
+      final note = result.setupNotes.firstWhere(
+        (note) => note.contains('Cost curve target'),
+      );
+      expect(note, contains('actual'));
+      expect(note, contains('matched'));
     });
   });
 

@@ -4,8 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/setup_result.dart';
 
-const _kHistory    = 'kingdom_history';
-const _maxHistory  = 10;
+const _kHistory = 'kingdom_history';
+const _maxHistory = 10;
 
 /// Persists the last [_maxHistory] generated kingdoms.
 class HistoryService {

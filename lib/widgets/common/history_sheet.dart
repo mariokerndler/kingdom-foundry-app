@@ -13,9 +13,9 @@ import '../common/expansion_badge.dart';
 /// push to the ResultsScreen without regenerating.
 void showHistorySheet(BuildContext context, WidgetRef ref) {
   showModalBottomSheet<void>(
-    context:           context,
+    context: context,
     isScrollControlled: true,
-    backgroundColor:   Colors.transparent,
+    backgroundColor: Colors.transparent,
     builder: (_) => const _HistorySheet(),
   );
 }
@@ -29,11 +29,11 @@ class _HistorySheet extends ConsumerWidget {
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
-      minChildSize:     0.4,
-      maxChildSize:     0.92,
+      minChildSize: 0.4,
+      maxChildSize: 0.92,
       builder: (ctx, ctrl) => Container(
         decoration: BoxDecoration(
-          color:        Theme.of(ctx).colorScheme.surface,
+          color: Theme.of(ctx).colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           border: Border(
             top: BorderSide(color: Theme.of(ctx).colorScheme.primary, width: 2),
@@ -44,9 +44,10 @@ class _HistorySheet extends ConsumerWidget {
             // Drag handle
             Container(
               margin: const EdgeInsets.only(top: 10),
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color:        Theme.of(ctx).colorScheme.outlineVariant,
+                color: Theme.of(ctx).colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -72,13 +73,14 @@ class _HistorySheet extends ConsumerWidget {
                       child: Text(
                         'Clear',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.errorRed,
-                        ),
+                              color: AppColors.errorRed,
+                            ),
                       ),
                     ),
                   IconButton(
                     icon: Icon(Icons.close_rounded,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: 20),
                     tooltip: 'Close',
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -93,17 +95,16 @@ class _HistorySheet extends ConsumerWidget {
             else
               Expanded(
                 child: ListView.separated(
-                  controller:  ctrl,
-                  padding:     const EdgeInsets.fromLTRB(0, 4, 0, 40),
-                  itemCount:   history.length,
+                  controller: ctrl,
+                  padding: const EdgeInsets.fromLTRB(0, 4, 0, 40),
+                  itemCount: history.length,
                   separatorBuilder: (_, __) =>
                       const Divider(height: 1, indent: 16, endIndent: 16),
                   itemBuilder: (_, i) => _HistoryTile(
                     result: history[i],
-                    index:  i,
-                    onTap:  () {
-                      ref.read(setupResultProvider.notifier).state =
-                          history[i];
+                    index: i,
+                    onTap: () {
+                      ref.read(setupResultProvider.notifier).state = history[i];
                       // Capture navigator before pop to avoid stale context.
                       final navigator = Navigator.of(context);
                       navigator.pop();
@@ -120,8 +121,8 @@ class _HistorySheet extends ConsumerWidget {
 }
 
 class _HistoryTile extends StatelessWidget {
-  final SetupResult  result;
-  final int          index;
+  final SetupResult result;
+  final int index;
   final VoidCallback onTap;
 
   const _HistoryTile({
@@ -133,12 +134,12 @@ class _HistoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final expansions = result.kingdomCards.map((c) => c.expansion).toSet();
-    final age        = _formatAge(result.generatedAt);
-    final primary    = result.primaryArchetype;
+    final age = _formatAge(result.generatedAt);
+    final primary = result.primaryArchetype;
 
     return Semantics(
-      label:  'Kingdom ${index + 1}, generated $age. '
-              '${result.kingdomCards.map((c) => c.name).join(', ')}',
+      label: 'Kingdom ${index + 1}, generated $age. '
+          '${result.kingdomCards.map((c) => c.name).join(', ')}',
       button: true,
       child: InkWell(
         onTap: onTap,
@@ -149,18 +150,20 @@ class _HistoryTile extends StatelessWidget {
             children: [
               // Index bubble
               Container(
-                width: 28, height: 28,
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
-                  shape:  BoxShape.circle,
-                  color:  Theme.of(context).colorScheme.surfaceContainer,
-                  border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                  shape: BoxShape.circle,
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant),
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   '${index + 1}',
                   style: TextStyle(
-                    color:      Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize:   11,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -175,9 +178,9 @@ class _HistoryTile extends StatelessWidget {
                     Text(
                       result.kingdomCards.map((c) => c.name).join(', '),
                       style: TextStyle(
-                        color:  Theme.of(context).colorScheme.onSurface,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 13,
-                        height:   1.4,
+                        height: 1.4,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -188,13 +191,13 @@ class _HistoryTile extends StatelessWidget {
                       children: [
                         // Expansion badges
                         Wrap(
-                          spacing:    4,
+                          spacing: 4,
                           runSpacing: 4,
                           children: expansions
                               .take(4)
                               .map((e) => ExpansionBadge(
                                     expansion: e,
-                                    fontSize:  11,
+                                    fontSize: 11,
                                   ))
                               .toList(),
                         ),
@@ -202,14 +205,18 @@ class _HistoryTile extends StatelessWidget {
                         // Age + primary archetype
                         Flexible(
                           child: Text(
-                            primary != null ? '${primary.headline} · $age' : age,
+                            primary != null
+                                ? '${primary.headline} · $age'
+                                : age,
                             style: TextStyle(
-                              color:    Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                               fontSize: 11,
                             ),
                             textAlign: TextAlign.end,
-                            overflow:  TextOverflow.ellipsis,
-                            maxLines:  1,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                       ],
@@ -220,7 +227,8 @@ class _HistoryTile extends StatelessWidget {
 
               const SizedBox(width: 8),
               Icon(Icons.chevron_right_rounded,
-                  color: Theme.of(context).colorScheme.outlineVariant, size: 18),
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  size: 18),
             ],
           ),
         ),
@@ -230,9 +238,9 @@ class _HistoryTile extends StatelessWidget {
 
   String _formatAge(DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inSeconds < 60)  return 'just now';
-    if (diff.inMinutes < 60)  return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24)    return '${diff.inHours}h ago';
+    if (diff.inSeconds < 60) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
   }
 }
@@ -242,24 +250,25 @@ class _EmptyHistory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.history_rounded, size: 48,
-            color: Theme.of(context).colorScheme.outlineVariant),
-        const SizedBox(height: 16),
-        Text(
-          'No kingdoms generated yet.',
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.history_rounded,
+                size: 48, color: Theme.of(context).colorScheme.outlineVariant),
+            const SizedBox(height: 16),
+            Text(
+              'No kingdoms generated yet.',
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Generate your first kingdom to see it here.',
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 12),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          'Generate your first kingdom to see it here.',
-          style: TextStyle(
-              color:    Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 12),
-        ),
-      ],
-    ),
-  );
+      );
 }
