@@ -33,6 +33,19 @@ class ConfigurationScreen extends ConsumerWidget {
           title: const _AppTitle(),
           actions: [
             IconButton(
+              icon: Icon(
+                config.useDarkMode
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+              ),
+              tooltip: config.useDarkMode
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode',
+              onPressed: () => ref
+                  .read(configProvider.notifier)
+                  .setUseDarkMode(!config.useDarkMode),
+            ),
+            IconButton(
               icon: const Icon(Icons.history_rounded),
               tooltip: 'Kingdom history',
               onPressed: () => showHistorySheet(context, ref),

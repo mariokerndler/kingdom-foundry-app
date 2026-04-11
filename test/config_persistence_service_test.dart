@@ -30,6 +30,7 @@ void main() {
         ),
         disabledCardIds: {'witch'},
         playerCount: 3,
+        useDarkMode: true,
       );
 
       await service.save(state);
@@ -47,6 +48,7 @@ void main() {
       expect(loaded.ownedExpansions, state.ownedExpansions);
       expect(loaded.disabledCardIds, state.disabledCardIds);
       expect(loaded.playerCount, 3);
+      expect(loaded.useDarkMode, isTrue);
     });
 
     test('round-trips hidden strategy tips setting', () async {

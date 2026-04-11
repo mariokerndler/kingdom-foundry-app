@@ -27,17 +27,19 @@ Future<void> main() async {
   );
 }
 
-class KingdomFoundryApp extends StatelessWidget {
+class KingdomFoundryApp extends ConsumerWidget {
   const KingdomFoundryApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final useDarkMode = ref.watch(configProvider).useDarkMode;
+
     return MaterialApp(
       title: 'Kingdom Foundry',
       debugShowCheckedModeBanner: false,
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
-      themeMode: ThemeMode.system,
+      themeMode: useDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: const ConfigurationScreen(),
     );
   }

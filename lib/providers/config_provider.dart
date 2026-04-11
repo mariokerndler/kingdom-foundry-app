@@ -12,12 +12,14 @@ class ConfigState {
   final SetupRules rules;
   final Set<String> disabledCardIds;
   final int playerCount; // 2–6
+  final bool useDarkMode;
 
   const ConfigState({
     required this.ownedExpansions,
     required this.rules,
     required this.disabledCardIds,
     this.playerCount = 2,
+    this.useDarkMode = false,
   });
 
   bool isExpansionOwned(Expansion e) => ownedExpansions.contains(e);
@@ -28,12 +30,14 @@ class ConfigState {
     SetupRules? rules,
     Set<String>? disabledCardIds,
     int? playerCount,
+    bool? useDarkMode,
   }) {
     return ConfigState(
       ownedExpansions: ownedExpansions ?? this.ownedExpansions,
       rules: rules ?? this.rules,
       disabledCardIds: disabledCardIds ?? this.disabledCardIds,
       playerCount: playerCount ?? this.playerCount,
+      useDarkMode: useDarkMode ?? this.useDarkMode,
     );
   }
 }
@@ -194,6 +198,8 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
 
   void setPlayerCount(int count) =>
       state = state.copyWith(playerCount: count.clamp(2, 6));
+
+  void setUseDarkMode(bool v) => state = state.copyWith(useDarkMode: v);
 
   // ── Card ban list ─────────────────────────────────────────────────────────
 

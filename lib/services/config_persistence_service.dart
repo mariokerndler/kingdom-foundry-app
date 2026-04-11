@@ -32,6 +32,7 @@ const _kLandscapeWays = 'cfg_landscape_ways';
 const _kLandscapeAllies = 'cfg_landscape_allies';
 const _kLandscapeTraits = 'cfg_landscape_traits';
 const _kCostCurve = 'cfg_cost_curve';
+const _kUseDarkMode = 'cfg_use_dark_mode';
 
 class ConfigPersistenceService {
   final SharedPreferences _prefs;
@@ -91,6 +92,7 @@ class ConfigPersistenceService {
       rules: rules,
       disabledCardIds: disabledCardIds,
       playerCount: _prefs.getInt(_kPlayerCount) ?? 2,
+      useDarkMode: _prefs.getBool(_kUseDarkMode) ?? false,
     );
   }
 
@@ -120,6 +122,7 @@ class ConfigPersistenceService {
         _prefs.setInt(_kPlayerCount, state.playerCount),
         _prefs.setBool(_kIncludeLandscape, state.rules.includeLandscape),
         _prefs.setBool(_kShowStrategyTips, state.rules.showStrategyTips),
+        _prefs.setBool(_kUseDarkMode, state.useDarkMode),
         _prefs.setInt(_kLandscapeEvents, state.rules.landscapeEvents),
         _prefs.setInt(_kLandscapeProjects, state.rules.landscapeProjects),
         _prefs.setInt(_kLandscapeLandmarks, state.rules.landscapeLandmarks),
