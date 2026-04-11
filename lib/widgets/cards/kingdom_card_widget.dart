@@ -23,7 +23,6 @@ class KingdomCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = _accentColor(card.types);
-
     final isSplit = splitPileCards.isNotEmpty;
     final splitLabel = splitPileCards.map((c) => c.name).join(' / ');
 
@@ -49,8 +48,8 @@ class KingdomCardWidget extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Coloured left-accent strip replaces the BorderSide approach
-                  Container(width: 3, color: accent),
+                  // Multi-type cards can blend their type colors vertically.
+                  _AccentStrip(types: card.types),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
@@ -175,14 +174,82 @@ class KingdomCardWidget extends StatelessWidget {
   // duration > treasure > victory > night > action (default).
   // Internal-accessible so _ChainStep can reuse it for upgrade card sheets.
   static Color _accentColor(List<CardType> types) {
-    if (types.contains(CardType.curse)) return const Color(0xFF9C27B0);
-    if (types.contains(CardType.attack)) return const Color(0xFFCF3C3C);
-    if (types.contains(CardType.reaction)) return const Color(0xFF1976D2);
-    if (types.contains(CardType.duration)) return const Color(0xFFE65100);
-    if (types.contains(CardType.treasure)) return const Color(0xFFFFB300);
-    if (types.contains(CardType.victory)) return const Color(0xFF388E3C);
-    if (types.contains(CardType.night)) return const Color(0xFF5C35CC);
-    return const Color(0xFF546E7A); // action
+    final accentTypes = _accentTypesInPriorityOrder(types);
+    return _typeAccentColor(accentTypes.firstOrNull ?? CardType.action);
+  }
+
+  static List<Color> _accentStripColors(List<CardType> types) {
+    final accentTypes = _accentTypesInDisplayOrder(types);
+    if (accentTypes.length > 1) {
+      accentTypes.removeWhere((t) => t == CardType.action);
+    }
+    final colors =
+        accentTypes.map(_typeAccentColor).fold<List<Color>>([], (list, color) {
+      if (!list.contains(color)) list.add(color);
+      return list;
+    });
+    return colors.isEmpty ? [_typeAccentColor(CardType.action)] : colors;
+  }
+
+  static List<CardType> _accentTypesInDisplayOrder(List<CardType> types) {
+    return types.where((t) => t.isKingdomCard).toList();
+  }
+
+  static List<CardType> _accentTypesInPriorityOrder(List<CardType> types) {
+    final priority = [
+      CardType.curse,
+      CardType.attack,
+      CardType.reaction,
+      CardType.duration,
+      CardType.treasure,
+      CardType.victory,
+      CardType.night,
+      CardType.action,
+    ];
+    return priority.where(types.contains).toList();
+  }
+
+  static Color _typeAccentColor(CardType type) {
+    switch (type) {
+      case CardType.curse:
+        return const Color(0xFF9C27B0);
+      case CardType.attack:
+        return const Color(0xFFCF3C3C);
+      case CardType.reaction:
+        return const Color(0xFF1976D2);
+      case CardType.duration:
+        return const Color(0xFFE65100);
+      case CardType.treasure:
+        return const Color(0xFFFFB300);
+      case CardType.victory:
+        return const Color(0xFF388E3C);
+      case CardType.night:
+        return const Color(0xFF5C35CC);
+      default:
+        return const Color(0xFF546E7A);
+    }
+  }
+}
+
+class _AccentStrip extends StatelessWidget {
+  final List<CardType> types;
+
+  const _AccentStrip({required this.types});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = KingdomCardWidget._accentStripColors(types);
+    final decoration = colors.length == 1
+        ? BoxDecoration(color: colors.first)
+        : BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: colors,
+            ),
+          );
+
+    return Container(width: 3, decoration: decoration);
   }
 }
 
