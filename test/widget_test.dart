@@ -9,8 +9,10 @@ import 'package:kingdom_foundry/models/setup_rules.dart';
 import 'package:kingdom_foundry/models/strategy_archetype.dart';
 import 'package:kingdom_foundry/providers/config_provider.dart';
 import 'package:kingdom_foundry/providers/generation_provider.dart';
+import 'package:kingdom_foundry/providers/history_provider.dart';
 import 'package:kingdom_foundry/screens/configuration_screen.dart';
 import 'package:kingdom_foundry/screens/results_screen.dart';
+import 'package:kingdom_foundry/services/history_service.dart';
 import 'package:kingdom_foundry/widgets/screens/rules_section.dart';
 import 'package:kingdom_foundry/main.dart';
 
@@ -213,6 +215,56 @@ void main() {
       final updatedApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
       expect(updatedApp.themeMode, ThemeMode.dark);
       expect(find.byTooltip('Switch to light mode'), findsOneWidget);
+    });
+  });
+
+  group('Saved kingdom presets', () {
+    testWidgets('results screen can save and unsave a preset', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            setupResultProvider.overrideWith((ref) => sampleResult),
+          ],
+          child: const MaterialApp(
+            home: ResultsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Save kingdom preset'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Save kingdom preset'));
+      await tester.pumpAndSettle();
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(ResultsScreen)),
+      );
+      expect(container.read(historyProvider).favorites, hasLength(1));
+      expect(find.byTooltip('Remove saved preset'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Remove saved preset'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(historyProvider).favorites, isEmpty);
+      expect(find.byTooltip('Save kingdom preset'), findsOneWidget);
+    });
+
+    test('history service keeps favorites when clearing history', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final service = HistoryService(prefs);
+
+      await service.push(sampleResult);
+      await service.toggleFavorite(sampleResult);
+      await service.clearHistory();
+
+      expect(service.loadHistory(), isEmpty);
+      expect(service.loadFavorites(), hasLength(1));
     });
   });
 }

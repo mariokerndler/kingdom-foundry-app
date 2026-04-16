@@ -43,6 +43,9 @@ class SetupResult {
   StrategyArchetype? get primaryArchetype =>
       archetypes.isEmpty ? null : archetypes.first;
 
+  /// Stable key used when persisting this result as a saved preset.
+  String get storageKey => generatedAt.toIso8601String();
+
   // ── Serialisation (for history) ────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {

@@ -421,8 +421,8 @@ class _CostCurveEditor extends StatelessWidget {
                 ),
               ),
               if (!isValid)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
                   child: Text(
                     'Finish assigning all 10 kingdom slots before generating.',
                     style: TextStyle(

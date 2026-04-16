@@ -8,25 +8,55 @@ final historyServiceProvider = Provider<HistoryService>(
   (ref) => HistoryService(ref.watch(sharedPreferencesProvider)),
 );
 
-/// In-memory list of past kingdoms, newest first.
-/// Loaded once from prefs; updated after every successful generation.
-final historyProvider =
-    StateNotifierProvider<HistoryNotifier, List<SetupResult>>(
+class HistoryState {
+  final List<SetupResult> history;
+  final List<SetupResult> favorites;
+
+  const HistoryState({
+    this.history = const [],
+    this.favorites = const [],
+  });
+
+  bool isFavorite(SetupResult result) =>
+      favorites.any((entry) => entry.storageKey == result.storageKey);
+}
+
+/// In-memory recent history plus locally saved presets.
+final historyProvider = StateNotifierProvider<HistoryNotifier, HistoryState>(
   (ref) => HistoryNotifier(ref.watch(historyServiceProvider)),
 );
 
-class HistoryNotifier extends StateNotifier<List<SetupResult>> {
+class HistoryNotifier extends StateNotifier<HistoryState> {
   final HistoryService _service;
 
-  HistoryNotifier(this._service) : super(_service.load());
+  HistoryNotifier(this._service) : super(_loadState(_service));
+
+  static HistoryState _loadState(HistoryService service) => HistoryState(
+        history: service.loadHistory(),
+        favorites: service.loadFavorites(),
+      );
+
+  void _refresh() {
+    state = _loadState(_service);
+  }
 
   Future<void> push(SetupResult result) async {
     await _service.push(result);
-    state = _service.load();
+    _refresh();
   }
 
-  Future<void> clear() async {
-    await _service.clear();
-    state = [];
+  Future<void> toggleFavorite(SetupResult result) async {
+    await _service.toggleFavorite(result);
+    _refresh();
+  }
+
+  Future<void> removeFavorite(SetupResult result) async {
+    await _service.removeFavorite(result);
+    _refresh();
+  }
+
+  Future<void> clearHistory() async {
+    await _service.clearHistory();
+    state = HistoryState(favorites: state.favorites);
   }
 }

@@ -9,6 +9,7 @@ import '../models/kingdom_card.dart';
 import '../models/setup_result.dart';
 import '../providers/config_provider.dart';
 import '../providers/generation_provider.dart';
+import '../providers/history_provider.dart';
 import '../utils/app_theme.dart';
 import '../utils/archetype_utils.dart';
 import '../widgets/cards/archetype_card.dart';
@@ -93,8 +94,10 @@ class ResultsScreen extends ConsumerWidget {
       appBar: _ResultsAppBar(
         result: result,
         isRegenerating: isRegenerating,
+        isFavorite: ref.watch(historyProvider).isFavorite(result),
         onRegenerate: () => _regenerate(context, ref),
         onCopy: () => _copyKingdom(context, result),
+        onToggleFavorite: () => _toggleFavorite(context, ref, result),
       ),
       body: isRegenerating
           ? const _RegeneratingOverlay()
@@ -132,6 +135,29 @@ class ResultsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Future<void> _toggleFavorite(
+    BuildContext context,
+    WidgetRef ref,
+    SetupResult result,
+  ) async {
+    final wasFavorite = ref.read(historyProvider).isFavorite(result);
+    await ref.read(historyProvider.notifier).toggleFavorite(result);
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          wasFavorite
+              ? 'Removed kingdom preset from saved'
+              : 'Saved kingdom preset locally',
+        ),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 }
 
 // ── App bar ────────────────────────────────────────────────────────────────
@@ -139,14 +165,18 @@ class ResultsScreen extends ConsumerWidget {
 class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final SetupResult result;
   final bool isRegenerating;
+  final bool isFavorite;
   final VoidCallback onRegenerate;
   final VoidCallback onCopy;
+  final VoidCallback onToggleFavorite;
 
   const _ResultsAppBar({
     required this.result,
     required this.isRegenerating,
+    required this.isFavorite,
     required this.onRegenerate,
     required this.onCopy,
+    required this.onToggleFavorite,
   });
 
   @override
@@ -175,6 +205,16 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
+        IconButton(
+          tooltip: isFavorite ? 'Remove saved preset' : 'Save kingdom preset',
+          onPressed: isRegenerating ? null : onToggleFavorite,
+          icon: Icon(
+            isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
+            color: isFavorite
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
         IconButton(
           tooltip: 'Copy kingdom list',
           onPressed: isRegenerating ? null : onCopy,
