@@ -45,6 +45,10 @@ class HeuristicEngine {
       landscapeCards: result.landscapeCards,
       archetypes: analyze(analysisCards),
       setupNotes: result.setupNotes,
+      selectionRationale: result.selectionRationale,
+      presetId: result.presetId,
+      lockedSlotIds: result.lockedSlotIds,
+      lockedLandscapeIds: result.lockedLandscapeIds,
       generatedAt: result.generatedAt,
     );
   }

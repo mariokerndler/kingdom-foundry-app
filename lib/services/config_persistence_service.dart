@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/cost_curve_rule.dart';
 import '../models/expansion.dart';
+import '../models/game_vibe_preset.dart';
 import '../models/setup_rules.dart';
 import '../providers/config_provider.dart';
 
@@ -33,6 +34,8 @@ const _kLandscapeAllies = 'cfg_landscape_allies';
 const _kLandscapeTraits = 'cfg_landscape_traits';
 const _kCostCurve = 'cfg_cost_curve';
 const _kUseDarkMode = 'cfg_use_dark_mode';
+const _kSelectedPresetId = 'cfg_selected_preset_id';
+const _kSelectedLanguageCode = 'cfg_selected_language_code';
 
 class ConfigPersistenceService {
   final SharedPreferences _prefs;
@@ -93,6 +96,9 @@ class ConfigPersistenceService {
       disabledCardIds: disabledCardIds,
       playerCount: _prefs.getInt(_kPlayerCount) ?? 2,
       useDarkMode: _prefs.getBool(_kUseDarkMode) ?? false,
+      selectedPresetId:
+          _prefs.getString(_kSelectedPresetId) ?? GameVibePresets.noneId,
+      selectedLanguageCode: _prefs.getString(_kSelectedLanguageCode) ?? 'en',
     );
   }
 
@@ -123,6 +129,8 @@ class ConfigPersistenceService {
         _prefs.setBool(_kIncludeLandscape, state.rules.includeLandscape),
         _prefs.setBool(_kShowStrategyTips, state.rules.showStrategyTips),
         _prefs.setBool(_kUseDarkMode, state.useDarkMode),
+        _prefs.setString(_kSelectedPresetId, state.selectedPresetId),
+        _prefs.setString(_kSelectedLanguageCode, state.selectedLanguageCode),
         _prefs.setInt(_kLandscapeEvents, state.rules.landscapeEvents),
         _prefs.setInt(_kLandscapeProjects, state.rules.landscapeProjects),
         _prefs.setInt(_kLandscapeLandmarks, state.rules.landscapeLandmarks),

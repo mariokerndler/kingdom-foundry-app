@@ -93,6 +93,37 @@ class SetupRules {
     this.costCurve = const CostCurveRule(),
   });
 
+  factory SetupRules.fromJson(Map<String, dynamic> json) {
+    return SetupRules(
+      noAttacks: json['noAttacks'] as bool? ?? false,
+      noDuration: json['noDuration'] as bool? ?? false,
+      noPotions: json['noPotions'] as bool? ?? false,
+      noDebt: json['noDebt'] as bool? ?? false,
+      noCursers: json['noCursers'] as bool? ?? false,
+      noTravellers: json['noTravellers'] as bool? ?? false,
+      requirePlusBuy: json['requirePlusBuy'] as bool? ?? false,
+      requireTrashing: json['requireTrashing'] as bool? ?? false,
+      requireVillage: json['requireVillage'] as bool? ?? false,
+      requireDraw: json['requireDraw'] as bool? ?? false,
+      requireReactionIfAttacks:
+          json['requireReactionIfAttacks'] as bool? ?? false,
+      maxCost: json['maxCost'] as int?,
+      maxAttacks: json['maxAttacks'] as int?,
+      minExpansionVariety: json['minExpansionVariety'] as int? ?? 1,
+      includeLandscape: json['includeLandscape'] as bool? ?? true,
+      showStrategyTips: json['showStrategyTips'] as bool? ?? true,
+      landscapeEvents: json['landscapeEvents'] as int? ?? 2,
+      landscapeProjects: json['landscapeProjects'] as int? ?? 2,
+      landscapeLandmarks: json['landscapeLandmarks'] as int? ?? 1,
+      landscapeWays: json['landscapeWays'] as int? ?? 1,
+      landscapeAllies: json['landscapeAllies'] as int? ?? 1,
+      landscapeTraits: json['landscapeTraits'] as int? ?? 1,
+      costCurve: json['costCurve'] is Map<String, dynamic>
+          ? CostCurveRule.fromJson(json['costCurve'] as Map<String, dynamic>)
+          : const CostCurveRule(),
+    );
+  }
+
   SetupRules copyWith({
     bool? noAttacks,
     bool? noDuration,
@@ -182,4 +213,30 @@ class SetupRules {
   }
 
   bool get hasActiveRules => activeRuleDescriptions.isNotEmpty;
+
+  Map<String, dynamic> toJson() => {
+        'noAttacks': noAttacks,
+        'noDuration': noDuration,
+        'noPotions': noPotions,
+        'noDebt': noDebt,
+        'noCursers': noCursers,
+        'noTravellers': noTravellers,
+        'requirePlusBuy': requirePlusBuy,
+        'requireTrashing': requireTrashing,
+        'requireVillage': requireVillage,
+        'requireDraw': requireDraw,
+        'requireReactionIfAttacks': requireReactionIfAttacks,
+        'maxCost': maxCost,
+        'maxAttacks': maxAttacks,
+        'minExpansionVariety': minExpansionVariety,
+        'includeLandscape': includeLandscape,
+        'showStrategyTips': showStrategyTips,
+        'landscapeEvents': landscapeEvents,
+        'landscapeProjects': landscapeProjects,
+        'landscapeLandmarks': landscapeLandmarks,
+        'landscapeWays': landscapeWays,
+        'landscapeAllies': landscapeAllies,
+        'landscapeTraits': landscapeTraits,
+        'costCurve': costCurve.toJson(),
+      };
 }

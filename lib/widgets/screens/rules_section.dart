@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/cost_curve_rule.dart';
+import '../../models/game_vibe_preset.dart';
 import '../../providers/config_provider.dart';
+import '../../providers/translation_provider.dart';
 import '../../utils/app_theme.dart';
 import '../common/section_header.dart';
 
@@ -23,12 +25,25 @@ class _RulesTabState extends ConsumerState<RulesTab>
     super.build(context);
 
     final rules = ref.watch(configProvider).rules;
+    final config = ref.watch(configProvider);
     final notifier = ref.read(configProvider.notifier);
     final hasRules = rules.hasActiveRules;
 
     return ListView(
       padding: const EdgeInsets.only(bottom: 100),
       children: [
+        const SectionHeader(
+          title: 'Game Vibe',
+          subtitle:
+              'Apply a curated preset before fine-tuning the rules below.',
+        ),
+
+        _PresetSelector(
+          selectedPresetId: config.selectedPresetId,
+          onChanged: notifier.setSelectedPresetId,
+        ),
+
+        const _Divider(),
         SectionHeader(
           title: 'Exclusions',
           subtitle: 'Remove card types from the pool entirely.',
@@ -251,6 +266,10 @@ class _RulesTabState extends ConsumerState<RulesTab>
           value: rules.showStrategyTips,
           onChange: notifier.setShowStrategyTips,
         ),
+        _LanguageSelector(
+          selectedLanguageCode: config.selectedLanguageCode,
+          onChanged: notifier.setSelectedLanguageCode,
+        ),
 
         // Active rules summary
         if (hasRules) ...[
@@ -259,6 +278,212 @@ class _RulesTabState extends ConsumerState<RulesTab>
         ],
       ],
     );
+  }
+}
+
+class _PresetSelector extends StatelessWidget {
+  final String selectedPresetId;
+  final ValueChanged<String> onChanged;
+
+  const _PresetSelector({
+    required this.selectedPresetId,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 148,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: GameVibePresets.all.length - 1,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (_, i) {
+          final preset = GameVibePresets.all[i + 1];
+          final selected = preset.id == selectedPresetId;
+          return GestureDetector(
+            onTap: () => onChanged(preset.id),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 220,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: selected
+                    ? Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.10)
+                    : Theme.of(context).colorScheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: selected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    preset.name,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Expanded(
+                    child: Text(
+                      preset.description,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    selected ? 'Preset active' : 'Tap to apply defaults',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: selected
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _LanguageSelector extends ConsumerWidget {
+  final String selectedLanguageCode;
+  final ValueChanged<String> onChanged;
+
+  const _LanguageSelector({
+    required this.selectedLanguageCode,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final packsAsync = ref.watch(translationPacksProvider);
+    return packsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (packs) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainer,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Card Language',
+                  style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 4),
+              Text(
+                'Use local translation packs for card names and rules text. Shared codes stay language-agnostic.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue:
+                    packs.any((p) => p.languageCode == selectedLanguageCode)
+                        ? selectedLanguageCode
+                        : 'en',
+                items: packs
+                    .map(
+                      (pack) => DropdownMenuItem(
+                        value: pack.languageCode,
+                        child: Text(pack.label),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) onChanged(value);
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Preferred card language',
+                ),
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => _showTranslationImportDialog(context, ref),
+                  icon: const Icon(Icons.translate_rounded, size: 16),
+                  label: const Text('Import translation pack'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showTranslationImportDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final controller = TextEditingController();
+    final rawJson = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import Translation Pack'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: TextField(
+            controller: controller,
+            maxLines: 14,
+            minLines: 6,
+            decoration: const InputDecoration(
+              hintText:
+                  '{"languageCode":"fr","label":"Francais","cards":{...}}',
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+
+    if (rawJson == null || rawJson.isEmpty) return;
+
+    try {
+      await ref.read(translationServiceProvider).importPack(rawJson);
+      ref.invalidate(translationPacksProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Translation pack imported')),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not import translation pack'),
+            backgroundColor: AppColors.errorRed,
+          ),
+        );
+      }
+    }
   }
 }
 

@@ -1,8 +1,10 @@
 import 'dart:math';
 
 import '../models/card_tag.dart';
+import '../models/card_metadata.dart';
 import '../models/cost_curve_rule.dart';
 import '../models/card_type.dart';
+import '../models/game_vibe_preset.dart';
 import '../models/kingdom_card.dart';
 import '../models/expansion.dart';
 import '../models/setup_result.dart';
@@ -42,6 +44,7 @@ const _plunderLootNames = {
 /// Throws [SetupException] when a valid kingdom cannot be produced.
 class SetupEngine {
   static const int _costCurveSearchBudget = 100;
+  static const int _presetSearchBudget = 60;
   final Random _rng;
 
   SetupEngine({Random? random}) : _rng = random ?? Random();
@@ -54,6 +57,9 @@ class SetupEngine {
     required List<KingdomCard> allCards,
     required Set<Expansion> ownedExpansions,
     required SetupRules rules,
+    GameVibePreset? preset,
+    List<KingdomCard> lockedKingdomCards = const [],
+    List<KingdomCard> lockedLandscapeCards = const [],
   }) {
     // ── Step A ── Expansion filter ──────────────────────────────────────────
     final pool = _stepAKingdomPool(allCards, ownedExpansions);
@@ -78,7 +84,12 @@ class SetupEngine {
     }
 
     // ── Step D/F ── Kingdom selection and post-processing ───────────────────
-    final kingdom = _selectKingdomForRules(pool, rules);
+    final kingdom = _selectKingdomForRules(
+      pool,
+      rules,
+      preset: preset,
+      lockedKingdomCards: lockedKingdomCards,
+    );
 
     // ── Step E ── Landscape cards ────────────────────────────────────────────
     final landscapeResult = _stepESelectLandscape(
@@ -86,11 +97,17 @@ class SetupEngine {
       kingdom,
       ownedExpansions,
       rules,
+      lockedLandscapeCards: lockedLandscapeCards,
     );
 
     // ── Supplement ── Setup notes ────────────────────────────────────────────
     final notes =
         _generateSetupNotes(kingdom, landscapeResult, ownedExpansions);
+    final rationale = _generateSelectionRationale(
+      kingdom: kingdom,
+      rules: rules,
+      preset: preset,
+    );
     if (rules.costCurve.enabled && rules.costCurve.isValid) {
       final actual = _costBucketCounts(kingdom);
       notes.add(
@@ -105,16 +122,29 @@ class SetupEngine {
       landscapeCards: landscapeResult,
       archetypes: const [], // populated later by HeuristicEngine
       setupNotes: notes,
+      selectionRationale: rationale,
+      presetId: preset?.id,
+      lockedSlotIds: lockedKingdomCards.map(_slotId).toSet(),
+      lockedLandscapeIds: lockedLandscapeCards.map((card) => card.id).toSet(),
       generatedAt: DateTime.now(),
     );
   }
 
   List<KingdomCard> _selectKingdomForRules(
     List<KingdomCard> pool,
-    SetupRules rules,
-  ) {
-    if (!rules.costCurve.enabled || !rules.costCurve.isValid) {
-      final (kingdom, locked) = _stepDSelect(pool, rules);
+    SetupRules rules, {
+    GameVibePreset? preset,
+    List<KingdomCard> lockedKingdomCards = const [],
+  }) {
+    final shouldSearch = (rules.costCurve.enabled && rules.costCurve.isValid) ||
+        preset != null ||
+        lockedKingdomCards.isNotEmpty;
+    if (!shouldSearch) {
+      final (kingdom, locked) = _stepDSelect(
+        pool,
+        rules,
+        seedCards: lockedKingdomCards,
+      );
       if (rules.requireReactionIfAttacks) {
         _stepFAutoReaction(kingdom, locked, pool);
       }
@@ -122,14 +152,29 @@ class SetupEngine {
     }
 
     _CurveCandidate? best;
-    for (var i = 0; i < _costCurveSearchBudget; i++) {
-      final (kingdom, locked) = _stepDSelect(pool, rules);
+    final budget = rules.costCurve.enabled && rules.costCurve.isValid
+        ? _costCurveSearchBudget
+        : _presetSearchBudget;
+    for (var i = 0; i < budget; i++) {
+      final (kingdom, locked) = _stepDSelect(
+        pool,
+        rules,
+        seedCards: lockedKingdomCards,
+      );
       if (rules.requireReactionIfAttacks) {
         _stepFAutoReaction(kingdom, locked, pool);
       }
-      final score = _scoreCostCurve(kingdom, rules.costCurve);
-      final candidate = _CurveCandidate(kingdom: kingdom, score: score);
-      if (best == null || score.isBetterThan(best.score)) {
+      final curveScore = rules.costCurve.enabled && rules.costCurve.isValid
+          ? _scoreCostCurve(kingdom, rules.costCurve)
+          : null;
+      final presetScore =
+          preset == null ? 0.0 : _scorePresetKingdom(kingdom, preset);
+      final candidate = _CurveCandidate(
+        kingdom: kingdom,
+        score: curveScore,
+        presetScore: presetScore,
+      );
+      if (best == null || candidate.isBetterThan(best)) {
         best = candidate;
       }
     }
@@ -190,8 +235,9 @@ class SetupEngine {
 
   (List<KingdomCard>, List<KingdomCard>) _stepDSelect(
     List<KingdomCard> pool,
-    SetupRules rules,
-  ) {
+    SetupRules rules, {
+    List<KingdomCard> seedCards = const [],
+  }) {
     // Collapse split piles: group by splitPileId.
     // Each unique pile id becomes one "slot". Within a slot, all member cards
     // are always selected together.
@@ -221,6 +267,16 @@ class SetupEngine {
     // Track slots filled (each split pile counts as 1 slot regardless of how
     // many individual cards it adds to [kingdom]).
     var slotsSelected = 0;
+
+    final seededSlotIds = seedCards.map(_slotId).toSet();
+    for (final card in seedCards) {
+      if (!kingdom.any((existing) => existing.id == card.id)) {
+        kingdom.add(card);
+        locked.add(card);
+      }
+    }
+    pileReps.removeWhere((rep) => seededSlotIds.contains(_slotId(rep)));
+    slotsSelected = seededSlotIds.length;
 
     // ── Phase 1: required slots ─────────────────────────────────────────────
 
@@ -561,17 +617,24 @@ class SetupEngine {
     List<KingdomCard> pool,
     List<KingdomCard> kingdom,
     Set<Expansion> owned,
-    SetupRules rules,
-  ) {
+    SetupRules rules, {
+    List<KingdomCard> lockedLandscapeCards = const [],
+  }) {
     if (pool.isEmpty) return const [];
 
-    final result = <KingdomCard>[];
+    final result = <KingdomCard>[...lockedLandscapeCards];
     final shuffled = [...pool]..shuffle(_rng);
+    final lockedIds = lockedLandscapeCards.map((card) => card.id).toSet();
 
     void draw(bool Function(KingdomCard) filter, int count) {
       if (count <= 0) return;
-      final candidates = shuffled.where(filter).toList();
-      result.addAll(candidates.take(count.clamp(0, candidates.length)));
+      final remaining =
+          count - result.where(filter).map((card) => card.id).toSet().length;
+      if (remaining <= 0) return;
+      final candidates = shuffled
+          .where((card) => !lockedIds.contains(card.id) && filter(card))
+          .toList();
+      result.addAll(candidates.take(remaining.clamp(0, candidates.length)));
     }
 
     if (rules.includeLandscape) {
@@ -597,6 +660,56 @@ class SetupEngine {
     }
 
     return result;
+  }
+
+  double _scorePresetKingdom(List<KingdomCard> kingdom, GameVibePreset preset) {
+    return kingdom.fold<double>(
+      0,
+      (sum, card) => sum + preset.scoreCard(card.metadata),
+    );
+  }
+
+  List<String> _generateSelectionRationale({
+    required List<KingdomCard> kingdom,
+    required SetupRules rules,
+    required GameVibePreset? preset,
+  }) {
+    final lines = <String>[];
+    if (preset != null && preset.id != GameVibePresets.noneId) {
+      lines.add(preset.rationale);
+    }
+
+    final engineCount = kingdom
+        .where((card) => card.metadata.engineSupport == EngineSupportLevel.high)
+        .length;
+    final attackCount = kingdom
+        .where(
+          (card) =>
+              card.metadata.interactionProfile ==
+              InteractionProfile.attackHeavy,
+        )
+        .length;
+    final lowSetupCount = kingdom
+        .where((card) => card.metadata.setupWeight == SetupWeight.low)
+        .length;
+
+    if (engineCount >= 3) {
+      lines.add(
+          'The board includes strong engine pieces with villages, draw, or clean support cards.');
+    }
+    if (attackCount >= 2) {
+      lines.add(
+          'Several interactive or attack-heavy cards push the kingdom toward player tension.');
+    }
+    if (lowSetupCount >= 6) {
+      lines.add(
+          'Most kingdom cards are light on setup overhead, so this board should come together quickly.');
+    }
+    if (rules.costCurve.enabled && rules.costCurve.isValid) {
+      lines.add(
+          'The final board was chosen from multiple candidates to stay close to your target cost curve.');
+    }
+    return lines;
   }
 
   // ===========================================================================
@@ -1101,12 +1214,25 @@ class SetupEngine {
 
 class _CurveCandidate {
   final List<KingdomCard> kingdom;
-  final _CurveScore score;
+  final _CurveScore? score;
+  final double presetScore;
 
   _CurveCandidate({
     required this.kingdom,
     required this.score,
+    required this.presetScore,
   });
+
+  bool isBetterThan(_CurveCandidate other) {
+    if (score != null && other.score != null) {
+      if (score!.isBetterThan(other.score!)) return true;
+      if (other.score!.isBetterThan(score!)) return false;
+    }
+    if (presetScore != other.presetScore) {
+      return presetScore > other.presetScore;
+    }
+    return false;
+  }
 }
 
 class _CurveScore {

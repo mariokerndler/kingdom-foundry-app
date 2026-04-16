@@ -1,5 +1,6 @@
 import 'card_type.dart';
 import 'card_tag.dart';
+import 'card_metadata.dart';
 import 'expansion.dart';
 
 /// The core data model for every kingdom card.
@@ -16,6 +17,7 @@ class KingdomCard {
   final int? debtCost;
   final bool potionCost;
   final String text;
+  final CardMetadata metadata;
   bool isDisabled;
 
   /// If non-null, this card belongs to a split pile (e.g. Encampment/Plunder).
@@ -44,6 +46,7 @@ class KingdomCard {
     this.debtCost,
     this.potionCost = false,
     required this.text,
+    this.metadata = const CardMetadata(),
     this.isDisabled = false,
     this.splitPileId,
     this.travellerChain = const [],
@@ -113,6 +116,34 @@ class KingdomCard {
       debtCost: json['debtCost'] as int?,
       potionCost: json['potionCost'] as bool? ?? false,
       text: json['text'] as String,
+      metadata: json['metadata'] is Map<String, dynamic>
+          ? CardMetadata.fromJson(json['metadata'] as Map<String, dynamic>)
+          : CardMetadata.derived(
+              types: (json['types'] as List<dynamic>)
+                  .map((t) => CardType.values.firstWhere(
+                        (e) => e.name == t,
+                        orElse: () => CardType.action,
+                      ))
+                  .toList(),
+              tags: (json['tags'] as List<dynamic>)
+                  .map((t) => CardTag.values.firstWhere(
+                        (e) => e.name == t,
+                        orElse: () => CardTag.plusAction,
+                      ))
+                  .toList(),
+              potionCost: json['potionCost'] as bool? ?? false,
+              debtCost: json['debtCost'] as int?,
+              isLandscape: !(json['types'] as List<dynamic>)
+                  .map((t) => CardType.values.firstWhere(
+                        (e) => e.name == t,
+                        orElse: () => CardType.action,
+                      ))
+                  .any((type) => type.isKingdomCard),
+              isSplitPile: json['splitPileId'] != null,
+              isTraveller:
+                  (json['travellerChain'] as List<dynamic>?)?.isNotEmpty ??
+                      false,
+            ),
       isDisabled: json['isDisabled'] as bool? ?? false,
       splitPileId: json['splitPileId'] as String?,
       travellerChain:
@@ -133,13 +164,15 @@ class KingdomCard {
         if (debtCost != null) 'debtCost': debtCost,
         'potionCost': potionCost,
         'text': text,
+        'metadata': metadata.toJson(),
         'isDisabled': isDisabled,
         if (splitPileId != null) 'splitPileId': splitPileId,
         if (travellerChain.isNotEmpty) 'travellerChain': travellerChain,
         if (pileCards.isNotEmpty) 'pileCards': pileCards,
       };
 
-  KingdomCard copyWith({bool? isDisabled}) => KingdomCard(
+  KingdomCard copyWith({bool? isDisabled, CardMetadata? metadata}) =>
+      KingdomCard(
         id: id,
         name: name,
         expansion: expansion,
@@ -149,6 +182,7 @@ class KingdomCard {
         debtCost: debtCost,
         potionCost: potionCost,
         text: text,
+        metadata: metadata ?? this.metadata,
         isDisabled: isDisabled ?? this.isDisabled,
         splitPileId: splitPileId,
         travellerChain: travellerChain,

@@ -10,6 +10,7 @@ import '../models/setup_result.dart';
 import '../providers/config_provider.dart';
 import '../providers/generation_provider.dart';
 import '../providers/history_provider.dart';
+import '../providers/translation_provider.dart';
 import '../utils/app_theme.dart';
 import '../utils/archetype_utils.dart';
 import '../widgets/cards/archetype_card.dart';
@@ -95,29 +96,14 @@ class ResultsScreen extends ConsumerWidget {
         result: result,
         isRegenerating: isRegenerating,
         isFavorite: ref.watch(historyProvider).isFavorite(result),
-        onRegenerate: () => _regenerate(context, ref),
         onCopy: () => _copyKingdom(context, result),
+        onCopyShare: () => _copyShareCode(context, ref, result),
         onToggleFavorite: () => _toggleFavorite(context, ref, result),
       ),
       body: isRegenerating
           ? const _RegeneratingOverlay()
           : _ResultsBody(result: result),
     );
-  }
-
-  Future<void> _regenerate(BuildContext context, WidgetRef ref) async {
-    HapticFeedback.lightImpact();
-    final success = await generateKingdom(ref);
-    if (!success && context.mounted) {
-      final error = ref.read(generationErrorProvider) ?? 'Unknown error.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: AppColors.errorRed,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
   }
 
   void _copyKingdom(BuildContext context, SetupResult result) {
@@ -130,6 +116,19 @@ class ResultsScreen extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Kingdom copied to clipboard'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _copyShareCode(BuildContext context, WidgetRef ref, SetupResult result) {
+    final config = ref.read(configProvider);
+    final code = encodeSharePayload(result, config);
+    Clipboard.setData(ClipboardData(text: code));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Share code copied to clipboard'),
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: 2),
       ),
@@ -166,16 +165,16 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final SetupResult result;
   final bool isRegenerating;
   final bool isFavorite;
-  final VoidCallback onRegenerate;
   final VoidCallback onCopy;
+  final VoidCallback onCopyShare;
   final VoidCallback onToggleFavorite;
 
   const _ResultsAppBar({
     required this.result,
     required this.isRegenerating,
     required this.isFavorite,
-    required this.onRegenerate,
     required this.onCopy,
+    required this.onCopyShare,
     required this.onToggleFavorite,
   });
 
@@ -222,20 +221,10 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
               color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         IconButton(
-          tooltip: 'Regenerate kingdom',
-          onPressed: isRegenerating ? null : onRegenerate,
-          icon: isRegenerating
-              ? SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(
-                        Theme.of(context).colorScheme.primary),
-                  ),
-                )
-              : Icon(Icons.casino_rounded,
-                  color: Theme.of(context).colorScheme.primary),
+          tooltip: 'Copy share code',
+          onPressed: isRegenerating ? null : onCopyShare,
+          icon: Icon(Icons.qr_code_rounded,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         const SizedBox(width: 4),
       ],
@@ -282,6 +271,15 @@ class _ResultsBody extends ConsumerWidget {
         if (showStrategyTips && result.archetypes.isNotEmpty)
           SliverToBoxAdapter(child: _ArchetypeBanner(result: result)),
 
+        SliverToBoxAdapter(
+          child: _RerollControls(result: result),
+        ),
+
+        if (result.selectionRationale.isNotEmpty)
+          SliverToBoxAdapter(
+            child: _SelectionRationaleSection(lines: result.selectionRationale),
+          ),
+
         // ── Kingdom board header ──────────────────────────────────────────
         const SliverToBoxAdapter(
           child: SectionHeader(
@@ -305,6 +303,12 @@ class _ResultsBody extends ConsumerWidget {
                     card: slot.primary,
                     splitPileCards: slot.splitPileCards,
                     index: i + 1,
+                    locked: result.isSlotLocked(
+                        slot.primary.splitPileId ?? slot.primary.id),
+                    onToggleLock: () => toggleKingdomSlotLock(
+                      ref,
+                      slot.primary.splitPileId ?? slot.primary.id,
+                    ),
                   ),
                 );
               },
@@ -322,7 +326,7 @@ class _ResultsBody extends ConsumerWidget {
         // ── Landscape cards (Events / Landmarks / Projects / Ways / Allies)
         if (result.landscapeCards.isNotEmpty)
           SliverToBoxAdapter(
-            child: _LandscapeSection(cards: result.landscapeCards),
+            child: _LandscapeSection(result: result),
           ),
 
         // ── Setup notes ───────────────────────────────────────────────────
@@ -407,14 +411,14 @@ class _StaggeredEntryState extends State<_StaggeredEntry>
 // ── Landscape section ──────────────────────────────────────────────────────
 
 class _LandscapeSection extends StatelessWidget {
-  final List<KingdomCard> cards;
-  const _LandscapeSection({required this.cards});
+  final SetupResult result;
+  const _LandscapeSection({required this.result});
 
   @override
   Widget build(BuildContext context) {
     // Group by type label for display
     final groups = <String, List<KingdomCard>>{};
-    for (final c in cards) {
+    for (final c in result.landscapeCards) {
       final label = _landscapeLabel(c);
       (groups[label] ??= []).add(c);
     }
@@ -458,13 +462,13 @@ class _LandscapeSection extends StatelessWidget {
   }
 }
 
-class _LandscapeGroup extends StatelessWidget {
+class _LandscapeGroup extends ConsumerWidget {
   final String label;
   final List<KingdomCard> cards;
   const _LandscapeGroup({required this.label, required this.cards});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -477,61 +481,213 @@ class _LandscapeGroup extends StatelessWidget {
                 ),
           ),
         ),
-        ...cards.map((c) => Semantics(
-              label: '${c.name}: ${c.text}',
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainer,
-                  border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
-                  borderRadius: BorderRadius.circular(8),
+        ...cards.map((c) {
+          final localized = ref.watch(localizedCardProvider(c));
+          final current = ref.watch(setupResultProvider);
+          final isLocked = current?.isLandscapeLocked(c.id) ?? false;
+          return Semantics(
+            label: '${localized.name}: ${localized.text}',
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainer,
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 4,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.landscapeAccent,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(localized.name,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                )),
+                        const SizedBox(height: 3),
+                        Text(localized.text,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  height: 1.4,
+                                ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () => toggleLandscapeLock(ref, c.id),
+                            icon: Icon(
+                              isLocked
+                                  ? Icons.lock_rounded
+                                  : Icons.lock_open_rounded,
+                              size: 16,
+                            ),
+                            label: Text(isLocked ? 'Locked' : 'Lock'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _RerollControls extends ConsumerWidget {
+  final SetupResult result;
+
+  const _RerollControls({required this.result});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lockedCount =
+        result.lockedSlotIds.length + result.lockedLandscapeIds.length;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text('Reroll Controls',
+                    style: Theme.of(context).textTheme.titleSmall),
+                const Spacer(),
+                if (lockedCount > 0)
+                  Text(
+                    '$lockedCount locked',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Use the lock buttons on cards and landscapes, then reroll only the unlocked parts.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: () => rerollCurrentResult(ref),
+                  icon: const Icon(Icons.casino_rounded, size: 16),
+                  label: const Text('Reroll All'),
                 ),
+                OutlinedButton.icon(
+                  onPressed: () => rerollCurrentResult(
+                    ref,
+                    rerollKingdom: true,
+                    rerollLandscapes: false,
+                  ),
+                  icon: const Icon(Icons.view_module_rounded, size: 16),
+                  label: const Text('Keep Landscapes'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => rerollCurrentResult(
+                    ref,
+                    rerollKingdom: false,
+                    rerollLandscapes: true,
+                  ),
+                  icon: const Icon(Icons.landscape_rounded, size: 16),
+                  label: const Text('Reroll Landscapes'),
+                ),
+                TextButton.icon(
+                  onPressed: lockedCount == 0 ? null : () => clearAllLocks(ref),
+                  icon: const Icon(Icons.lock_reset_rounded, size: 16),
+                  label: const Text('Clear Locks'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectionRationaleSection extends StatelessWidget {
+  final List<String> lines;
+
+  const _SelectionRationaleSection({required this.lines});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color:
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Why This Kingdom',
+                style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            ...lines.map(
+              (line) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 4,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.landscapeAccent,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
+                    Icon(Icons.auto_awesome_rounded,
+                        size: 14, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 8),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(c.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                    fontWeight: FontWeight.w600,
-                                  )),
-                          const SizedBox(height: 3),
-                          Text(c.text,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    height: 1.4,
-                                  ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis),
-                        ],
+                      child: Text(
+                        line,
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
                   ],
                 ),
               ),
-            )),
-        const SizedBox(height: 8),
-      ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/setup_exception.dart';
+import '../models/share_payload.dart';
 import '../providers/config_provider.dart';
 import '../providers/generation_provider.dart';
 import '../screens/results_screen.dart';
@@ -275,6 +276,7 @@ class _ImportDialog extends StatefulWidget {
 class _ImportDialogState extends State<_ImportDialog> {
   final _ctrl = TextEditingController();
   List<String> _parsed = [];
+  bool _isShareCode = false;
 
   @override
   void initState() {
@@ -284,14 +286,17 @@ class _ImportDialogState extends State<_ImportDialog> {
     Clipboard.getData('text/plain').then((data) {
       if (!mounted || data?.text == null) return;
       final names = parseKingdomText(data!.text!);
-      if (names.length == 10) {
+      if (names.length == 10 || SharePayload.tryDecode(data.text!) != null) {
         _ctrl.text = data.text!;
       }
     });
   }
 
   void _onChanged() {
-    setState(() => _parsed = parseKingdomText(_ctrl.text));
+    setState(() {
+      _parsed = parseKingdomText(_ctrl.text);
+      _isShareCode = SharePayload.tryDecode(_ctrl.text) != null;
+    });
   }
 
   @override
@@ -302,7 +307,7 @@ class _ImportDialogState extends State<_ImportDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isValid = _parsed.length == 10;
+    final isValid = _parsed.length == 10 || _isShareCode;
 
     return AlertDialog(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -328,7 +333,7 @@ class _ImportDialogState extends State<_ImportDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Paste a kingdom list shared from another player\'s device.',
+              'Paste either a kingdom list or a compact share code from another player.',
               style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 13),
@@ -352,7 +357,11 @@ class _ImportDialogState extends State<_ImportDialog> {
 
             // Live validation feedback
             if (_ctrl.text.trim().isNotEmpty)
-              _ParsePreview(parsed: _parsed, isValid: isValid),
+              _ParsePreview(
+                parsed: _parsed,
+                isValid: isValid,
+                isShareCode: _isShareCode,
+              ),
 
             const SizedBox(height: 4),
           ],
@@ -387,8 +396,13 @@ class _ImportDialogState extends State<_ImportDialog> {
 class _ParsePreview extends StatelessWidget {
   final List<String> parsed;
   final bool isValid;
+  final bool isShareCode;
 
-  const _ParsePreview({required this.parsed, required this.isValid});
+  const _ParsePreview({
+    required this.parsed,
+    required this.isValid,
+    required this.isShareCode,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -417,9 +431,11 @@ class _ParsePreview extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                isValid
-                    ? '$count cards found — ready to import'
-                    : '$count of 10 cards found',
+                isShareCode
+                    ? 'Share code found — ready to import'
+                    : isValid
+                        ? '$count cards found — ready to import'
+                        : '$count of 10 cards found',
                 style: TextStyle(
                   color: color,
                   fontSize: 12,
@@ -428,7 +444,7 @@ class _ParsePreview extends StatelessWidget {
               ),
             ],
           ),
-          if (parsed.isNotEmpty) ...[
+          if (!isShareCode && parsed.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
               parsed.join(' · '),

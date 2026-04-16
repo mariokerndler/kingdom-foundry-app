@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/heuristic_engine.dart';
 import '../controllers/setup_engine.dart';
 import '../controllers/setup_exception.dart';
+import '../models/game_vibe_preset.dart';
 import '../models/kingdom_card.dart';
+import '../models/share_payload.dart';
 import '../models/setup_result.dart';
 import 'card_data_providers.dart';
 import 'config_provider.dart';
@@ -66,6 +68,7 @@ Future<bool> generateKingdom(WidgetRef ref) async {
       allCards: cards,
       ownedExpansions: config.ownedExpansions,
       rules: config.rules,
+      preset: GameVibePresets.byId(config.selectedPresetId),
     );
 
     final enriched = _heuristicEngine.enrich(result);
@@ -100,6 +103,11 @@ Future<bool> importKingdom(WidgetRef ref, String rawText) async {
   ref.read(_generationReasonProvider.notifier).state = null;
 
   try {
+    final sharePayload = SharePayload.tryDecode(rawText);
+    if (sharePayload != null) {
+      return _importSharePayload(ref, sharePayload);
+    }
+
     final names = parseKingdomText(rawText);
 
     if (names.length != 10) {
@@ -141,6 +149,7 @@ Future<bool> importKingdom(WidgetRef ref, String rawText) async {
       kingdomCards: kingdom,
       archetypes: [],
       setupNotes: [],
+      selectionRationale: const ['Imported from plain text list.'],
       generatedAt: DateTime.now(),
     );
     final enriched = _heuristicEngine.enrich(baseResult);
@@ -154,6 +163,154 @@ Future<bool> importKingdom(WidgetRef ref, String rawText) async {
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
     return false;
   }
+}
+
+Future<bool> rerollCurrentResult(
+  WidgetRef ref, {
+  bool rerollKingdom = true,
+  bool rerollLandscapes = true,
+}) async {
+  final current = ref.read(setupResultProvider);
+  if (current == null) return false;
+
+  ref.read(_generationStatusProvider.notifier).state = GenerationStatus.loading;
+  ref.read(_generationErrorProvider.notifier).state = null;
+  ref.read(_generationReasonProvider.notifier).state = null;
+
+  try {
+    final allRaw = await ref.read(allCardsProvider.future);
+    final config = ref.read(configProvider);
+    final preset = GameVibePresets.byId(config.selectedPresetId);
+    final cards = allRaw
+        .map((c) =>
+            config.isCardDisabled(c.id) ? c.copyWith(isDisabled: true) : c)
+        .toList();
+
+    final lockedKingdomCards = rerollKingdom
+        ? current.kingdomCards
+            .where((card) =>
+                current.lockedSlotIds.contains(card.splitPileId ?? card.id))
+            .toList()
+        : current.kingdomCards;
+    final lockedLandscapeCards = rerollLandscapes
+        ? current.landscapeCards
+            .where((card) => current.lockedLandscapeIds.contains(card.id))
+            .toList()
+        : current.landscapeCards;
+
+    final result = _setupEngine.generate(
+      allCards: cards,
+      ownedExpansions: config.ownedExpansions,
+      rules: config.rules,
+      preset: preset,
+      lockedKingdomCards: lockedKingdomCards,
+      lockedLandscapeCards: lockedLandscapeCards,
+    );
+
+    final enriched = _heuristicEngine.enrich(result);
+    ref.read(setupResultProvider.notifier).state = enriched;
+    ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
+    ref.read(historyProvider.notifier).push(enriched);
+    return true;
+  } on SetupException catch (e) {
+    ref.read(_generationErrorProvider.notifier).state = e.message;
+    ref.read(_generationReasonProvider.notifier).state = e.reason;
+    ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
+    return false;
+  } catch (e) {
+    ref.read(_generationErrorProvider.notifier).state =
+        'Unexpected error: ${e.toString()}';
+    ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
+    return false;
+  }
+}
+
+void toggleKingdomSlotLock(WidgetRef ref, String slotId) {
+  final current = ref.read(setupResultProvider);
+  if (current == null) return;
+  final updated = Set<String>.from(current.lockedSlotIds);
+  if (updated.contains(slotId)) {
+    updated.remove(slotId);
+  } else {
+    updated.add(slotId);
+  }
+  ref.read(setupResultProvider.notifier).state =
+      current.copyWith(lockedSlotIds: updated);
+}
+
+void toggleLandscapeLock(WidgetRef ref, String cardId) {
+  final current = ref.read(setupResultProvider);
+  if (current == null) return;
+  final updated = Set<String>.from(current.lockedLandscapeIds);
+  if (updated.contains(cardId)) {
+    updated.remove(cardId);
+  } else {
+    updated.add(cardId);
+  }
+  ref.read(setupResultProvider.notifier).state =
+      current.copyWith(lockedLandscapeIds: updated);
+}
+
+void clearAllLocks(WidgetRef ref) {
+  final current = ref.read(setupResultProvider);
+  if (current == null) return;
+  ref.read(setupResultProvider.notifier).state = current.copyWith(
+    lockedSlotIds: {},
+    lockedLandscapeIds: {},
+  );
+}
+
+String encodeSharePayload(SetupResult result, ConfigState config) {
+  return SharePayload(
+    kingdomCardIds: result.kingdomCards.map((card) => card.id).toList(),
+    landscapeCardIds: result.landscapeCards.map((card) => card.id).toList(),
+    presetId: result.presetId ?? config.selectedPresetId,
+    rulesSnapshot: config.rules,
+    playerCount: config.playerCount,
+    notes: result.setupNotes,
+  ).encode();
+}
+
+Future<bool> _importSharePayload(WidgetRef ref, SharePayload payload) async {
+  final allCards = await ref.read(allCardsProvider.future);
+  final byId = {for (final card in allCards) card.id: card};
+  final kingdom = <KingdomCard>[];
+  final landscape = <KingdomCard>[];
+
+  for (final id in payload.kingdomCardIds) {
+    final card = byId[id];
+    if (card != null) kingdom.add(card);
+  }
+  for (final id in payload.landscapeCardIds) {
+    final card = byId[id];
+    if (card != null) landscape.add(card);
+  }
+
+  if (kingdom.isEmpty) {
+    ref.read(_generationErrorProvider.notifier).state =
+        'Share code could not be resolved with the current card database.';
+    ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
+    return false;
+  }
+
+  final baseResult = SetupResult(
+    kingdomCards: kingdom,
+    landscapeCards: landscape,
+    archetypes: const [],
+    setupNotes: payload.notes,
+    selectionRationale: [
+      if (payload.presetId != null)
+        'Imported from a shared ${GameVibePresets.byId(payload.presetId).name} kingdom.'
+      else
+        'Imported from a shared kingdom code.',
+    ],
+    presetId: payload.presetId,
+    generatedAt: DateTime.now(),
+  );
+  final enriched = _heuristicEngine.enrich(baseResult);
+  ref.read(setupResultProvider.notifier).state = enriched;
+  ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
+  return true;
 }
 
 // ── Text parsing ──────────────────────────────────────────────────────────

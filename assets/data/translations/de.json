@@ -1,0 +1,47 @@
+{
+  "languageCode": "de",
+  "label": "Deutsch",
+  "version": 1,
+  "cards": {
+    "artisan": {
+      "name": "Handwerker",
+      "text": "+1 Karte. Nimm eine Karte bis zu 5 Kosten auf die Hand. Lege eine Handkarte auf deinen Nachziehstapel."
+    },
+    "bandit": {
+      "name": "Bandit",
+      "text": "Nimm ein Gold. Jeder andere Spieler deckt die obersten 2 Karten seines Nachziehstapels auf, entsorgt einen aufgedeckten Schatz außer Kupfer und legt den Rest ab."
+    },
+    "cellar": {
+      "name": "Keller",
+      "text": "+1 Aktion. Lege beliebig viele Karten ab und ziehe genauso viele Karten nach."
+    },
+    "chapel": {
+      "name": "Kapelle",
+      "text": "Entsorge bis zu 4 Karten aus deiner Hand."
+    },
+    "festival": {
+      "name": "Jahrmarkt",
+      "text": "+2 Aktionen. +1 Kauf. +2 Geld."
+    },
+    "market": {
+      "name": "Markt",
+      "text": "+1 Karte. +1 Aktion. +1 Kauf. +1 Geld."
+    },
+    "militia": {
+      "name": "Miliz",
+      "text": "+2 Geld. Jeder andere Spieler legt ab, bis er nur noch 3 Karten auf der Hand hat."
+    },
+    "smithy": {
+      "name": "Schmiede",
+      "text": "+3 Karten."
+    },
+    "village": {
+      "name": "Dorf",
+      "text": "+1 Karte. +2 Aktionen."
+    },
+    "witch": {
+      "name": "Hexe",
+      "text": "+2 Karten. Jeder andere Spieler nimmt einen Fluch."
+    }
+  }
+}

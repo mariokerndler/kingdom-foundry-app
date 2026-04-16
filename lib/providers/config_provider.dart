@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/expansion.dart';
+import '../models/game_vibe_preset.dart';
 import '../models/setup_rules.dart';
 import '../services/config_persistence_service.dart';
 
@@ -13,6 +14,8 @@ class ConfigState {
   final Set<String> disabledCardIds;
   final int playerCount; // 2–6
   final bool useDarkMode;
+  final String selectedPresetId;
+  final String selectedLanguageCode;
 
   const ConfigState({
     required this.ownedExpansions,
@@ -20,6 +23,8 @@ class ConfigState {
     required this.disabledCardIds,
     this.playerCount = 2,
     this.useDarkMode = false,
+    this.selectedPresetId = GameVibePresets.noneId,
+    this.selectedLanguageCode = 'en',
   });
 
   bool isExpansionOwned(Expansion e) => ownedExpansions.contains(e);
@@ -31,6 +36,8 @@ class ConfigState {
     Set<String>? disabledCardIds,
     int? playerCount,
     bool? useDarkMode,
+    String? selectedPresetId,
+    String? selectedLanguageCode,
   }) {
     return ConfigState(
       ownedExpansions: ownedExpansions ?? this.ownedExpansions,
@@ -38,6 +45,8 @@ class ConfigState {
       disabledCardIds: disabledCardIds ?? this.disabledCardIds,
       playerCount: playerCount ?? this.playerCount,
       useDarkMode: useDarkMode ?? this.useDarkMode,
+      selectedPresetId: selectedPresetId ?? this.selectedPresetId,
+      selectedLanguageCode: selectedLanguageCode ?? this.selectedLanguageCode,
     );
   }
 }
@@ -194,12 +203,26 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
 
   void resetRules() => state = state.copyWith(rules: const SetupRules());
 
+  void setSelectedPresetId(String presetId) {
+    final preset = GameVibePresets.byId(presetId);
+    state = state.copyWith(
+      selectedPresetId: preset.id,
+      rules: preset.defaultRules.copyWith(
+        showStrategyTips: state.rules.showStrategyTips,
+        includeLandscape: state.rules.includeLandscape,
+      ),
+    );
+  }
+
   // ── Player count ──────────────────────────────────────────────────────────
 
   void setPlayerCount(int count) =>
       state = state.copyWith(playerCount: count.clamp(2, 6));
 
   void setUseDarkMode(bool v) => state = state.copyWith(useDarkMode: v);
+
+  void setSelectedLanguageCode(String code) =>
+      state = state.copyWith(selectedLanguageCode: code);
 
   // ── Card ban list ─────────────────────────────────────────────────────────
 

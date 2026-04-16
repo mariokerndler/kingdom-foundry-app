@@ -4,9 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kingdom_foundry/controllers/setup_engine.dart';
 import 'package:kingdom_foundry/controllers/setup_exception.dart';
+import 'package:kingdom_foundry/models/card_metadata.dart';
 import 'package:kingdom_foundry/models/card_tag.dart';
 import 'package:kingdom_foundry/models/card_type.dart';
 import 'package:kingdom_foundry/models/cost_curve_rule.dart';
+import 'package:kingdom_foundry/models/game_vibe_preset.dart';
 import 'package:kingdom_foundry/models/kingdom_card.dart';
 import 'package:kingdom_foundry/models/expansion.dart';
 import 'package:kingdom_foundry/models/setup_rules.dart';
@@ -26,6 +28,7 @@ KingdomCard _card({
   int? debtCost,
   String? splitPileId,
   List<String> pileCards = const [],
+  CardMetadata metadata = const CardMetadata(),
 }) =>
     KingdomCard(
       id: id,
@@ -37,6 +40,7 @@ KingdomCard _card({
       potionCost: potionCost,
       debtCost: debtCost,
       text: '',
+      metadata: metadata,
       isDisabled: isDisabled,
       splitPileId: splitPileId,
       pileCards: pileCards,
@@ -220,6 +224,87 @@ void main() {
         rules: const SetupRules(),
       );
       expect(result.kingdomCards, hasLength(10));
+    });
+  });
+
+  group('SetupEngine — presets and rerolls', () {
+    test('engine builder preset prefers stronger engine support cards', () {
+      final engineCards = List.generate(
+        10,
+        (i) => _card(
+          id: 'engine_$i',
+          tags: const [
+            CardTag.plusCard,
+            CardTag.villageEffect,
+            CardTag.trashCards,
+          ],
+          metadata: const CardMetadata(
+            engineSupport: EngineSupportLevel.high,
+            payloadProfile: PayloadProfile.support,
+            complexity: CardComplexity.medium,
+            setupWeight: SetupWeight.low,
+            drawQuality: QualityLevel.high,
+          ),
+        ),
+      );
+      final economyCards = List.generate(
+        10,
+        (i) => _card(
+          id: 'economy_$i',
+          tags: const [CardTag.plusCoin, CardTag.gainTreasure],
+          metadata: const CardMetadata(
+            engineSupport: EngineSupportLevel.low,
+            payloadProfile: PayloadProfile.economy,
+            complexity: CardComplexity.low,
+            setupWeight: SetupWeight.low,
+          ),
+        ),
+      );
+
+      final engineResult = _seededEngine(9).generate(
+        allCards: [...engineCards, ...economyCards],
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: const SetupRules(),
+        preset: GameVibePresets.byId('engine_builder'),
+      );
+      final bigMoneyResult = _seededEngine(9).generate(
+        allCards: [...engineCards, ...economyCards],
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: const SetupRules(),
+        preset: GameVibePresets.byId('big_money_simple'),
+      );
+
+      final enginePresetCount = engineResult.kingdomCards
+          .where(
+              (card) => card.metadata.engineSupport == EngineSupportLevel.high)
+          .length;
+      final bigMoneyEngineCount = bigMoneyResult.kingdomCards
+          .where(
+              (card) => card.metadata.engineSupport == EngineSupportLevel.high)
+          .length;
+
+      expect(enginePresetCount, greaterThan(bigMoneyEngineCount));
+    });
+
+    test('locked kingdom cards are preserved during reroll generation', () {
+      final lockedA = _card(id: 'locked_a', cost: 2);
+      final lockedB = _card(id: 'locked_b', cost: 5);
+      final pool = [
+        lockedA,
+        lockedB,
+        ...List.generate(20, (i) => _card(id: 'pool_$i', cost: 3 + (i % 3))),
+      ];
+
+      final result = _seededEngine(5).generate(
+        allCards: pool,
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: const SetupRules(),
+        lockedKingdomCards: [lockedA, lockedB],
+      );
+
+      expect(result.kingdomCards, contains(lockedA));
+      expect(result.kingdomCards, contains(lockedB));
+      expect(result.lockedSlotIds, containsAll(['locked_a', 'locked_b']));
     });
   });
 

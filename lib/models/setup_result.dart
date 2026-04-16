@@ -18,6 +18,18 @@ class SetupResult {
   /// Special setup reminders (Potion pile, Platinum/Colony, etc.).
   final List<String> setupNotes;
 
+  /// Short rationale strings that explain why this setup matched the preset.
+  final List<String> selectionRationale;
+
+  /// The active preset that influenced this board, if any.
+  final String? presetId;
+
+  /// Stable locked kingdom slot ids for partial rerolls.
+  final Set<String> lockedSlotIds;
+
+  /// Stable locked landscape ids for partial rerolls.
+  final Set<String> lockedLandscapeIds;
+
   /// ISO-8601 timestamp of when this result was generated.
   final DateTime generatedAt;
 
@@ -26,6 +38,10 @@ class SetupResult {
     this.landscapeCards = const [],
     required this.archetypes,
     required this.setupNotes,
+    this.selectionRationale = const [],
+    this.presetId,
+    this.lockedSlotIds = const {},
+    this.lockedLandscapeIds = const {},
     required this.generatedAt,
   });
 
@@ -46,6 +62,36 @@ class SetupResult {
   /// Stable key used when persisting this result as a saved preset.
   String get storageKey => generatedAt.toIso8601String();
 
+  Set<String> get kingdomSlotIds =>
+      kingdomCards.map((card) => card.splitPileId ?? card.id).toSet();
+
+  bool isSlotLocked(String slotId) => lockedSlotIds.contains(slotId);
+  bool isLandscapeLocked(String cardId) => lockedLandscapeIds.contains(cardId);
+
+  SetupResult copyWith({
+    List<KingdomCard>? kingdomCards,
+    List<KingdomCard>? landscapeCards,
+    List<StrategyArchetype>? archetypes,
+    List<String>? setupNotes,
+    List<String>? selectionRationale,
+    String? presetId,
+    Set<String>? lockedSlotIds,
+    Set<String>? lockedLandscapeIds,
+    DateTime? generatedAt,
+  }) {
+    return SetupResult(
+      kingdomCards: kingdomCards ?? this.kingdomCards,
+      landscapeCards: landscapeCards ?? this.landscapeCards,
+      archetypes: archetypes ?? this.archetypes,
+      setupNotes: setupNotes ?? this.setupNotes,
+      selectionRationale: selectionRationale ?? this.selectionRationale,
+      presetId: presetId ?? this.presetId,
+      lockedSlotIds: lockedSlotIds ?? this.lockedSlotIds,
+      lockedLandscapeIds: lockedLandscapeIds ?? this.lockedLandscapeIds,
+      generatedAt: generatedAt ?? this.generatedAt,
+    );
+  }
+
   // ── Serialisation (for history) ────────────────────────────────────────────
 
   Map<String, dynamic> toJson() => {
@@ -53,6 +99,10 @@ class SetupResult {
         'landscapeCards': landscapeCards.map((c) => c.toJson()).toList(),
         'archetypes': archetypes.map((a) => a.toJson()).toList(),
         'setupNotes': setupNotes,
+        'selectionRationale': selectionRationale,
+        'presetId': presetId,
+        'lockedSlotIds': lockedSlotIds.toList(),
+        'lockedLandscapeIds': lockedLandscapeIds.toList(),
         'generatedAt': generatedAt.toIso8601String(),
       };
 
@@ -68,6 +118,14 @@ class SetupResult {
           .map((a) => StrategyArchetype.fromJson(a as Map<String, dynamic>))
           .toList(),
       setupNotes: (json['setupNotes'] as List).cast<String>(),
+      selectionRationale:
+          (json['selectionRationale'] as List? ?? const []).cast<String>(),
+      presetId: json['presetId'] as String?,
+      lockedSlotIds:
+          ((json['lockedSlotIds'] as List? ?? const []).cast<String>()).toSet(),
+      lockedLandscapeIds:
+          ((json['lockedLandscapeIds'] as List? ?? const []).cast<String>())
+              .toSet(),
       generatedAt: DateTime.parse(json['generatedAt'] as String),
     );
   }

@@ -5,30 +5,38 @@ import '../../models/card_tag.dart';
 import '../../models/card_type.dart';
 import '../../models/kingdom_card.dart';
 import '../../providers/card_data_providers.dart';
+import '../../providers/translation_provider.dart';
 import '../../utils/app_theme.dart';
 import '../common/expansion_badge.dart';
 
-class KingdomCardWidget extends StatelessWidget {
+class KingdomCardWidget extends ConsumerWidget {
   final KingdomCard card;
   final List<KingdomCard> splitPileCards;
   final int index; // 1-based display number
+  final bool locked;
+  final VoidCallback? onToggleLock;
 
   const KingdomCardWidget({
     super.key,
     required this.card,
     this.splitPileCards = const [],
     required this.index,
+    this.locked = false,
+    this.onToggleLock,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final localized = ref.watch(localizedCardProvider(card));
     final accent = _accentColor(card.types);
     final isSplit = splitPileCards.isNotEmpty;
-    final splitLabel = splitPileCards.map((c) => c.name).join(' / ');
+    final splitLabel = splitPileCards
+        .map((c) => ref.watch(localizedCardProvider(c)).name)
+        .join(' / ');
 
     return Semantics(
       label:
-          '${card.name}${isSplit ? ' / $splitLabel' : ''}, ${card.typeString}. Cost: ${card.costString}. Tap for details.',
+          '${localized.name}${isSplit ? ' / $splitLabel' : ''}, ${card.typeString}. Cost: ${card.costString}. Tap for details.',
       button: true,
       excludeSemantics: true,
       child: Material(
@@ -62,7 +70,7 @@ class KingdomCardWidget extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  card.name,
+                                  localized.name,
                                   style: TextStyle(
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
@@ -75,7 +83,49 @@ class KingdomCardWidget extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 6),
-                              _CostBadge(cost: card.costString),
+                              Column(
+                                children: [
+                                  _CostBadge(cost: card.costString),
+                                  if (onToggleLock != null) ...[
+                                    const SizedBox(height: 6),
+                                    InkWell(
+                                      onTap: onToggleLock,
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Container(
+                                        width: 24,
+                                        height: 24,
+                                        decoration: BoxDecoration(
+                                          color: locked
+                                              ? accent.withValues(alpha: 0.14)
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .surface,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: locked
+                                                ? accent
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .outlineVariant,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          locked
+                                              ? Icons.lock_rounded
+                                              : Icons.lock_open_rounded,
+                                          size: 13,
+                                          color: locked
+                                              ? accent
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ],
                           ),
 
@@ -89,7 +139,7 @@ class KingdomCardWidget extends StatelessWidget {
                           // Card text (truncated)
                           Expanded(
                             child: Text(
-                              card.text,
+                              localized.text,
                               style: TextStyle(
                                 color: Theme.of(context)
                                     .colorScheme
@@ -443,7 +493,7 @@ class _TypePills extends StatelessWidget {
 
 // ── Card detail bottom sheet ─────────────────────────────────────────────────
 
-class _CardDetailSheet extends StatelessWidget {
+class _CardDetailSheet extends ConsumerWidget {
   final KingdomCard card;
   final List<KingdomCard> splitPileCards;
   final Color accent;
@@ -455,7 +505,8 @@ class _CardDetailSheet extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final localized = ref.watch(localizedCardProvider(card));
     return DraggableScrollableSheet(
       initialChildSize: 0.55,
       minChildSize: 0.35,
@@ -489,7 +540,7 @@ class _CardDetailSheet extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          card.name,
+                          localized.name,
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 22,
@@ -517,7 +568,7 @@ class _CardDetailSheet extends StatelessWidget {
 
                   // Rules text
                   Text(
-                    card.text,
+                    localized.text,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 15,
@@ -635,12 +686,13 @@ class _CardDetailSheet extends StatelessWidget {
 
 // ── Split pile card ────────────────────────────────────────────────────────
 
-class _SplitPileCard extends StatelessWidget {
+class _SplitPileCard extends ConsumerWidget {
   final KingdomCard card;
   const _SplitPileCard({required this.card});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final localized = ref.watch(localizedCardProvider(card));
     final accent = KingdomCardWidget._accentColor(card.types);
     return Container(
       padding: const EdgeInsets.all(12),
@@ -659,7 +711,7 @@ class _SplitPileCard extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  card.name,
+                  localized.name,
                   style: TextStyle(
                     color: accent,
                     fontSize: 15,
@@ -674,7 +726,7 @@ class _SplitPileCard extends StatelessWidget {
           _TypePills(types: card.types),
           const SizedBox(height: 8),
           Text(
-            card.text,
+            localized.text,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
               fontSize: 13,
@@ -713,14 +765,16 @@ class _PileCards extends ConsumerWidget {
   }
 }
 
-class _PileCardRow extends StatelessWidget {
+class _PileCardRow extends ConsumerWidget {
   final String name;
   final KingdomCard? card;
 
   const _PileCardRow({required this.name, required this.card});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final localized =
+        card == null ? null : ref.watch(localizedCardProvider(card!));
     final accent = card == null
         ? Theme.of(context).colorScheme.outline
         : KingdomCardWidget._accentColor(card!.types);
@@ -749,7 +803,7 @@ class _PileCardRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        name,
+                        localized?.name ?? name,
                         style: TextStyle(
                           color: accent,
                           fontSize: 13,
@@ -759,7 +813,7 @@ class _PileCardRow extends StatelessWidget {
                       if (card != null) ...[
                         const SizedBox(height: 2),
                         Text(
-                          card!.text,
+                          localized?.text ?? card!.text,
                           style: TextStyle(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -858,7 +912,7 @@ class _TravellerChain extends ConsumerWidget {
   }
 }
 
-class _ChainStep extends StatelessWidget {
+class _ChainStep extends ConsumerWidget {
   final String name;
   final KingdomCard? card; // null while allCardsProvider is loading
   final bool isBase;
@@ -874,9 +928,13 @@ class _ChainStep extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final localized =
+        card == null ? null : ref.watch(localizedCardProvider(card!));
     return Semantics(
-      label: card != null ? '$name: ${card!.text}' : name,
+      label: card != null
+          ? '${localized?.name ?? name}: ${localized?.text ?? card!.text}'
+          : name,
       button: card != null,
       child: Material(
         color: Colors.transparent,
@@ -908,7 +966,7 @@ class _ChainStep extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        name,
+                        localized?.name ?? name,
                         style: TextStyle(
                           color: accent,
                           fontSize: 13,

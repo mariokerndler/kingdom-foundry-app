@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/setup_result.dart';
 import '../../providers/generation_provider.dart';
 import '../../providers/history_provider.dart';
+import '../../providers/translation_provider.dart';
 import '../../screens/results_screen.dart';
 import '../../utils/app_theme.dart';
 import '../common/expansion_badge.dart';
@@ -163,7 +164,7 @@ class _HistorySheet extends ConsumerWidget {
   }
 }
 
-class _HistoryTile extends StatelessWidget {
+class _HistoryTile extends ConsumerWidget {
   final SetupResult result;
   final int index;
   final bool isFavorite;
@@ -181,14 +182,17 @@ class _HistoryTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final expansions = result.kingdomCards.map((c) => c.expansion).toSet();
     final age = _formatAge(result.generatedAt);
     final primary = result.primaryArchetype;
+    final pack = ref.watch(activeTranslationPackProvider).valueOrNull;
+    final names = result.kingdomCards
+        .map((card) => pack?.lookup(card.id)?.name ?? card.name)
+        .join(', ');
 
     return Semantics(
-      label: 'Kingdom ${index + 1}, generated $age. '
-          '${result.kingdomCards.map((c) => c.name).join(', ')}',
+      label: 'Kingdom ${index + 1}, generated $age. $names',
       button: true,
       child: InkWell(
         onTap: onTap,
@@ -228,7 +232,7 @@ class _HistoryTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      result.kingdomCards.map((c) => c.name).join(', '),
+                      names,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 13,
