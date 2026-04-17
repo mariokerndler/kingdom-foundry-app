@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/cost_curve_rule.dart';
 import '../../models/game_vibe_preset.dart';
+import '../../models/translation_pack.dart';
 import '../../providers/config_provider.dart';
 import '../../providers/translation_provider.dart';
 import '../../utils/app_theme.dart';
 import '../common/section_header.dart';
+import '../common/ui_primitives.dart';
 
 class RulesTab extends ConsumerStatefulWidget {
   const RulesTab({super.key});
@@ -302,9 +304,16 @@ class _PresetSelector extends StatelessWidget {
         itemBuilder: (_, i) {
           final preset = GameVibePresets.all[i + 1];
           final selected = preset.id == selectedPresetId;
-          return GestureDetector(
-            onTap: () => onChanged(preset.id),
-            child: AnimatedContainer(
+          return Semantics(
+            selected: selected,
+            button: true,
+            label: '${preset.name} preset',
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => onChanged(preset.id),
+                borderRadius: BorderRadius.circular(12),
+                child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               width: 220,
               padding: const EdgeInsets.all(14),
@@ -322,32 +331,34 @@ class _PresetSelector extends StatelessWidget {
                       : Theme.of(context).colorScheme.outlineVariant,
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    preset.name,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        preset.name,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Expanded(
+                        child: Text(
+                          preset.description,
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        selected ? 'Preset active' : 'Tap to apply defaults',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: selected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 6),
-                  Expanded(
-                    child: Text(
-                      preset.description,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    selected ? 'Preset active' : 'Tap to apply defaults',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: selected
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                ],
+                ),
               ),
             ),
           );
@@ -370,8 +381,18 @@ class _LanguageSelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final packsAsync = ref.watch(translationPacksProvider);
     return packsAsync.when(
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      loading: () => const Padding(
+        padding: EdgeInsets.fromLTRB(16, 6, 16, 0),
+        child: AppLoadingStrip(label: 'Loading translation packs...'),
+      ),
+      error: (_, __) => const Padding(
+        padding: EdgeInsets.fromLTRB(16, 6, 16, 0),
+        child: AppStateCard(
+          icon: Icons.translate_rounded,
+          title: 'Translation packs unavailable',
+          message: 'Card languages could not be loaded right now.',
+        ),
+      ),
       data: (packs) => Padding(
         padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
         child: Container(
@@ -435,33 +456,66 @@ class _LanguageSelector extends ConsumerWidget {
     WidgetRef ref,
   ) async {
     final controller = TextEditingController();
+    String? validationMessage(String value) {
+      if (value.trim().isEmpty) {
+        return 'Paste a translation pack JSON payload to continue.';
+      }
+      try {
+        // Parse eagerly by calling the same importer logic on a copy path.
+        TranslationPack.fromJsonString(value.trim());
+        return null;
+      } catch (error) {
+        return error.toString();
+      }
+    }
     final rawJson = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Import Translation Pack'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: TextField(
-            controller: controller,
-            maxLines: 14,
-            minLines: 6,
-            decoration: const InputDecoration(
-              hintText:
-                  '{"languageCode":"fr","label":"Francais","cards":{...}}',
+      builder: (context) {
+        String? errorText = validationMessage(controller.text);
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text('Import Translation Pack'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Paste a JSON translation pack with a language code, label, and card map.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    maxLines: 14,
+                    minLines: 6,
+                    onChanged: (_) =>
+                        setState(() => errorText = validationMessage(controller.text)),
+                    decoration: InputDecoration(
+                      hintText:
+                          '{"languageCode":"fr","label":"Francais","cards":{...}}',
+                      errorText: errorText,
+                    ),
+                  ),
+                ],
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: errorText == null
+                    ? () => Navigator.of(context).pop(controller.text.trim())
+                    : null,
+                child: const Text('Import'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('Import'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (rawJson == null || rawJson.isEmpty) return;
@@ -931,20 +985,17 @@ class _StepBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: 32,
-      height: 32,
-      child: Material(
-        color: enabled ? cs.surfaceContainer : Colors.transparent,
-        borderRadius: BorderRadius.circular(6),
-        child: InkWell(
-          onTap: enabled ? onPressed : null,
-          borderRadius: BorderRadius.circular(6),
-          child: Icon(
-            icon,
-            size: 16,
-            color: enabled ? cs.onSurface : cs.outlineVariant,
-          ),
+    return IconButton(
+      onPressed: enabled ? onPressed : null,
+      icon: Icon(
+        icon,
+        size: 20,
+        color: enabled ? cs.onSurface : cs.outlineVariant,
+      ),
+      style: IconButton.styleFrom(
+        backgroundColor: enabled ? cs.surfaceContainer : Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.sm),
         ),
       ),
     );

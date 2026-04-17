@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/setup_exception.dart';
 import '../models/share_payload.dart';
+import '../providers/card_data_providers.dart';
 import '../providers/config_provider.dart';
 import '../providers/generation_provider.dart';
 import '../screens/results_screen.dart';
 import '../utils/app_theme.dart';
 import '../widgets/common/history_sheet.dart';
 import '../widgets/common/player_count_bar.dart';
+import '../widgets/common/ui_primitives.dart';
 import '../widgets/screens/card_ban_list.dart';
 import '../widgets/screens/expansion_picker.dart';
 import '../widgets/screens/rules_section.dart';
@@ -46,17 +48,34 @@ class ConfigurationScreen extends ConsumerWidget {
                   .read(configProvider.notifier)
                   .setUseDarkMode(!config.useDarkMode),
             ),
-            IconButton(
-              icon: const Icon(Icons.history_rounded),
-              tooltip: 'Kingdom history',
-              onPressed: () => showHistorySheet(context, ref),
+            PopupMenuButton<_ConfigMenuAction>(
+              tooltip: 'More options',
+              onSelected: (value) {
+                if (value == _ConfigMenuAction.history) {
+                  showHistorySheet(context, ref);
+                } else {
+                  _showImportDialog(context, ref);
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _ConfigMenuAction.history,
+                  child: ListTile(
+                    leading: Icon(Icons.history_rounded),
+                    title: Text('Kingdom history'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: _ConfigMenuAction.import,
+                  child: ListTile(
+                    leading: Icon(Icons.paste_rounded),
+                    title: Text('Import kingdom'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
             ),
-            IconButton(
-              icon: const Icon(Icons.paste_rounded),
-              tooltip: 'Import kingdom from clipboard',
-              onPressed: () => _showImportDialog(context, ref),
-            ),
-            const SizedBox(width: 4),
           ],
           bottom: const TabBar(
             tabs: [
@@ -80,13 +99,11 @@ class ConfigurationScreen extends ConsumerWidget {
             ),
           ],
         ),
-        floatingActionButton: _GenerateFab(
+        bottomNavigationBar: _GeneratePanel(
           isLoading: isLoading,
-          ownedCount: config.ownedExpansions.length,
-          activeRuleCount: config.rules.activeRuleDescriptions.length,
+          config: config,
           onGenerate: () => _generate(context, ref),
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
     );
   }
@@ -170,6 +187,8 @@ class ConfigurationScreen extends ConsumerWidget {
   }
 }
 
+enum _ConfigMenuAction { history, import }
+
 // ── App title ──────────────────────────────────────────────────────────────
 
 class _AppTitle extends StatelessWidget {
@@ -191,7 +210,7 @@ class _AppTitle extends StatelessWidget {
         Text('Kingdom Generator',
             style: TextStyle(
               color: cs.primary.withValues(alpha: 0.8),
-              fontSize: 11,
+              fontSize: 12,
             )),
       ],
     );
@@ -200,66 +219,129 @@ class _AppTitle extends StatelessWidget {
 
 // ── Generate FAB ───────────────────────────────────────────────────────────
 
-class _GenerateFab extends StatelessWidget {
+class _GeneratePanel extends ConsumerWidget {
   final bool isLoading;
-  final int ownedCount;
-  final int activeRuleCount;
+  final ConfigState config;
   final VoidCallback onGenerate;
 
-  const _GenerateFab({
+  const _GeneratePanel({
     required this.isLoading,
-    required this.ownedCount,
-    required this.activeRuleCount,
+    required this.config,
     required this.onGenerate,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    return FloatingActionButton.extended(
-      onPressed: isLoading ? null : onGenerate,
-      backgroundColor:
-          isLoading ? cs.primary.withValues(alpha: 0.6) : cs.primary,
-      label: isLoading
-          ? Row(
-              children: [
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(cs.onPrimary),
+    final poolCountAsync = ref.watch(selectedPoolCountProvider);
+    final chips = [
+      AppSummaryChip(
+        icon: Icons.library_books_outlined,
+        label: 'sets',
+        value: '${config.ownedExpansions.length}',
+      ),
+      AppSummaryChip(
+        icon: Icons.tune_rounded,
+        label: 'rules',
+        value: '${config.rules.activeRuleDescriptions.length}',
+      ),
+      AppSummaryChip(
+        icon: Icons.block_rounded,
+        label: 'banned',
+        value: '${config.disabledCardIds.length}',
+        color: config.disabledCardIds.isEmpty ? null : AppColors.errorRed,
+      ),
+      AppSummaryChip(
+        icon: Icons.grid_view_rounded,
+        label: 'pool',
+        value: poolCountAsync.maybeWhen(
+          data: (count) => '$count',
+          orElse: () => '...',
+        ),
+        color: poolCountAsync.maybeWhen(
+          data: (count) => count >= 10 ? AppColors.successGreen : AppColors.errorRed,
+          orElse: () => null,
+        ),
+      ),
+    ];
+
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+            border: Border.all(color: cs.outlineVariant),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Current setup',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const Spacer(),
+                  if (poolCountAsync.maybeWhen(
+                    data: (count) => count < 10,
+                    orElse: () => false,
+                  ))
+                    Text(
+                      'Need at least 10 cards',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: AppColors.errorRed,
+                          ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final chip in chips) ...[
+                      chip,
+                      const SizedBox(width: AppSpacing.sm),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: isLoading ? null : onGenerate,
+                  icon: isLoading
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(cs.onPrimary),
+                          ),
+                        )
+                      : const Icon(Icons.casino_rounded),
+                  label: Text(
+                    isLoading ? 'Generating kingdom...' : 'Generate kingdom',
                   ),
                 ),
-                const SizedBox(width: 10),
-                Text('Generating...',
-                    style: TextStyle(
-                        color: cs.onPrimary, fontWeight: FontWeight.w700)),
-              ],
-            )
-          : Row(
-              children: [
-                const Icon(Icons.casino_rounded, size: 20),
-                const SizedBox(width: 8),
-                const Text('Generate Kingdom',
-                    style: TextStyle(fontWeight: FontWeight.w700)),
-                if (activeRuleCount > 0) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.20),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '$activeRuleCount rule${activeRuleCount == 1 ? '' : 's'}',
-                      style: TextStyle(fontSize: 11, color: cs.onPrimary),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -308,6 +390,7 @@ class _ImportDialogState extends State<_ImportDialog> {
   @override
   Widget build(BuildContext context) {
     final isValid = _parsed.length == 10 || _isShareCode;
+    final hasInput = _ctrl.text.trim().isNotEmpty;
 
     return AlertDialog(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -346,17 +429,20 @@ class _ImportDialogState extends State<_ImportDialog> {
               maxLines: 12,
               minLines: 5,
               autofocus: true,
-              style: const TextStyle(fontSize: 12, height: 1.6),
-              decoration: const InputDecoration(
+              style: const TextStyle(fontSize: 13, height: 1.6),
+              decoration: InputDecoration(
                 hintText: '1. Village (\$3)\n2. Smithy (\$4)\n…',
                 alignLabelWithHint: true,
+                errorText: hasInput && !isValid
+                    ? 'Paste 10 cards or a valid share code.'
+                    : null,
               ),
             ),
 
             const SizedBox(height: 10),
 
             // Live validation feedback
-            if (_ctrl.text.trim().isNotEmpty)
+            if (hasInput)
               _ParsePreview(
                 parsed: _parsed,
                 isValid: isValid,

@@ -6,6 +6,7 @@ import '../../models/expansion.dart';
 import '../../providers/card_data_providers.dart';
 import '../../providers/config_provider.dart';
 import '../../utils/app_theme.dart';
+import '../common/ui_primitives.dart';
 
 class ExpansionPickerTab extends ConsumerStatefulWidget {
   const ExpansionPickerTab({super.key});
@@ -38,8 +39,16 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
     final notifier = ref.read(configProvider.notifier);
 
     return availableAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error loading expansions: $e')),
+      loading: () => const AppStateCard(
+        icon: Icons.library_books_outlined,
+        title: 'Loading expansions',
+        message: 'Building your expansion library...',
+      ),
+      error: (e, _) => AppStateCard(
+        icon: Icons.error_outline_rounded,
+        title: 'Could not load expansions',
+        message: 'The expansion catalog failed to load.\n$e',
+      ),
       data: (available) {
         // Sort alphabetically, then filter by search query.
         final sorted = available.toList()
@@ -120,9 +129,20 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
               child: filtered.isEmpty
                   ? _EmptySearch(query: _searchCtrl.text)
                   : statsAsync.when(
-                      loading: () =>
-                          const Center(child: CircularProgressIndicator()),
-                      error: (_, __) => const SizedBox.shrink(),
+                      loading: () => const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: AppLoadingStrip(
+                          label: 'Updating expansion counts...',
+                        ),
+                      ),
+                      error: (_, __) => const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: AppStateCard(
+                          icon: Icons.error_outline_rounded,
+                          title: 'Counts unavailable',
+                          message: 'Expansion counts could not be loaded.',
+                        ),
+                      ),
                       data: (stats) => _GroupedList(
                         expansions: filtered,
                         stats: stats,
@@ -251,7 +271,7 @@ class _GroupHeader extends StatelessWidget {
             title.toUpperCase(),
             style: TextStyle(
               color: primary,
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.3,
             ),
@@ -267,7 +287,7 @@ class _GroupHeader extends StatelessWidget {
               '$count',
               style: TextStyle(
                 color: primary,
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -425,9 +445,9 @@ class _CountPill extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 10, color: color),
+          Icon(icon, size: 12, color: color),
           const SizedBox(width: 3),
-          Text(label, style: TextStyle(color: color, fontSize: 10)),
+          Text(label, style: TextStyle(color: color, fontSize: 12)),
         ],
       );
 }
@@ -449,9 +469,9 @@ class _KingdomCountChip extends StatelessWidget {
   Widget build(BuildContext context) {
     if (count == null) {
       return const SizedBox(
-        width: 16,
-        height: 16,
-        child: CircularProgressIndicator(strokeWidth: 1.5),
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(strokeWidth: 2),
       );
     }
 
@@ -481,7 +501,7 @@ class _KingdomCountChip extends StatelessWidget {
             '$count kingdom · $owned/$total sets',
             style: TextStyle(
               color: color,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
           ),

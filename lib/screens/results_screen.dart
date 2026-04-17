@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +17,7 @@ import '../utils/archetype_utils.dart';
 import '../widgets/cards/archetype_card.dart';
 import '../widgets/cards/kingdom_card_widget.dart';
 import '../widgets/common/section_header.dart';
+import '../widgets/common/ui_primitives.dart';
 
 /// Groups a flat kingdom card list into display slots.
 /// Cards sharing a splitPileId collapse into a single pile slot.
@@ -85,9 +87,14 @@ class ResultsScreen extends ConsumerWidget {
     final isRegenerating = status == GenerationStatus.loading;
 
     if (result == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Kingdom')),
-        body: const Center(child: CircularProgressIndicator()),
+      return const Scaffold(
+        appBar: _EmptyResultsAppBar(),
+        body: AppStateCard(
+          icon: Icons.casino_rounded,
+          title: 'No kingdom generated yet',
+          message:
+              'Generate or import a kingdom from the configuration screen to review it here.',
+        ),
       );
     }
 
@@ -100,9 +107,21 @@ class ResultsScreen extends ConsumerWidget {
         onCopyShare: () => _copyShareCode(context, ref, result),
         onToggleFavorite: () => _toggleFavorite(context, ref, result),
       ),
-      body: isRegenerating
-          ? const _RegeneratingOverlay()
-          : _ResultsBody(result: result),
+      body: Stack(
+        children: [
+          _ResultsBody(result: result),
+          if (isRegenerating)
+            const Positioned(
+              left: 16,
+              right: 16,
+              top: 16,
+              child: AppLoadingStrip(
+                label:
+                    'Rerolling unlocked cards. Your previous kingdom stays visible until the refresh completes.',
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -156,6 +175,19 @@ class ResultsScreen extends ConsumerWidget {
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+}
+
+class _EmptyResultsAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
+  const _EmptyResultsAppBar();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(title: const Text('Kingdom Board'));
   }
 }
 
@@ -234,25 +266,6 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
 
 // ── Regenerating overlay ───────────────────────────────────────────────────
 
-class _RegeneratingOverlay extends StatelessWidget {
-  const _RegeneratingOverlay();
-
-  @override
-  Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation(
-                    Theme.of(context).colorScheme.primary)),
-            const SizedBox(height: 20),
-            Text('Drawing a new kingdom…',
-                style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        ),
-      );
-}
-
 // ── Main scrollable body ───────────────────────────────────────────────────
 
 class _ResultsBody extends ConsumerWidget {
@@ -264,6 +277,11 @@ class _ResultsBody extends ConsumerWidget {
     final playerCount = ref.watch(playerCountProvider);
     final showStrategyTips = ref.watch(configProvider).rules.showStrategyTips;
     final genKey = result.generatedAt.millisecondsSinceEpoch;
+    final slots = _splitPileSlots(result.kingdomCards);
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final useSingleColumn = viewportWidth < 720 || textScale > 1.15;
+    const spacing = 12.0;
 
     return CustomScrollView(
       slivers: [
@@ -293,32 +311,29 @@ class _ResultsBody extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           sliver: SliverGrid(
             delegate: SliverChildBuilderDelegate(
-              (_, i) {
-                final slots = _splitPileSlots(result.kingdomCards);
-                final slot = slots[i];
-                return _StaggeredEntry(
-                  key: ValueKey('${genKey}_$i'),
-                  index: i,
-                  child: KingdomCardWidget(
-                    card: slot.primary,
-                    splitPileCards: slot.splitPileCards,
-                    index: i + 1,
-                    locked: result.isSlotLocked(
-                        slot.primary.splitPileId ?? slot.primary.id),
-                    onToggleLock: () => toggleKingdomSlotLock(
-                      ref,
-                      slot.primary.splitPileId ?? slot.primary.id,
-                    ),
+              (_, i) => _StaggeredEntry(
+                key: ValueKey('${genKey}_$i'),
+                index: i,
+                child: KingdomCardWidget(
+                  card: slots[i].primary,
+                  splitPileCards: slots[i].splitPileCards,
+                  index: i + 1,
+                  locked: result.isSlotLocked(
+                    slots[i].primary.splitPileId ?? slots[i].primary.id,
                   ),
-                );
-              },
-              childCount: _splitPileSlots(result.kingdomCards).length,
+                  onToggleLock: () => toggleKingdomSlotLock(
+                    ref,
+                    slots[i].primary.splitPileId ?? slots[i].primary.id,
+                  ),
+                ),
+              ),
+              childCount: slots.length,
             ),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisExtent: 180,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: useSingleColumn ? 1 : 2,
+              mainAxisExtent: useSingleColumn ? 278 : 248,
+              crossAxisSpacing: spacing,
+              mainAxisSpacing: spacing,
             ),
           ),
         ),
@@ -381,6 +396,7 @@ class _StaggeredEntryState extends State<_StaggeredEntry>
   late final AnimationController _ctrl;
   late final Animation<double> _opacity;
   late final Animation<Offset> _slide;
+  Timer? _delayTimer;
 
   @override
   void initState() {
@@ -390,13 +406,14 @@ class _StaggeredEntryState extends State<_StaggeredEntry>
     _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
     _slide = Tween(begin: const Offset(0, 0.07), end: Offset.zero)
         .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-    Future.delayed(Duration(milliseconds: widget.index * 50), () {
+    _delayTimer = Timer(Duration(milliseconds: widget.index * 50), () {
       if (mounted) _ctrl.forward();
     });
   }
 
   @override
   void dispose() {
+    _delayTimer?.cancel();
     _ctrl.dispose();
     super.dispose();
   }
@@ -532,18 +549,56 @@ class _LandscapeGroup extends ConsumerWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis),
                         const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            onPressed: () => toggleLandscapeLock(ref, c.id),
-                            icon: Icon(
-                              isLocked
-                                  ? Icons.lock_rounded
-                                  : Icons.lock_open_rounded,
-                              size: 16,
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isLocked
+                                    ? AppColors.landscapeAccent
+                                        .withValues(alpha: 0.10)
+                                    : Theme.of(context).colorScheme.surface,
+                                borderRadius: BorderRadius.circular(AppRadii.pill),
+                                border: Border.all(
+                                  color: isLocked
+                                      ? AppColors.landscapeAccent
+                                      : Theme.of(context).colorScheme.outlineVariant,
+                                ),
+                              ),
+                              child: Text(
+                                isLocked
+                                    ? 'Locked for rerolls'
+                                    : 'Unlocked for rerolls',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: isLocked
+                                          ? AppColors.landscapeAccent
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                    ),
+                              ),
                             ),
-                            label: Text(isLocked ? 'Locked' : 'Lock'),
-                          ),
+                            OutlinedButton.icon(
+                              onPressed: () => toggleLandscapeLock(ref, c.id),
+                              icon: Icon(
+                                isLocked
+                                    ? Icons.lock_open_rounded
+                                    : Icons.lock_rounded,
+                              ),
+                              label: Text(
+                                isLocked ? 'Unlock card' : 'Lock card',
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -584,7 +639,7 @@ class _RerollControls extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Text('Reroll Controls',
+                Text('Reroll controls',
                     style: Theme.of(context).textTheme.titleSmall),
                 const Spacer(),
                 if (lockedCount > 0)
@@ -596,8 +651,37 @@ class _RerollControls extends ConsumerWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Use the lock buttons on cards and landscapes, then reroll only the unlocked parts.',
+              'Lock any cards or landscapes you want to keep, then reroll only the unlocked parts.',
               style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(AppRadii.md),
+                border: Border.all(
+                  color:
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.tips_and_updates_outlined,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Tip: locked cards keep their exact slot, so you can iterate on the rest of the kingdom without losing your favorites.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -607,7 +691,7 @@ class _RerollControls extends ConsumerWidget {
                 FilledButton.icon(
                   onPressed: () => rerollCurrentResult(ref),
                   icon: const Icon(Icons.casino_rounded, size: 16),
-                  label: const Text('Reroll All'),
+                  label: const Text('Reroll unlocked cards'),
                 ),
                 OutlinedButton.icon(
                   onPressed: () => rerollCurrentResult(
@@ -616,7 +700,7 @@ class _RerollControls extends ConsumerWidget {
                     rerollLandscapes: false,
                   ),
                   icon: const Icon(Icons.view_module_rounded, size: 16),
-                  label: const Text('Keep Landscapes'),
+                  label: const Text('Reroll only kingdom cards'),
                 ),
                 OutlinedButton.icon(
                   onPressed: () => rerollCurrentResult(
@@ -625,12 +709,12 @@ class _RerollControls extends ConsumerWidget {
                     rerollLandscapes: true,
                   ),
                   icon: const Icon(Icons.landscape_rounded, size: 16),
-                  label: const Text('Reroll Landscapes'),
+                  label: const Text('Reroll only landscapes'),
                 ),
                 TextButton.icon(
                   onPressed: lockedCount == 0 ? null : () => clearAllLocks(ref),
                   icon: const Icon(Icons.lock_reset_rounded, size: 16),
-                  label: const Text('Clear Locks'),
+                  label: const Text('Clear all locks'),
                 ),
               ],
             ),
@@ -945,8 +1029,10 @@ class _StatStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
+    return Wrap(
+      alignment: WrapAlignment.spaceAround,
+      spacing: 18,
+      runSpacing: 12,
       children: [
         _Stat(
           icon: Icons.local_fire_department_rounded,

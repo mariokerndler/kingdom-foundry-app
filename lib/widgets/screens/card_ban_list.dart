@@ -8,6 +8,7 @@ import '../../providers/config_provider.dart';
 import '../../utils/app_theme.dart';
 import '../common/expansion_badge.dart';
 import '../common/section_header.dart';
+import '../common/ui_primitives.dart';
 
 class CardBanListTab extends ConsumerStatefulWidget {
   const CardBanListTab({super.key});
@@ -45,7 +46,11 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
     final disabledCount = config.disabledCardIds.length;
 
     return cardsByExpAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const AppStateCard(
+        icon: Icons.block_rounded,
+        title: 'Loading card ban list',
+        message: 'Preparing cards from your selected expansions...',
+      ),
       error: (e, _) => _ErrorState(
         message: 'Could not load card list.',
         onRetry: () => ref.invalidate(cardsByExpansionProvider),
@@ -75,9 +80,9 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
             ),
 
             SectionHeader(
-              title: 'Kingdom Cards',
+              title: 'Banned Cards',
               subtitle:
-                  '$totalOwned cards from ${owned.length} expansion${owned.length == 1 ? '' : 's'}',
+                  '$disabledCount banned from $totalOwned cards across ${owned.length} expansion${owned.length == 1 ? '' : 's'}',
             ),
 
             // Grouped list
@@ -185,7 +190,7 @@ class _SearchBar extends StatelessWidget {
             TextButton.icon(
               onPressed: onClearAll,
               icon: const Icon(Icons.restore, size: 16),
-              label: Text('Enable all ($disabledCount)',
+              label: Text('Unban all ($disabledCount)',
                   style: const TextStyle(fontSize: 12)),
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.errorRed,
@@ -248,21 +253,25 @@ class _CardRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Semantics(
-      label: '${card.name}, ${isDisabled ? "banned" : "available"}',
-      hint: 'Double tap to ${isDisabled ? "enable" : "ban"}',
+      label: '${card.name}, ${isDisabled ? "banned" : "allowed"}',
+      hint: 'Double tap to ${isDisabled ? "allow" : "ban"}',
       button: true,
       excludeSemantics: true,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 200),
-        opacity: isDisabled ? 0.45 : 1.0,
+        opacity: isDisabled ? 1.0 : 1.0,
         child: InkWell(
           onTap: onToggle,
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: cs.surfaceContainer,
-              border: Border.all(color: cs.outlineVariant),
+              color: isDisabled
+                  ? AppColors.errorRed.withValues(alpha: 0.08)
+                  : cs.surfaceContainer,
+              border: Border.all(
+                color: isDisabled ? AppColors.errorRed : cs.outlineVariant,
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -276,12 +285,9 @@ class _CardRow extends StatelessWidget {
                       Text(
                         card.name,
                         style: TextStyle(
-                          color:
-                              isDisabled ? cs.onSurfaceVariant : cs.onSurface,
+                          color: cs.onSurface,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          decoration:
-                              isDisabled ? TextDecoration.lineThrough : null,
                         ),
                       ),
                       Text(
@@ -289,10 +295,43 @@ class _CardRow extends StatelessWidget {
                         style:
                             TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
                       ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            isDisabled
+                                ? Icons.block_rounded
+                                : Icons.check_circle_outline_rounded,
+                            size: 16,
+                            color:
+                                isDisabled ? AppColors.errorRed : AppColors.successGreen,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isDisabled ? 'Banned from generation' : 'Allowed',
+                            style: TextStyle(
+                              color: isDisabled
+                                  ? AppColors.errorRed
+                                  : AppColors.successGreen,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-                Checkbox(value: !isDisabled, onChanged: (_) => onToggle()),
+                Switch(
+                  value: isDisabled,
+                  onChanged: (_) => onToggle(),
+                  thumbIcon: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return const Icon(Icons.block_rounded, size: 14);
+                    }
+                    return const Icon(Icons.check_rounded, size: 14);
+                  }),
+                ),
               ],
             ),
           ),
@@ -349,7 +388,7 @@ class _EmptyState extends StatelessWidget {
           Text('No expansions selected.',
               style: TextStyle(color: cs.onSurfaceVariant)),
           const SizedBox(height: 4),
-          Text('Go to the Expansions tab to pick your sets.',
+          Text('Go to the Expansions tab to choose cards you can ban.',
               style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
         ],
       ),
@@ -390,22 +429,16 @@ class _ErrorState extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ignore: prefer_const_constructors
-          Icon(Icons.error_outline_rounded, size: 48, color: cs.error),
-          const SizedBox(height: 16),
-          Text(message, style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 12),
-          TextButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded, size: 16),
-            label: const Text('Retry'),
-            style: TextButton.styleFrom(foregroundColor: cs.primary),
-          ),
-        ],
+    return AppStateCard(
+      icon: Icons.error_outline_rounded,
+      title: 'Ban list unavailable',
+      message: message,
+      accentColor: cs.error,
+      action: TextButton.icon(
+        onPressed: onRetry,
+        icon: const Icon(Icons.refresh_rounded, size: 16),
+        label: const Text('Retry'),
+        style: TextButton.styleFrom(foregroundColor: cs.primary),
       ),
     );
   }

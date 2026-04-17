@@ -4,9 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:kingdom_foundry/models/expansion.dart';
+import 'package:kingdom_foundry/models/card_tag.dart';
+import 'package:kingdom_foundry/models/card_type.dart';
+import 'package:kingdom_foundry/models/kingdom_card.dart';
 import 'package:kingdom_foundry/models/setup_result.dart';
 import 'package:kingdom_foundry/models/setup_rules.dart';
 import 'package:kingdom_foundry/models/strategy_archetype.dart';
+import 'package:kingdom_foundry/providers/card_data_providers.dart';
 import 'package:kingdom_foundry/providers/config_provider.dart';
 import 'package:kingdom_foundry/providers/generation_provider.dart';
 import 'package:kingdom_foundry/providers/history_provider.dart';
@@ -28,8 +32,20 @@ void main() {
     strength: 0.7,
   );
 
+  KingdomCard sampleCard(int i) => KingdomCard(
+        id: 'card_$i',
+        name: 'Village $i',
+        expansion: Expansion.baseSecondEdition,
+        types: const [CardType.action],
+        tags: const [CardTag.villageEffect, CardTag.plusAction],
+        cost: 3 + (i % 3),
+        text: 'Gain actions and keep your turn moving.',
+      );
+
+  final sampleCards = List.generate(10, sampleCard);
+
   final sampleResult = SetupResult(
-    kingdomCards: [],
+    kingdomCards: sampleCards,
     archetypes: const [sampleArchetype],
     setupNotes: const ['Potion Supply pile present.'],
     generatedAt: DateTime(2026, 4, 11),
@@ -57,20 +73,20 @@ void main() {
       400,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
   }
 
   Future<void> enableCostCurve(WidgetTester tester) async {
     await scrollToCostCurve(tester);
     await tester.tap(find.text('Prefer a cost curve'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
   }
 
   Future<void> decrementCheapBucket(WidgetTester tester) async {
     final removeButtons = find.byIcon(Icons.remove_rounded);
     final firstCurveRemoveIndex = tester.widgetList(removeButtons).length - 5;
     await tester.tap(removeButtons.at(firstCurveRemoveIndex));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
   }
 
   group('RulesTab cost curve editor', () {
@@ -109,7 +125,7 @@ void main() {
       expect(find.text('Assigned 9 / 10 slots'), findsOneWidget);
 
       await tester.tap(find.text('Reset curve'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Assigned 10 / 10 slots'), findsOneWidget);
       expect(
@@ -128,7 +144,7 @@ void main() {
         300,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Show strategy tips'), findsOneWidget);
       expect(find.text('Hide strategy tips'), findsNothing);
@@ -163,12 +179,20 @@ void main() {
 
       expect(find.text('Strategy Guide'), findsNothing);
       expect(find.text('Big Money'), findsNothing);
+      await tester.scrollUntilVisible(
+        find.text('Potion Supply pile present.'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Potion Supply pile present.'), findsOneWidget);
     });
   });
 
   group('Theme mode', () {
     testWidgets('theme toggle is shown in the app bar', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
 
@@ -176,24 +200,47 @@ void main() {
         ProviderScope(
           overrides: [
             sharedPreferencesProvider.overrideWithValue(prefs),
+            allCardsProvider.overrideWith((ref) async => sampleCards),
+            availableExpansionsProvider.overrideWith(
+              (ref) async => {Expansion.baseSecondEdition},
+            ),
+            expansionStatsProvider.overrideWith(
+              (ref) async => {
+                Expansion.baseSecondEdition:
+                    (kingdom: sampleCards.length, landscape: 0),
+              },
+            ),
           ],
           child: const MaterialApp(
             home: ConfigurationScreen(),
           ),
         ),
       );
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
 
       expect(find.byTooltip('Switch to dark mode'), findsOneWidget);
+      expect(find.text('Current setup'), findsOneWidget);
     });
 
     testWidgets('app switches to dark theme when toggle is enabled',
         (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
+          allCardsProvider.overrideWith((ref) async => sampleCards),
+          availableExpansionsProvider.overrideWith(
+            (ref) async => {Expansion.baseSecondEdition},
+          ),
+          expansionStatsProvider.overrideWith(
+            (ref) async => {
+              Expansion.baseSecondEdition:
+                  (kingdom: sampleCards.length, landscape: 0),
+            },
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -215,6 +262,45 @@ void main() {
       final updatedApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
       expect(updatedApp.themeMode, ThemeMode.dark);
       expect(find.byTooltip('Switch to light mode'), findsOneWidget);
+    });
+  });
+
+  group('Responsive results layout', () {
+    testWidgets('uses one-column layout at larger text scales', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            setupResultProvider.overrideWith((ref) => sampleResult),
+          ],
+          child: MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: const TextScaler.linear(1.3),
+              ),
+              child: child!,
+            ),
+            home: const ResultsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Village 0'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final cardZero = tester.getTopLeft(find.text('Village 0'));
+      final cardOne = tester.getTopLeft(find.text('Village 1'));
+      expect(cardZero.dx, equals(cardOne.dx));
+      expect(find.text('Tap for details'), findsWidgets);
     });
   });
 

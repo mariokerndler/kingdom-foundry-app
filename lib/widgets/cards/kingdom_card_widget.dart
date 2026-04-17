@@ -45,162 +45,206 @@ class KingdomCardWidget extends ConsumerWidget {
         child: InkWell(
           onTap: () => _showDetail(context, accent),
           borderRadius: BorderRadius.circular(10),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainer,
-                border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant),
-              ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainer,
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: IntrinsicHeight(
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Multi-type cards can blend their type colors vertically.
                   _AccentStrip(types: card.types),
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Name row + cost badge
-                          Row(
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  localized.name,
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.2,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Column(
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _CostBadge(cost: card.costString),
-                                  if (onToggleLock != null) ...[
-                                    const SizedBox(height: 6),
-                                    InkWell(
-                                      onTap: onToggleLock,
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Container(
-                                        width: 24,
-                                        height: 24,
-                                        decoration: BoxDecoration(
-                                          color: locked
-                                              ? accent.withValues(alpha: 0.14)
-                                              : Theme.of(context)
-                                                  .colorScheme
-                                                  .surface,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          border: Border.all(
-                                            color: locked
-                                                ? accent
-                                                : Theme.of(context)
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              'Card $index',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelMedium
+                                                  ?.copyWith(color: accent),
+                                            ),
+                                            if (onToggleLock != null) ...[
+                                              const SizedBox(width: 8),
+                                              Flexible(
+                                                child: InkWell(
+                                                  onTap: onToggleLock,
+                                                  borderRadius:
+                                                      BorderRadius.circular(999),
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 6,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: locked
+                                                          ? accent.withValues(
+                                                              alpha: 0.12)
+                                                          : Theme.of(context)
+                                                              .colorScheme
+                                                              .surface,
+                                                      borderRadius:
+                                                          BorderRadius.circular(999),
+                                                      border: Border.all(
+                                                        color: locked
+                                                            ? accent
+                                                            : Theme.of(context)
+                                                                .colorScheme
+                                                                .outlineVariant,
+                                                      ),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Icon(
+                                                          locked
+                                                              ? Icons.lock_rounded
+                                                              : Icons
+                                                                  .lock_open_rounded,
+                                                          size: 14,
+                                                          color: locked
+                                                              ? accent
+                                                              : Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onSurfaceVariant,
+                                                        ),
+                                                        const SizedBox(width: 6),
+                                                        Flexible(
+                                                          child: Text(
+                                                            locked
+                                                                ? 'Locked'
+                                                                : 'Unlocked',
+                                                            overflow:
+                                                                TextOverflow.ellipsis,
+                                                            style: Theme.of(context)
+                                                                .textTheme
+                                                                .labelSmall
+                                                                ?.copyWith(
+                                                                  color: locked
+                                                                      ? accent
+                                                                      : Theme.of(
+                                                                              context)
+                                                                          .colorScheme
+                                                                          .onSurfaceVariant,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          localized.name,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall
+                                              ?.copyWith(
+                                                color: Theme.of(context)
                                                     .colorScheme
-                                                    .outlineVariant,
-                                          ),
+                                                    .onSurface,
+                                                height: 1.25,
+                                              ),
                                         ),
-                                        child: Icon(
-                                          locked
-                                              ? Icons.lock_rounded
-                                              : Icons.lock_open_rounded,
-                                          size: 13,
-                                          color: locked
-                                              ? accent
-                                              : Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
-                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  _CostBadge(cost: card.costString),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              _TypePills(types: card.types),
+                              const SizedBox(height: 10),
+                              Text(
+                                localized.text,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                      height: 1.45,
+                                    ),
+                                maxLines: 4,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (isSplit) ...[
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.layers_rounded,
+                                      size: 14,
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'Split pile with $splitLabel',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color:
+                                                  Theme.of(context).colorScheme.primary,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                       ),
                                     ),
                                   ],
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 6),
-
-                          // Type pills
-                          _TypePills(types: card.types),
-
-                          const SizedBox(height: 6),
-
-                          // Card text (truncated)
-                          Expanded(
-                            child: Text(
-                              localized.text,
-                              style: TextStyle(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                                fontSize: 12,
-                                height: 1.35,
-                              ),
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-
-                          const SizedBox(height: 6),
-
-                          // Split pile partner label
-                          if (isSplit) ...[
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Icon(Icons.layers_rounded,
-                                    size: 10,
-                                    color:
-                                        Theme.of(context).colorScheme.primary),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    '+ $splitLabel',
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
                                 ),
                               ],
-                            ),
-                          ],
-
-                          // Footer: expansion + tap hint
+                            ],
+                          ),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
-                              ExpansionBadge(
-                                  expansion: card.expansion, fontSize: 11),
+                              ExpansionBadge(expansion: card.expansion, fontSize: 12),
                               const Spacer(),
-                              Icon(Icons.open_in_full_rounded,
-                                  size: 11,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant),
+                              Text(
+                                'Tap for details',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
                             ],
                           ),
                         ],
-                      ), // Column
-                    ), // Padding
-                  ), // Expanded
-                ], // Row.children
-              ), // Row
-            ), // Container
-          ), // ClipRRect
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ), // InkWell
       ), // Material
     ); // Semantics
@@ -446,7 +490,7 @@ class _TypePills extends StatelessWidget {
           .map((t) {
         final color = _typeColor(t);
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.15),
             border: Border.all(color: color.withValues(alpha: 0.5)),
@@ -456,7 +500,7 @@ class _TypePills extends StatelessWidget {
             t.displayName,
             style: TextStyle(
               color: color,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
