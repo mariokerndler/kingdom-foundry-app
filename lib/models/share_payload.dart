@@ -24,28 +24,34 @@ class SharePayload {
   });
 
   Map<String, dynamic> toJson() => {
-        'version': version,
-        'kingdomCardIds': kingdomCardIds,
-        'landscapeCardIds': landscapeCardIds,
-        'presetId': presetId,
-        'rulesSnapshot': rulesSnapshot.toJson(),
-        'playerCount': playerCount,
-        'notes': notes,
+        'v': version,
+        'k': kingdomCardIds,
+        if (landscapeCardIds.isNotEmpty) 'l': landscapeCardIds,
+        if (presetId != null) 'p': presetId,
+        if (_shouldIncludeRules) 'r': rulesSnapshot.toJson(),
+        if (playerCount != 2) 'c': playerCount,
       };
 
   factory SharePayload.fromJson(Map<String, dynamic> json) => SharePayload(
-        version: json['version'] as int? ?? 1,
+        version: (json['version'] ?? json['v']) as int? ?? 1,
         kingdomCardIds:
-            (json['kingdomCardIds'] as List? ?? const []).cast<String>(),
+            ((json['kingdomCardIds'] ?? json['k']) as List? ?? const [])
+                .cast<String>(),
         landscapeCardIds:
-            (json['landscapeCardIds'] as List? ?? const []).cast<String>(),
-        presetId: json['presetId'] as String?,
-        rulesSnapshot: json['rulesSnapshot'] is Map<String, dynamic>
-            ? SetupRules.fromJson(json['rulesSnapshot'] as Map<String, dynamic>)
+            ((json['landscapeCardIds'] ?? json['l']) as List? ?? const [])
+                .cast<String>(),
+        presetId: (json['presetId'] ?? json['p']) as String?,
+        rulesSnapshot: (json['rulesSnapshot'] ?? json['r'])
+                is Map<String, dynamic>
+            ? SetupRules.fromJson(
+                (json['rulesSnapshot'] ?? json['r']) as Map<String, dynamic>,
+              )
             : const SetupRules(),
-        playerCount: json['playerCount'] as int? ?? 2,
+        playerCount: (json['playerCount'] ?? json['c']) as int? ?? 2,
         notes: (json['notes'] as List? ?? const []).cast<String>(),
       );
+
+  bool get _shouldIncludeRules => rulesSnapshot.hasActiveRules;
 
   String encode() {
     final raw = utf8.encode(jsonEncode(toJson()));
