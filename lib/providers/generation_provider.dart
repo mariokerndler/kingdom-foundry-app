@@ -120,20 +120,9 @@ Future<bool> importKingdom(WidgetRef ref, String rawText) async {
     }
 
     final allCards = await ref.read(allCardsProvider.future);
-    final kingdom = <KingdomCard>[];
-    final notFound = <String>[];
-
-    for (final name in names) {
-      final card = allCards
-          .where((c) =>
-              c.isKingdomCard && c.name.toLowerCase() == name.toLowerCase())
-          .firstOrNull;
-      if (card != null) {
-        kingdom.add(card);
-      } else {
-        notFound.add(name);
-      }
-    }
+    final resolution = resolveImportedKingdomCards(allCards, names);
+    final kingdom = resolution.cards;
+    final notFound = resolution.notFound;
 
     if (notFound.isNotEmpty) {
       final missing = notFound.join(', ');
@@ -267,7 +256,6 @@ String encodeSharePayload(SetupResult result, ConfigState config) {
     presetId: result.presetId ?? config.selectedPresetId,
     rulesSnapshot: config.rules,
     playerCount: config.playerCount,
-    notes: result.setupNotes,
   ).encode();
 }
 
@@ -335,6 +323,58 @@ List<String> parseKingdomText(String text) {
       .whereType<RegExpMatch>()
       .map((m) => m.group(1)!)
       .toList();
+}
+
+/// Resolves imported kingdom-list labels back into cards.
+///
+/// Supports split-pile labels such as `Sauna / Avanto` by expanding them back
+/// into their constituent cards.
+({List<KingdomCard> cards, List<String> notFound}) resolveImportedKingdomCards(
+  List<KingdomCard> allCards,
+  List<String> importedNames,
+) {
+  final byLowerName = {
+    for (final card in allCards.where((c) => c.isKingdomCard))
+      card.name.toLowerCase(): card,
+  };
+  final cards = <KingdomCard>[];
+  final notFound = <String>[];
+  final seenIds = <String>{};
+
+  for (final rawName in importedNames) {
+    final parts = rawName
+        .split('/')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) {
+      notFound.add(rawName);
+      continue;
+    }
+
+    var matchedAny = false;
+    for (final part in parts) {
+      final card = byLowerName[part.toLowerCase()];
+      if (card == null) {
+        if (parts.length == 1) {
+          notFound.add(rawName);
+        } else {
+          notFound.add(part);
+        }
+        continue;
+      }
+      matchedAny = true;
+      if (seenIds.add(card.id)) {
+        cards.add(card);
+      }
+    }
+
+    if (!matchedAny && !notFound.contains(rawName)) {
+      notFound.add(rawName);
+    }
+  }
+
+  return (cards: cards, notFound: notFound);
 }
 
 // ── Derived: available card count ─────────────────────────────────────────

@@ -23,6 +23,19 @@ void main() {
     expect(decoded.presetId, 'engine_builder');
     expect(decoded.rulesSnapshot.requireVillage, isTrue);
     expect(decoded.playerCount, 3);
-    expect(decoded.notes, ['Use one Ally.']);
+    expect(decoded.notes, isEmpty);
+  });
+
+  test('SharePayload omits bulky optional fields from encoded form', () {
+    const payload = SharePayload(
+      kingdomCardIds: ['village', 'smithy'],
+      landscapeCardIds: ['mission'],
+      notes: ['This should not be serialized'],
+    );
+
+    final encoded = payload.encode();
+
+    expect(encoded.startsWith(SharePayload.prefix), isTrue);
+    expect(encoded.length, lessThan(100));
   });
 }

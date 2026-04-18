@@ -1,5 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:kingdom_foundry/models/card_metadata.dart';
+import 'package:kingdom_foundry/models/card_type.dart';
+import 'package:kingdom_foundry/models/expansion.dart';
+import 'package:kingdom_foundry/models/kingdom_card.dart';
 import 'package:kingdom_foundry/providers/generation_provider.dart';
 
 void main() {
@@ -150,6 +154,57 @@ void main() {
           '9. Militia (\$4)\n'
           '10. Festival (\$5)\n';
       expect(parseKingdomText(text), hasLength(10));
+    });
+
+    test('split pile labels are preserved for later import resolution', () {
+      const text = '1. Sauna / Avanto (\$4)\n'
+          '2. Village (\$3)\n'
+          '3. Smithy (\$4)\n'
+          '4. Chapel (\$2)\n'
+          '5. Witch (\$5)\n'
+          '6. Market (\$5)\n'
+          '7. Laboratory (\$5)\n'
+          '8. Cellar (\$2)\n'
+          '9. Moat (\$2)\n'
+          '10. Militia (\$4)\n';
+      expect(parseKingdomText(text).first, 'Sauna / Avanto');
+    });
+  });
+
+  group('resolveImportedKingdomCards', () {
+    KingdomCard card({
+      required String id,
+      required String name,
+      String? splitPileId,
+    }) {
+      return KingdomCard(
+        id: id,
+        name: name,
+        expansion: Expansion.promos,
+        types: const [CardType.action],
+        tags: const [],
+        cost: 4,
+        text: '',
+        metadata: const CardMetadata(),
+        splitPileId: splitPileId,
+      );
+    }
+
+    test('expands split pile labels back into both cards', () {
+      final allCards = [
+        card(id: 'sauna', name: 'Sauna', splitPileId: 'sauna_avanto'),
+        card(id: 'avanto', name: 'Avanto', splitPileId: 'sauna_avanto'),
+        card(id: 'village', name: 'Village'),
+      ];
+
+      final resolved = resolveImportedKingdomCards(
+        allCards,
+        ['Sauna / Avanto', 'Village'],
+      );
+
+      expect(resolved.notFound, isEmpty);
+      expect(resolved.cards.map((card) => card.id),
+          containsAll(['sauna', 'avanto', 'village']));
     });
   });
 }
