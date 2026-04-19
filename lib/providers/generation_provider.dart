@@ -5,6 +5,7 @@ import '../controllers/setup_engine.dart';
 import '../controllers/setup_exception.dart';
 import '../models/game_vibe_preset.dart';
 import '../models/kingdom_card.dart';
+import '../models/share_codebook.dart';
 import '../models/share_payload.dart';
 import '../models/setup_result.dart';
 import 'card_data_providers.dart';
@@ -103,7 +104,8 @@ Future<bool> importKingdom(WidgetRef ref, String rawText) async {
   ref.read(_generationReasonProvider.notifier).state = null;
 
   try {
-    final sharePayload = SharePayload.tryDecode(rawText);
+    final allCards = await ref.read(allCardsProvider.future);
+    final sharePayload = SharePayload.tryDecodeAny(rawText, allCards);
     if (sharePayload != null) {
       return _importSharePayload(ref, sharePayload);
     }
@@ -119,7 +121,6 @@ Future<bool> importKingdom(WidgetRef ref, String rawText) async {
       return false;
     }
 
-    final allCards = await ref.read(allCardsProvider.future);
     final resolution = resolveImportedKingdomCards(allCards, names);
     final kingdom = resolution.cards;
     final notFound = resolution.notFound;
@@ -249,14 +250,11 @@ void clearAllLocks(WidgetRef ref) {
   );
 }
 
-String encodeSharePayload(SetupResult result, ConfigState config) {
-  return SharePayload(
-    kingdomCardIds: result.kingdomCards.map((card) => card.id).toList(),
-    landscapeCardIds: result.landscapeCards.map((card) => card.id).toList(),
-    presetId: result.presetId ?? config.selectedPresetId,
-    rulesSnapshot: config.rules,
-    playerCount: config.playerCount,
-  ).encode();
+String encodeSharePayload(SetupResult result) {
+  return ShareCodebook.encode(
+    kingdomSlotKeys: ShareCodebook.extractKingdomSlotKeys(result.kingdomCards),
+    landscapeIds: ShareCodebook.extractLandscapeIds(result.landscapeCards),
+  );
 }
 
 Future<bool> _importSharePayload(WidgetRef ref, SharePayload payload) async {
@@ -281,9 +279,12 @@ Future<bool> _importSharePayload(WidgetRef ref, SharePayload payload) async {
     return false;
   }
 
+  final sortedKingdom = _sortImportedKingdomCards(kingdom);
+  final sortedLandscape = _sortImportedLandscapeCards(landscape);
+
   final baseResult = SetupResult(
-    kingdomCards: kingdom,
-    landscapeCards: landscape,
+    kingdomCards: sortedKingdom,
+    landscapeCards: sortedLandscape,
     archetypes: const [],
     setupNotes: payload.notes,
     selectionRationale: [
@@ -299,6 +300,54 @@ Future<bool> _importSharePayload(WidgetRef ref, SharePayload payload) async {
   ref.read(setupResultProvider.notifier).state = enriched;
   ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
   return true;
+}
+
+List<KingdomCard> _sortImportedKingdomCards(List<KingdomCard> cards) {
+  final slotInfo = <String, ({int cost, String name})>{};
+  for (final card in cards) {
+    final slotId = card.splitPileId ?? card.id;
+    final current = slotInfo[slotId];
+    if (current == null ||
+        card.cost < current.cost ||
+        (card.cost == current.cost && card.name.compareTo(current.name) < 0)) {
+      slotInfo[slotId] = (cost: card.cost, name: card.name);
+    }
+  }
+
+  final sorted = [...cards];
+  sorted.sort((a, b) {
+    final aInfo = slotInfo[a.splitPileId ?? a.id]!;
+    final bInfo = slotInfo[b.splitPileId ?? b.id]!;
+    final slotCost = aInfo.cost.compareTo(bInfo.cost);
+    if (slotCost != 0) return slotCost;
+    final slotName = aInfo.name.compareTo(bInfo.name);
+    if (slotName != 0) return slotName;
+    final cost = a.cost.compareTo(b.cost);
+    if (cost != 0) return cost;
+    return a.name.compareTo(b.name);
+  });
+  return sorted;
+}
+
+List<KingdomCard> _sortImportedLandscapeCards(List<KingdomCard> cards) {
+  final sorted = [...cards];
+  sorted.sort((a, b) {
+    final type = _landscapeSortOrder(a).compareTo(_landscapeSortOrder(b));
+    if (type != 0) return type;
+    return a.name.compareTo(b.name);
+  });
+  return sorted;
+}
+
+int _landscapeSortOrder(KingdomCard card) {
+  if (card.isEvent) return 0;
+  if (card.isLandmark) return 1;
+  if (card.isProject) return 2;
+  if (card.isWay) return 3;
+  if (card.isAlly) return 4;
+  if (card.isProphecy) return 5;
+  if (card.isTrait) return 6;
+  return 7;
 }
 
 // ── Text parsing ──────────────────────────────────────────────────────────

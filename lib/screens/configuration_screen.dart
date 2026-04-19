@@ -365,19 +365,19 @@ class _ImportDialogState extends State<_ImportDialog> {
     super.initState();
     _ctrl.addListener(_onChanged);
     // Pre-fill if the clipboard already contains a kingdom list.
-    Clipboard.getData('text/plain').then((data) {
-      if (!mounted || data?.text == null) return;
-      final names = parseKingdomText(data!.text!);
-      if (names.length == 10 || SharePayload.tryDecode(data.text!) != null) {
-        _ctrl.text = data.text!;
-      }
-    });
+      Clipboard.getData('text/plain').then((data) {
+        if (!mounted || data?.text == null) return;
+        final names = parseKingdomText(data!.text!);
+        if (names.length == 10 || SharePayload.looksLikeShareCode(data.text!)) {
+          _ctrl.text = data.text!;
+        }
+      });
   }
 
   void _onChanged() {
     setState(() {
       _parsed = parseKingdomText(_ctrl.text);
-      _isShareCode = SharePayload.tryDecode(_ctrl.text) != null;
+      _isShareCode = SharePayload.looksLikeShareCode(_ctrl.text);
     });
   }
 

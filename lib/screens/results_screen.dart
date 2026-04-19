@@ -142,8 +142,7 @@ class ResultsScreen extends ConsumerWidget {
   }
 
   void _copyShareCode(BuildContext context, WidgetRef ref, SetupResult result) {
-    final config = ref.read(configProvider);
-    final code = encodeSharePayload(result, config);
+    final code = encodeSharePayload(result);
     Clipboard.setData(ClipboardData(text: code));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
