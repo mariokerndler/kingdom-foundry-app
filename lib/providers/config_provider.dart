@@ -205,6 +205,13 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
 
   void setSelectedPresetId(String presetId) {
     final preset = GameVibePresets.byId(presetId);
+    if (preset.id == GameVibePresets.noneId) {
+      state = state.copyWith(
+        selectedPresetId: preset.id,
+        rules: const SetupRules(),
+      );
+      return;
+    }
     state = state.copyWith(
       selectedPresetId: preset.id,
       rules: preset.defaultRules.copyWith(

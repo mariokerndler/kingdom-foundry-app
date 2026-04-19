@@ -59,4 +59,9 @@ class HistoryNotifier extends StateNotifier<HistoryState> {
     await _service.clearHistory();
     state = HistoryState(favorites: state.favorites);
   }
+
+  Future<void> restoreHistory(List<SetupResult> history) async {
+    await _service.saveHistory(history);
+    _refresh();
+  }
 }

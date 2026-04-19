@@ -190,6 +190,8 @@ class _EmptyResultsAppBar extends StatelessWidget
   }
 }
 
+enum _ResultsMenuAction { copyKingdom, copyShareCode }
+
 // ── App bar ────────────────────────────────────────────────────────────────
 
 class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -245,17 +247,39 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-        IconButton(
-          tooltip: 'Copy kingdom list',
-          onPressed: isRegenerating ? null : onCopy,
-          icon: Icon(Icons.copy_rounded,
-              color: Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
-        IconButton(
-          tooltip: 'Copy share code',
-          onPressed: isRegenerating ? null : onCopyShare,
-          icon: Icon(Icons.qr_code_rounded,
-              color: Theme.of(context).colorScheme.onSurfaceVariant),
+        PopupMenuButton<_ResultsMenuAction>(
+          tooltip: 'Kingdom actions',
+          enabled: !isRegenerating,
+          onSelected: (action) {
+            switch (action) {
+              case _ResultsMenuAction.copyKingdom:
+                onCopy();
+              case _ResultsMenuAction.copyShareCode:
+                onCopyShare();
+            }
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem(
+              value: _ResultsMenuAction.copyKingdom,
+              child: ListTile(
+                leading: Icon(Icons.copy_rounded),
+                title: Text('Copy kingdom list'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            PopupMenuItem(
+              value: _ResultsMenuAction.copyShareCode,
+              child: ListTile(
+                leading: Icon(Icons.qr_code_rounded),
+                title: Text('Copy share code'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ],
+          icon: Icon(
+            Icons.more_horiz_rounded,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(width: 4),
       ],

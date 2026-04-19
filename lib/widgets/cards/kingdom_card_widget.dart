@@ -33,39 +33,47 @@ class KingdomCardWidget extends ConsumerWidget {
     final splitLabel = splitPileCards
         .map((c) => ref.watch(localizedCardProvider(c)).name)
         .join(' / ');
+    final detailLabel =
+        '${localized.name}${isSplit ? ' / $splitLabel' : ''}, ${card.typeString}. Cost: ${card.costString}. Tap for details.';
 
-    return Semantics(
-      label:
-          '${localized.name}${isSplit ? ' / $splitLabel' : ''}, ${card.typeString}. Cost: ${card.costString}. Tap for details.',
-      button: true,
-      excludeSemantics: true,
-      child: Material(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          onTap: () => _showDetail(context, accent),
+    return Material(
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           borderRadius: BorderRadius.circular(10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainer,
-              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _AccentStrip(types: card.types),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _AccentStrip(types: card.types),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final canFillHeight =
+                      constraints.hasBoundedHeight && constraints.maxHeight.isFinite;
+
+                  Widget body = Semantics(
+                    label: detailLabel,
+                    button: true,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showDetail(context, accent),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            12,
+                            12,
+                            onToggleLock != null ? 72 : 12,
+                            12,
+                          ),
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
+                            mainAxisSize:
+                                canFillHeight ? MainAxisSize.max : MainAxisSize.min,
                             children: [
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,90 +82,12 @@ class KingdomCardWidget extends ConsumerWidget {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Row(
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              'Card $index',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelMedium
-                                                  ?.copyWith(color: accent),
-                                            ),
-                                            if (onToggleLock != null) ...[
-                                              const SizedBox(width: 8),
-                                              Flexible(
-                                                child: InkWell(
-                                                  onTap: onToggleLock,
-                                                  borderRadius:
-                                                      BorderRadius.circular(999),
-                                                  child: Container(
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                      horizontal: 10,
-                                                      vertical: 6,
-                                                    ),
-                                                    decoration: BoxDecoration(
-                                                      color: locked
-                                                          ? accent.withValues(
-                                                              alpha: 0.12)
-                                                          : Theme.of(context)
-                                                              .colorScheme
-                                                              .surface,
-                                                      borderRadius:
-                                                          BorderRadius.circular(999),
-                                                      border: Border.all(
-                                                        color: locked
-                                                            ? accent
-                                                            : Theme.of(context)
-                                                                .colorScheme
-                                                                .outlineVariant,
-                                                      ),
-                                                    ),
-                                                    child: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Icon(
-                                                          locked
-                                                              ? Icons.lock_rounded
-                                                              : Icons
-                                                                  .lock_open_rounded,
-                                                          size: 14,
-                                                          color: locked
-                                                              ? accent
-                                                              : Theme.of(context)
-                                                                  .colorScheme
-                                                                  .onSurfaceVariant,
-                                                        ),
-                                                        const SizedBox(width: 6),
-                                                        Flexible(
-                                                          child: Text(
-                                                            locked
-                                                                ? 'Locked'
-                                                                : 'Unlocked',
-                                                            overflow:
-                                                                TextOverflow.ellipsis,
-                                                            style: Theme.of(context)
-                                                                .textTheme
-                                                                .labelSmall
-                                                                ?.copyWith(
-                                                                  color: locked
-                                                                      ? accent
-                                                                      : Theme.of(
-                                                                              context)
-                                                                          .colorScheme
-                                                                          .onSurfaceVariant,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ],
+                                        Text(
+                                          'Card $index',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelMedium
+                                              ?.copyWith(color: accent),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
@@ -219,35 +149,98 @@ class KingdomCardWidget extends ConsumerWidget {
                                   ],
                                 ),
                               ],
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              ExpansionBadge(expansion: card.expansion, fontSize: 12),
-                              const Spacer(),
-                              Text(
-                                'Tap for details',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                      fontWeight: FontWeight.w600,
+                              if (canFillHeight) const Spacer() else const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  ExpansionBadge(expansion: card.expansion, fontSize: 12),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Tap for details',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.end,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                     ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  );
+
+                  if (canFillHeight) {
+                    body = Positioned.fill(child: body);
+                  }
+
+                  return Stack(
+                    fit: canFillHeight ? StackFit.expand : StackFit.loose,
+                    children: [
+                      body,
+                      if (onToggleLock != null)
+                        Positioned(
+                          top: 6,
+                          right: 6,
+                          child: Semantics(
+                            label: locked ? 'Unlock card $index' : 'Lock card $index',
+                            hint: locked
+                                ? 'Double tap to unlock this card for rerolls'
+                                : 'Double tap to keep this card locked during rerolls',
+                            checked: locked,
+                            button: true,
+                            child: Tooltip(
+                              message: locked ? 'Unlock card' : 'Lock card',
+                              child: IconButton(
+                                onPressed: onToggleLock,
+                                icon: Icon(
+                                  locked
+                                      ? Icons.lock_rounded
+                                      : Icons.lock_open_rounded,
+                                  color: locked
+                                      ? accent
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                ),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: locked
+                                      ? accent.withValues(alpha: 0.12)
+                                      : Theme.of(context).colorScheme.surface,
+                                  side: BorderSide(
+                                    color: locked
+                                        ? accent
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .outlineVariant,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
-          ),
-        ), // InkWell
-      ), // Material
-    ); // Semantics
+          ],
+        ),
+      ),
+    );
   }
 
   void _showDetail(BuildContext context, Color accent) {
@@ -255,6 +248,8 @@ class KingdomCardWidget extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      showDragHandle: true,
+      useSafeArea: true,
       builder: (_) => _CardDetailSheet(
         card: card,
         splitPileCards: splitPileCards,
@@ -888,6 +883,8 @@ class _PileCardRow extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      showDragHandle: true,
+      useSafeArea: true,
       builder: (_) => _CardDetailSheet(
         card: card!,
         accent: KingdomCardWidget._accentColor(card!.types),
@@ -1057,6 +1054,8 @@ class _ChainStep extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      showDragHandle: true,
+      useSafeArea: true,
       builder: (_) => _CardDetailSheet(
         card: card!,
         accent: KingdomCardWidget._accentColor(card!.types),

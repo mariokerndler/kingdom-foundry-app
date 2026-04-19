@@ -38,6 +38,22 @@ final generationErrorProvider =
 final generationFailureReasonProvider = Provider<SetupFailureReason?>(
     (ref) => ref.watch(_generationReasonProvider));
 
+void clearGenerationFeedback(WidgetRef ref) {
+  ref.read(_generationErrorProvider.notifier).state = null;
+  ref.read(_generationReasonProvider.notifier).state = null;
+  ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
+}
+
+void setGenerationFeedback(
+  WidgetRef ref, {
+  required String message,
+  SetupFailureReason? reason,
+}) {
+  ref.read(_generationErrorProvider.notifier).state = message;
+  ref.read(_generationReasonProvider.notifier).state = reason;
+  ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
+}
+
 // ── Shared engine singletons ──────────────────────────────────────────────
 
 /// Singletons reused across calls — both are stateless.

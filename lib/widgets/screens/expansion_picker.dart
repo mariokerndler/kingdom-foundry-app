@@ -75,8 +75,11 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: TextField(
                 controller: _searchCtrl,
+                textInputAction: TextInputAction.search,
                 onChanged: (v) => setState(() => _query = v.toLowerCase()),
                 decoration: InputDecoration(
+                  labelText: 'Search expansions',
+                  helperText: 'Filter the expansion library by name.',
                   hintText: 'Search expansions…',
                   prefixIcon: const Icon(Icons.search_rounded, size: 20),
                   suffixIcon: _query.isNotEmpty
@@ -403,8 +406,8 @@ class _ExpansionTile extends StatelessWidget {
                   const SizedBox(width: 10),
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    width: 22,
-                    height: 22,
+                    width: 26,
+                    height: 26,
                     decoration: BoxDecoration(
                       color: selected ? badgeColor : Colors.transparent,
                       border: Border.all(

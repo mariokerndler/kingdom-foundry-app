@@ -179,7 +179,10 @@ class _SearchBar extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
+              textInputAction: TextInputAction.search,
               decoration: const InputDecoration(
+                labelText: 'Search cards',
+                helperText: 'Filter by card name or type.',
                 hintText: 'Search cards...',
                 prefixIcon: Icon(Icons.search_rounded),
               ),
@@ -252,89 +255,94 @@ class _CardRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Semantics(
-      label: '${card.name}, ${isDisabled ? "banned" : "allowed"}',
-      hint: 'Double tap to ${isDisabled ? "allow" : "ban"}',
-      button: true,
-      excludeSemantics: true,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 200),
-        opacity: isDisabled ? 1.0 : 1.0,
-        child: InkWell(
-          onTap: onToggle,
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: isDisabled
-                  ? AppColors.errorRed.withValues(alpha: 0.08)
-                  : cs.surfaceContainer,
-              border: Border.all(
-                color: isDisabled ? AppColors.errorRed : cs.outlineVariant,
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                _CostBadge(cost: card.cost),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: isDisabled
+            ? AppColors.errorRed.withValues(alpha: 0.08)
+            : cs.surfaceContainer,
+        border: Border.all(
+          color: isDisabled ? AppColors.errorRed : cs.outlineVariant,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _CostBadge(cost: card.cost),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        card.name,
-                        style: TextStyle(
-                          color: cs.onSurface,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              card.name,
+                              style: TextStyle(
+                                color: cs.onSurface,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              card.typeString,
+                              style: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        card.typeString,
-                        style:
-                            TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            isDisabled
-                                ? Icons.block_rounded
-                                : Icons.check_circle_outline_rounded,
-                            size: 16,
-                            color:
-                                isDisabled ? AppColors.errorRed : AppColors.successGreen,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isDisabled ? 'Banned from generation' : 'Allowed',
-                            style: TextStyle(
-                              color: isDisabled
-                                  ? AppColors.errorRed
-                                  : AppColors.successGreen,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 12),
+                      Semantics(
+                        label:
+                            '${isDisabled ? "Ban enabled" : "Ban disabled"} for ${card.name}',
+                        toggled: isDisabled,
+                        child: Switch.adaptive(
+                          value: isDisabled,
+                          onChanged: (_) => onToggle(),
+                        ),
                       ),
                     ],
                   ),
-                ),
-                Switch(
-                  value: isDisabled,
-                  onChanged: (_) => onToggle(),
-                  thumbIcon: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return const Icon(Icons.block_rounded, size: 14);
-                    }
-                    return const Icon(Icons.check_rounded, size: 14);
-                  }),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        isDisabled
+                            ? Icons.block_rounded
+                            : Icons.check_circle_outline_rounded,
+                        size: 16,
+                        color:
+                            isDisabled ? AppColors.errorRed : AppColors.successGreen,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isDisabled ? 'Banned from generation' : 'Allowed in generation',
+                        style: TextStyle(
+                          color: isDisabled
+                              ? AppColors.errorRed
+                              : AppColors.successGreen,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

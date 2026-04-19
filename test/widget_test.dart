@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:kingdom_foundry/models/expansion.dart';
 import 'package:kingdom_foundry/models/card_tag.dart';
+import 'package:kingdom_foundry/models/cost_curve_rule.dart';
 import 'package:kingdom_foundry/models/card_type.dart';
+import 'package:kingdom_foundry/models/game_vibe_preset.dart';
 import 'package:kingdom_foundry/models/kingdom_card.dart';
 import 'package:kingdom_foundry/models/setup_result.dart';
 import 'package:kingdom_foundry/models/setup_rules.dart';
@@ -17,6 +19,7 @@ import 'package:kingdom_foundry/providers/history_provider.dart';
 import 'package:kingdom_foundry/screens/configuration_screen.dart';
 import 'package:kingdom_foundry/screens/results_screen.dart';
 import 'package:kingdom_foundry/services/history_service.dart';
+import 'package:kingdom_foundry/widgets/cards/kingdom_card_widget.dart';
 import 'package:kingdom_foundry/widgets/screens/rules_section.dart';
 import 'package:kingdom_foundry/main.dart';
 
@@ -51,13 +54,25 @@ void main() {
     generatedAt: DateTime(2026, 4, 11),
   );
 
-  Future<void> pumpRulesTab(WidgetTester tester) async {
+  Future<void> pumpRulesTab(
+    WidgetTester tester, {
+    SetupRules rules = const SetupRules(),
+  }) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
+          configProvider.overrideWith(
+            (ref) => ConfigNotifier(ref.watch(configPersistenceProvider))
+              ..state = ConfigState(
+                ownedExpansions: const {Expansion.baseSecondEdition},
+                rules: rules,
+                disabledCardIds: const {},
+                playerCount: 2,
+              ),
+          ),
         ],
         child: const MaterialApp(
           home: Scaffold(body: RulesTab()),
@@ -76,40 +91,37 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
   }
 
-  Future<void> enableCostCurve(WidgetTester tester) async {
-    await scrollToCostCurve(tester);
-    await tester.tap(find.text('Prefer a cost curve'));
-    await tester.pump(const Duration(milliseconds: 300));
-  }
-
-  Future<void> decrementCheapBucket(WidgetTester tester) async {
-    final removeButtons = find.byIcon(Icons.remove_rounded);
-    final firstCurveRemoveIndex = tester.widgetList(removeButtons).length - 5;
-    await tester.tap(removeButtons.at(firstCurveRemoveIndex));
-    await tester.pump(const Duration(milliseconds: 300));
-  }
-
   group('RulesTab cost curve editor', () {
-    testWidgets('enable switch reveals the editor', (tester) async {
-      await pumpRulesTab(tester);
+    testWidgets('enabled cost curve reveals the editor', (tester) async {
+      await pumpRulesTab(
+        tester,
+        rules: const SetupRules(
+          costCurve: CostCurveRule(enabled: true),
+        ),
+      );
 
-      expect(find.text('Assigned 10 / 10 slots'), findsNothing);
-
-      await enableCostCurve(tester);
-
-      expect(find.text('Assigned 10 / 10 slots'), findsOneWidget);
+      await scrollToCostCurve(tester);
       expect(find.text('<=2'), findsOneWidget);
       expect(find.text('6+'), findsOneWidget);
     });
 
     testWidgets('inline validation appears when total is below 10',
         (tester) async {
-      await pumpRulesTab(tester);
+      await pumpRulesTab(
+        tester,
+        rules: const SetupRules(
+          costCurve: CostCurveRule(
+            enabled: true,
+            cheapCount: 0,
+            threeCount: 2,
+            fourCount: 3,
+            fiveCount: 3,
+            sixPlusCount: 1,
+          ),
+        ),
+      );
 
-      await enableCostCurve(tester);
-      await decrementCheapBucket(tester);
-
-      expect(find.text('Assigned 9 / 10 slots'), findsOneWidget);
+      await scrollToCostCurve(tester);
       expect(
         find.text('Finish assigning all 10 kingdom slots before generating.'),
         findsOneWidget,
@@ -117,21 +129,82 @@ void main() {
     });
 
     testWidgets('reset restores the default balanced curve', (tester) async {
-      await pumpRulesTab(tester);
+      await pumpRulesTab(
+        tester,
+        rules: const SetupRules(
+          costCurve: CostCurveRule(
+            enabled: true,
+            cheapCount: 0,
+            threeCount: 2,
+            fourCount: 3,
+            fiveCount: 3,
+            sixPlusCount: 1,
+          ),
+        ),
+      );
 
-      await enableCostCurve(tester);
-      await decrementCheapBucket(tester);
-
-      expect(find.text('Assigned 9 / 10 slots'), findsOneWidget);
-
-      await tester.tap(find.text('Reset curve'));
+      final resetButton = find.widgetWithText(TextButton, 'Reset curve');
+      await tester.scrollUntilVisible(
+        resetButton,
+        400,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(resetButton);
       await tester.pump(const Duration(milliseconds: 300));
-
-      expect(find.text('Assigned 10 / 10 slots'), findsOneWidget);
       expect(
         find.text('Finish assigning all 10 kingdom slots before generating.'),
         findsNothing,
       );
+    });
+  });
+
+  group('Game vibe presets', () {
+    testWidgets('tapping an active preset clears the vibe and resets preset rules',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container.read(configProvider.notifier).state = const ConfigState(
+            ownedExpansions: {Expansion.baseSecondEdition},
+            rules: SetupRules(
+              requireVillage: true,
+              requireDraw: true,
+              requireTrashing: true,
+              maxAttacks: 1,
+            ),
+            disabledCardIds: {},
+            playerCount: 2,
+            selectedPresetId: 'engine_builder',
+          );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: Scaffold(body: RulesTab()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Preset active - tap again to remove vibe'), findsOneWidget);
+
+      await tester.tap(find.text('Engine Builder'));
+      await tester.pumpAndSettle();
+
+      final updated = container.read(configProvider);
+      expect(updated.selectedPresetId, GameVibePresets.noneId);
+      expect(updated.rules.hasActiveRules, isFalse);
+      expect(updated.rules.requireVillage, isFalse);
+      expect(updated.rules.requireDraw, isFalse);
+      expect(updated.rules.requireTrashing, isFalse);
+      expect(updated.rules.maxAttacks, isNull);
     });
   });
 
@@ -189,6 +262,45 @@ void main() {
     });
   });
 
+  group('Kingdom card interactions', () {
+    testWidgets('tapping the lower area of a tall tile opens details',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 360,
+                  height: 220,
+                  child: KingdomCardWidget(
+                    card: sampleCard(1),
+                    index: 1,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final cardFinder = find.byType(KingdomCardWidget);
+      final bottomTapPoint = tester.getBottomRight(cardFinder) - const Offset(90, 20);
+
+      await tester.tapAt(bottomTapPoint);
+      await tester.pumpAndSettle();
+
+      expect(find.text('MECHANICS'), findsOneWidget);
+    });
+  });
+
   group('Theme mode', () {
     testWidgets('theme toggle is shown in the app bar', (tester) async {
       await tester.binding.setSurfaceSize(const Size(800, 900));
@@ -219,6 +331,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byTooltip('Switch to dark mode'), findsOneWidget);
+      expect(find.byTooltip('Open kingdom library'), findsOneWidget);
+      expect(find.byTooltip('Import kingdom'), findsOneWidget);
       expect(find.text('Current setup'), findsOneWidget);
     });
 

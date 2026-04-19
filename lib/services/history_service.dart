@@ -59,6 +59,8 @@ class HistoryService {
 
   Future<void> clearHistory() => _prefs.remove(_kHistory);
 
+  Future<void> saveHistory(List<SetupResult> results) => _saveList(_kHistory, results);
+
   Future<void> _saveList(String key, List<SetupResult> results) {
     return _prefs.setString(
       key,

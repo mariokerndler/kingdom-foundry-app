@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../controllers/setup_exception.dart';
 import '../../models/cost_curve_rule.dart';
 import '../../models/game_vibe_preset.dart';
+import '../../models/setup_rules.dart';
 import '../../models/translation_pack.dart';
 import '../../providers/config_provider.dart';
+import '../../providers/generation_provider.dart';
 import '../../providers/translation_provider.dart';
 import '../../utils/app_theme.dart';
-import '../common/section_header.dart';
 import '../common/ui_primitives.dart';
 
 class RulesTab extends ConsumerStatefulWidget {
@@ -19,12 +21,54 @@ class RulesTab extends ConsumerStatefulWidget {
 
 class _RulesTabState extends ConsumerState<RulesTab>
     with AutomaticKeepAliveClientMixin {
+  late final ScrollController _scrollController;
+  late final Map<_RuleSection, bool> _expandedSections;
+  late final Map<_RuleSection, GlobalKey> _sectionKeys;
+
   @override
   bool get wantKeepAlive => true;
 
   @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _expandedSections = {
+      for (final section in _RuleSection.values)
+        section: switch (section) {
+          _RuleSection.gameVibe => true,
+          _RuleSection.exclusions => true,
+          _RuleSection.landscapes => false,
+          _RuleSection.requirements => true,
+          _RuleSection.costLimit => false,
+          _RuleSection.attackLimit => false,
+          _RuleSection.costCurve => true,
+          _RuleSection.display => true,
+        },
+    };
+    _sectionKeys = {
+      for (final section in _RuleSection.values) section: GlobalKey(),
+    };
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
+    ref.listen<SetupFailureReason?>(generationFailureReasonProvider, (_, next) {
+      if (next == null) return;
+      switch (next) {
+        case SetupFailureReason.requirementImpossible:
+          _focusSection(_RuleSection.requirements);
+        case SetupFailureReason.varietyImpossible:
+        case SetupFailureReason.poolTooSmall:
+          _focusSection(_RuleSection.exclusions);
+      }
+    });
 
     final rules = ref.watch(configProvider).rules;
     final config = ref.watch(configProvider);
@@ -32,253 +76,458 @@ class _RulesTabState extends ConsumerState<RulesTab>
     final hasRules = rules.hasActiveRules;
 
     return ListView(
+      controller: _scrollController,
       padding: const EdgeInsets.only(bottom: 100),
       children: [
-        const SectionHeader(
+        if (hasRules) ...[
+          _ActiveRulesSummary(
+            descriptions: rules.activeRuleDescriptions,
+            onDescriptionTap: (description) =>
+                _focusSection(_sectionForDescription(description)),
+          ),
+          _RulesConflictHint(rules: rules),
+        ],
+        _SectionAccordion(
+          key: _sectionKeys[_RuleSection.gameVibe],
           title: 'Game Vibe',
-          subtitle:
-              'Apply a curated preset before fine-tuning the rules below.',
+          subtitle: 'Apply a curated preset before fine-tuning the rules below.',
+          expanded: _expandedSections[_RuleSection.gameVibe]!,
+          onChanged: (value) => _setExpanded(_RuleSection.gameVibe, value),
+          child: _PresetSelector(
+            selectedPresetId: config.selectedPresetId,
+            onChanged: notifier.setSelectedPresetId,
+          ),
         ),
-
-        _PresetSelector(
-          selectedPresetId: config.selectedPresetId,
-          onChanged: notifier.setSelectedPresetId,
-        ),
-
-        const _Divider(),
-        SectionHeader(
+        _SectionAccordion(
+          key: _sectionKeys[_RuleSection.exclusions],
           title: 'Exclusions',
           subtitle: 'Remove card types from the pool entirely.',
+          expanded: _expandedSections[_RuleSection.exclusions]!,
+          onChanged: (value) => _setExpanded(_RuleSection.exclusions, value),
           trailing: hasRules
               ? TextButton(
                   onPressed: notifier.resetRules,
                   child: const Text(
                     'Reset all',
-                    style: TextStyle(color: AppColors.errorRed, fontSize: 13),
+                    style: TextStyle(color: AppColors.errorRed),
                   ),
                 )
               : null,
+          child: Column(
+            children: [
+              _RuleTile(
+                icon: Icons.shield_outlined,
+                label: 'No Attack cards',
+                detail: 'Removes every card with the Attack type.',
+                value: rules.noAttacks,
+                onChange: notifier.setNoAttacks,
+              ),
+              _RuleTile(
+                icon: Icons.hourglass_empty_rounded,
+                label: 'No Duration cards',
+                detail: 'Removes Stay-in-Play (orange banner) cards.',
+                value: rules.noDuration,
+                onChange: notifier.setNoDuration,
+              ),
+              _RuleTile(
+                icon: Icons.science_outlined,
+                label: 'No Potion-cost cards',
+                detail: 'Skips cards requiring the Alchemy Potion.',
+                value: rules.noPotions,
+                onChange: notifier.setNoPotions,
+              ),
+              _RuleTile(
+                icon: Icons.credit_card_off_outlined,
+                label: 'No Debt cards',
+                detail: 'Skips cards with a Debt (hex token) cost.',
+                value: rules.noDebt,
+                onChange: notifier.setNoDebt,
+              ),
+              _RuleTile(
+                icon: Icons.sentiment_very_dissatisfied_outlined,
+                label: 'No Curse-givers',
+                detail: 'Removes cards that hand out Curse cards (e.g. Witch).',
+                value: rules.noCursers,
+                onChange: notifier.setNoCursers,
+              ),
+              _RuleTile(
+                icon: Icons.swap_horiz_rounded,
+                label: 'No Travellers',
+                detail:
+                    'Removes Page, Peasant, Hermit, and Urchin to skip set-aside chains.',
+                value: rules.noTravellers,
+                onChange: notifier.setNoTravellers,
+              ),
+            ],
+          ),
         ),
-
-        _RuleTile(
-          icon: Icons.shield_outlined,
-          label: 'No Attack cards',
-          detail: 'Removes every card with the Attack type.',
-          value: rules.noAttacks,
-          onChange: notifier.setNoAttacks,
-        ),
-        _RuleTile(
-          icon: Icons.hourglass_empty_rounded,
-          label: 'No Duration cards',
-          detail: 'Removes Stay-in-Play (orange banner) cards.',
-          value: rules.noDuration,
-          onChange: notifier.setNoDuration,
-        ),
-        _RuleTile(
-          icon: Icons.science_outlined,
-          label: 'No Potion-cost cards',
-          detail: 'Skips cards requiring the Alchemy Potion.',
-          value: rules.noPotions,
-          onChange: notifier.setNoPotions,
-        ),
-        _RuleTile(
-          icon: Icons.credit_card_off_outlined,
-          label: 'No Debt cards',
-          detail: 'Skips cards with a Debt (hex token) cost.',
-          value: rules.noDebt,
-          onChange: notifier.setNoDebt,
-        ),
-        _RuleTile(
-          icon: Icons.sentiment_very_dissatisfied_outlined,
-          label: 'No Curse-givers',
-          detail: 'Removes cards that hand out Curse cards (e.g. Witch).',
-          value: rules.noCursers,
-          onChange: notifier.setNoCursers,
-        ),
-        _RuleTile(
-          icon: Icons.swap_horiz_rounded,
-          label: 'No Travellers',
-          detail:
-              'Removes Page, Peasant, Hermit, and Urchin to skip set-aside chains.',
-          value: rules.noTravellers,
-          onChange: notifier.setNoTravellers,
-        ),
-
-        const _Divider(),
-        const SectionHeader(
+        _SectionAccordion(
+          key: _sectionKeys[_RuleSection.landscapes],
           title: 'Landscape Cards',
           subtitle: 'Events, Landmarks, Projects, Ways, Allies and Traits.',
+          expanded: _expandedSections[_RuleSection.landscapes]!,
+          onChanged: (value) => _setExpanded(_RuleSection.landscapes, value),
+          child: Column(
+            children: [
+              _RuleTile(
+                icon: Icons.map_outlined,
+                label: 'Include landscape cards',
+                detail: 'Draw Events, Projects, etc. from owned expansions.',
+                value: rules.includeLandscape,
+                onChange: notifier.setIncludeLandscape,
+              ),
+              if (rules.includeLandscape) ...[
+                _LandscapeCountTile(
+                  icon: Icons.bolt_outlined,
+                  label: 'Events',
+                  value: rules.landscapeEvents,
+                  max: 4,
+                  onChange: notifier.setLandscapeEvents,
+                ),
+                _LandscapeCountTile(
+                  icon: Icons.account_balance_outlined,
+                  label: 'Projects',
+                  value: rules.landscapeProjects,
+                  max: 4,
+                  onChange: notifier.setLandscapeProjects,
+                ),
+                _LandscapeCountTile(
+                  icon: Icons.landscape_outlined,
+                  label: 'Landmarks',
+                  value: rules.landscapeLandmarks,
+                  max: 3,
+                  onChange: notifier.setLandscapeLandmarks,
+                ),
+                _LandscapeCountTile(
+                  icon: Icons.route_outlined,
+                  label: 'Ways',
+                  value: rules.landscapeWays,
+                  max: 4,
+                  onChange: notifier.setLandscapeWays,
+                ),
+                _LandscapeCountTile(
+                  icon: Icons.groups_outlined,
+                  label: 'Allies',
+                  value: rules.landscapeAllies,
+                  max: 3,
+                  onChange: notifier.setLandscapeAllies,
+                ),
+                _LandscapeCountTile(
+                  icon: Icons.auto_awesome_outlined,
+                  label: 'Traits',
+                  value: rules.landscapeTraits,
+                  max: 4,
+                  onChange: notifier.setLandscapeTraits,
+                ),
+              ],
+            ],
+          ),
         ),
-
-        _RuleTile(
-          icon: Icons.map_outlined,
-          label: 'Include landscape cards',
-          detail: 'Draw Events, Projects, etc. from owned expansions.',
-          value: rules.includeLandscape,
-          onChange: notifier.setIncludeLandscape,
-        ),
-
-        if (rules.includeLandscape) ...[
-          _LandscapeCountTile(
-            icon: Icons.bolt_outlined,
-            label: 'Events',
-            value: rules.landscapeEvents,
-            max: 4,
-            onChange: notifier.setLandscapeEvents,
-          ),
-          _LandscapeCountTile(
-            icon: Icons.account_balance_outlined,
-            label: 'Projects',
-            value: rules.landscapeProjects,
-            max: 4,
-            onChange: notifier.setLandscapeProjects,
-          ),
-          _LandscapeCountTile(
-            icon: Icons.landscape_outlined,
-            label: 'Landmarks',
-            value: rules.landscapeLandmarks,
-            max: 3,
-            onChange: notifier.setLandscapeLandmarks,
-          ),
-          _LandscapeCountTile(
-            icon: Icons.route_outlined,
-            label: 'Ways',
-            value: rules.landscapeWays,
-            max: 4,
-            onChange: notifier.setLandscapeWays,
-          ),
-          _LandscapeCountTile(
-            icon: Icons.groups_outlined,
-            label: 'Allies',
-            value: rules.landscapeAllies,
-            max: 3,
-            onChange: notifier.setLandscapeAllies,
-          ),
-          _LandscapeCountTile(
-            icon: Icons.auto_awesome_outlined,
-            label: 'Traits',
-            value: rules.landscapeTraits,
-            max: 4,
-            onChange: notifier.setLandscapeTraits,
-          ),
-        ],
-
-        const _Divider(),
-        const SectionHeader(
+        _SectionAccordion(
+          key: _sectionKeys[_RuleSection.requirements],
           title: 'Requirements',
           subtitle: 'Guarantee certain card types appear.',
+          expanded: _expandedSections[_RuleSection.requirements]!,
+          onChanged: (value) => _setExpanded(_RuleSection.requirements, value),
+          child: Column(
+            children: [
+              _RuleTile(
+                icon: Icons.shopping_cart_outlined,
+                label: 'Require a +Buy card',
+                detail: 'At least one card that grants +Buy.',
+                value: rules.requirePlusBuy,
+                onChange: notifier.setRequirePlusBuy,
+              ),
+              _RuleTile(
+                icon: Icons.delete_outline_rounded,
+                label: 'Require a Trashing card',
+                detail: 'At least one card that can trash cards.',
+                value: rules.requireTrashing,
+                onChange: notifier.setRequireTrashing,
+              ),
+              _RuleTile(
+                icon: Icons.account_tree_outlined,
+                label: 'Require a Village',
+                detail: 'At least one card granting +2 Actions.',
+                value: rules.requireVillage,
+                onChange: notifier.setRequireVillage,
+              ),
+              _RuleTile(
+                icon: Icons.style_outlined,
+                label: 'Require card draw',
+                detail: 'At least one card that draws additional cards.',
+                value: rules.requireDraw,
+                onChange: notifier.setRequireDraw,
+              ),
+              _RuleTile(
+                icon: Icons.security_outlined,
+                label: 'Auto-Reaction',
+                detail:
+                    'If Attacks are present, guarantee at least one Reaction card.',
+                value: rules.requireReactionIfAttacks,
+                onChange: notifier.setRequireReactionIfAttacks,
+              ),
+            ],
+          ),
         ),
-
-        _RuleTile(
-          icon: Icons.shopping_cart_outlined,
-          label: 'Require a +Buy card',
-          detail: 'At least one card that grants +Buy.',
-          value: rules.requirePlusBuy,
-          onChange: notifier.setRequirePlusBuy,
-        ),
-        _RuleTile(
-          icon: Icons.delete_outline_rounded,
-          label: 'Require a Trashing card',
-          detail: 'At least one card that can trash cards.',
-          value: rules.requireTrashing,
-          onChange: notifier.setRequireTrashing,
-        ),
-        _RuleTile(
-          icon: Icons.account_tree_outlined,
-          label: 'Require a Village',
-          detail: 'At least one card granting +2 Actions.',
-          value: rules.requireVillage,
-          onChange: notifier.setRequireVillage,
-        ),
-        _RuleTile(
-          icon: Icons.style_outlined,
-          label: 'Require card draw',
-          detail: 'At least one card that draws additional cards.',
-          value: rules.requireDraw,
-          onChange: notifier.setRequireDraw,
-        ),
-        _RuleTile(
-          icon: Icons.security_outlined,
-          label: 'Auto-Reaction',
-          detail:
-              'If Attacks are present, guarantee at least one Reaction card.',
-          value: rules.requireReactionIfAttacks,
-          onChange: notifier.setRequireReactionIfAttacks,
-        ),
-
-        const _Divider(),
-        const SectionHeader(
+        _SectionAccordion(
+          key: _sectionKeys[_RuleSection.costLimit],
           title: 'Cost Limit',
           subtitle: 'Cap the maximum coin cost of any kingdom card.',
+          expanded: _expandedSections[_RuleSection.costLimit]!,
+          onChanged: (value) => _setExpanded(_RuleSection.costLimit, value),
+          child: _MaxCostRow(
+            currentMax: rules.maxCost,
+            onChange: notifier.setMaxCost,
+          ),
         ),
-
-        _MaxCostRow(
-          currentMax: rules.maxCost,
-          onChange: notifier.setMaxCost,
-        ),
-
-        const _Divider(),
-        const SectionHeader(
+        _SectionAccordion(
+          key: _sectionKeys[_RuleSection.attackLimit],
           title: 'Attack Limit',
           subtitle: 'Cap how many Attack cards can appear in the kingdom.',
+          expanded: _expandedSections[_RuleSection.attackLimit]!,
+          onChanged: (value) => _setExpanded(_RuleSection.attackLimit, value),
+          child: _MaxAttacksRow(
+            currentMax: rules.maxAttacks,
+            onChange: notifier.setMaxAttacks,
+          ),
         ),
-
-        _MaxAttacksRow(
-          currentMax: rules.maxAttacks,
-          onChange: notifier.setMaxAttacks,
-        ),
-
-        const _Divider(),
-        SectionHeader(
+        _SectionAccordion(
+          key: _sectionKeys[_RuleSection.costCurve],
           title: 'Cost Curve',
           subtitle: 'Prefer kingdoms that match your target cost spread.',
+          expanded: _expandedSections[_RuleSection.costCurve]!,
+          onChanged: (value) => _setExpanded(_RuleSection.costCurve, value),
           trailing: rules.costCurve.enabled
               ? TextButton(
                   onPressed: notifier.resetCostCurve,
-                  child: const Text(
-                    'Reset curve',
-                    style: TextStyle(fontSize: 13),
-                  ),
+                  child: const Text('Reset curve'),
                 )
               : null,
+          child: _CostCurveEditor(
+            rule: rules.costCurve,
+            onEnabledChanged: notifier.setCostCurveEnabled,
+            onCheapChanged: notifier.setCostCurveCheapCount,
+            onThreeChanged: notifier.setCostCurveThreeCount,
+            onFourChanged: notifier.setCostCurveFourCount,
+            onFiveChanged: notifier.setCostCurveFiveCount,
+            onSixPlusChanged: notifier.setCostCurveSixPlusCount,
+          ),
         ),
-
-        _CostCurveEditor(
-          rule: rules.costCurve,
-          onEnabledChanged: notifier.setCostCurveEnabled,
-          onCheapChanged: notifier.setCostCurveCheapCount,
-          onThreeChanged: notifier.setCostCurveThreeCount,
-          onFourChanged: notifier.setCostCurveFourCount,
-          onFiveChanged: notifier.setCostCurveFiveCount,
-          onSixPlusChanged: notifier.setCostCurveSixPlusCount,
-        ),
-
-        const _Divider(),
-        const SectionHeader(
+        _SectionAccordion(
+          key: _sectionKeys[_RuleSection.display],
           title: 'Display',
-          subtitle:
-              'Control what extra guidance appears on the results screen.',
+          subtitle: 'Control what extra guidance appears on the results screen.',
+          expanded: _expandedSections[_RuleSection.display]!,
+          onChanged: (value) => _setExpanded(_RuleSection.display, value),
+          child: Column(
+            children: [
+              _RuleTile(
+                icon: Icons.lightbulb_outline_rounded,
+                label: 'Show strategy tips',
+                detail:
+                    'Display heuristic archetypes and strategy guidance on results.',
+                value: rules.showStrategyTips,
+                onChange: notifier.setShowStrategyTips,
+              ),
+              _LanguageSelector(
+                selectedLanguageCode: config.selectedLanguageCode,
+                onChanged: notifier.setSelectedLanguageCode,
+              ),
+            ],
+          ),
         ),
-
-        _RuleTile(
-          icon: Icons.lightbulb_outline_rounded,
-          label: 'Show strategy tips',
-          detail:
-              'Display heuristic archetypes and strategy guidance on results.',
-          value: rules.showStrategyTips,
-          onChange: notifier.setShowStrategyTips,
-        ),
-        _LanguageSelector(
-          selectedLanguageCode: config.selectedLanguageCode,
-          onChanged: notifier.setSelectedLanguageCode,
-        ),
-
-        // Active rules summary
-        if (hasRules) ...[
-          const _Divider(),
-          _ActiveRulesSummary(descriptions: rules.activeRuleDescriptions),
-        ],
       ],
+    );
+  }
+
+  void _setExpanded(_RuleSection section, bool expanded) {
+    setState(() => _expandedSections[section] = expanded);
+  }
+
+  void _focusSection(_RuleSection section) {
+    if (!_expandedSections[section]!) {
+      setState(() => _expandedSections[section] = true);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final targetContext = _sectionKeys[section]!.currentContext;
+      if (targetContext == null) return;
+      Scrollable.ensureVisible(
+        targetContext,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOut,
+        alignment: 0.08,
+      );
+    });
+  }
+
+  _RuleSection _sectionForDescription(String description) {
+    if (description.startsWith('Max cost')) return _RuleSection.costLimit;
+    if (description.startsWith('Max ') && description.contains('attack')) {
+      return _RuleSection.attackLimit;
+    }
+    if (description.startsWith('No ')) return _RuleSection.exclusions;
+    if (description.startsWith('Events:') ||
+        description.startsWith('Projects:') ||
+        description.startsWith('Landmarks:') ||
+        description.startsWith('Ways:') ||
+        description.startsWith('Allies:') ||
+        description.startsWith('Traits:') ||
+        description == 'No landscape cards') {
+      return _RuleSection.landscapes;
+    }
+    if (description.startsWith('Must include') || description == 'Auto-Reaction') {
+      return _RuleSection.requirements;
+    }
+    if (description.contains('curve')) return _RuleSection.costCurve;
+    if (description == 'Hide strategy tips') return _RuleSection.display;
+    return _RuleSection.exclusions;
+  }
+}
+
+enum _RuleSection {
+  gameVibe,
+  exclusions,
+  landscapes,
+  requirements,
+  costLimit,
+  attackLimit,
+  costCurve,
+  display,
+}
+
+class _SectionAccordion extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool expanded;
+  final ValueChanged<bool> onChanged;
+  final Widget child;
+  final Widget? trailing;
+
+  const _SectionAccordion({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.expanded,
+    required this.onChanged,
+    required this.child,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: expanded ? cs.primary.withValues(alpha: 0.35) : cs.outlineVariant,
+          ),
+        ),
+        child: Column(
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => onChanged(!expanded),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title.toUpperCase(),
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: expanded ? cs.primary : cs.onSurfaceVariant,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+                        ],
+                      ),
+                    ),
+                    if (trailing != null) ...[
+                      const SizedBox(width: 8),
+                      trailing!,
+                    ],
+                    const SizedBox(width: 4),
+                    Icon(
+                      expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              child: expanded
+                  ? Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: child,
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RulesConflictHint extends StatelessWidget {
+  final SetupRules rules;
+
+  const _RulesConflictHint({required this.rules});
+
+  @override
+  Widget build(BuildContext context) {
+    final warnings = <String>[
+      if (rules.noAttacks && rules.requireReactionIfAttacks)
+        'Auto-Reaction may never matter while Attack cards are excluded.',
+      if (rules.noAttacks && rules.maxAttacks != null)
+        'Attack limit is redundant while Attack cards are excluded.',
+      if (rules.costCurve.enabled && !rules.costCurve.isValid)
+        'Finish assigning all 10 cost-curve slots before generating.',
+      if (rules.activeRuleDescriptions.length >= 6)
+        'Many active constraints can shrink the card pool and cause failed rolls.',
+    ];
+
+    if (warnings.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.errorRed.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.errorRed.withValues(alpha: 0.22)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Rule Notes', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            for (final warning in warnings)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  '• $warning',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -294,75 +543,119 @@ class _PresetSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final presets = GameVibePresets.all.skip(1).toList();
+    final width = MediaQuery.sizeOf(context).width;
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final useWrap = width < 520 || textScale > 1.15;
+
+    if (useWrap) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: presets
+              .map((preset) => SizedBox(
+                    width: width > 640 ? 280 : width - 42,
+                    child: _PresetCard(
+                      preset: preset,
+                      selected: preset.id == selectedPresetId,
+                      onTap: () => onChanged(
+                        preset.id == selectedPresetId
+                            ? GameVibePresets.noneId
+                            : preset.id,
+                      ),
+                    ),
+                  ))
+              .toList(),
+        ),
+      );
+    }
+
     return SizedBox(
-      height: 148,
+      height: 240,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: GameVibePresets.all.length - 1,
+        itemCount: presets.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (_, i) {
-          final preset = GameVibePresets.all[i + 1];
-          final selected = preset.id == selectedPresetId;
-          return Semantics(
-            selected: selected,
-            button: true,
-            label: '${preset.name} preset',
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => onChanged(preset.id),
-                borderRadius: BorderRadius.circular(12),
-                child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              width: 220,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: selected
-                    ? Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.10)
-                    : Theme.of(context).colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: selected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.outlineVariant,
-                ),
-              ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        preset.name,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
-                      const SizedBox(height: 6),
-                      Expanded(
-                        child: Text(
-                          preset.description,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        selected ? 'Preset active' : 'Tap to apply defaults',
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: selected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
+        itemBuilder: (_, i) => SizedBox(
+          width: 240,
+          child: _PresetCard(
+            preset: presets[i],
+            selected: presets[i].id == selectedPresetId,
+            onTap: () => onChanged(
+              presets[i].id == selectedPresetId
+                  ? GameVibePresets.noneId
+                  : presets[i].id,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PresetCard extends StatelessWidget {
+  final GameVibePreset preset;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _PresetCard({
+    required this.preset,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: '${preset.name} preset',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: selected ? cs.primary.withValues(alpha: 0.10) : cs.surfaceContainer,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: selected ? cs.primary : cs.outlineVariant,
               ),
             ),
-          );
-        },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  preset.name,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  preset.description,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  selected ? 'Preset active - tap again to remove vibe' : 'Tap to apply defaults',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: selected ? cs.primary : cs.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -490,9 +783,12 @@ class _LanguageSelector extends ConsumerWidget {
                     controller: controller,
                     maxLines: 14,
                     minLines: 6,
+                    textInputAction: TextInputAction.done,
                     onChanged: (_) =>
                         setState(() => errorText = validationMessage(controller.text)),
                     decoration: InputDecoration(
+                      labelText: 'Translation pack JSON',
+                      helperText: 'Paste a full translation pack payload.',
                       hintText:
                           '{"languageCode":"fr","label":"Francais","cards":{...}}',
                       errorText: errorText,
@@ -563,7 +859,7 @@ class _RuleTile extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
       decoration: BoxDecoration(
         color: value ? cs.primary.withValues(alpha: 0.08) : cs.surfaceContainer,
         border: Border.all(
@@ -571,24 +867,124 @@ class _RuleTile extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: SwitchListTile(
-        secondary: Icon(icon,
-            size: 20, color: value ? cs.primary : cs.onSurfaceVariant),
-        title: Text(
-          label,
-          style: TextStyle(
-            color: value ? cs.onSurface : cs.onSurfaceVariant,
-            fontWeight: value ? FontWeight.w500 : FontWeight.w400,
-            fontSize: 14,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => onChange(!value),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: value ? cs.primary : cs.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: value ? cs.onSurface : cs.onSurfaceVariant,
+                          fontWeight: value ? FontWeight.w600 : FontWeight.w400,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        detail,
+                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Switch.adaptive(
+                  value: value,
+                  onChanged: onChange,
+                ),
+              ],
+            ),
           ),
         ),
-        subtitle: Text(
-          detail,
-          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+      ),
+    );
+  }
+}
+
+class _AdaptiveToggleHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _AdaptiveToggleHeader({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onChanged(!value),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: value ? cs.primary : cs.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: value ? cs.onSurface : cs.onSurfaceVariant,
+                        fontWeight: value ? FontWeight.w600 : FontWeight.w400,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Switch.adaptive(
+                value: value,
+                onChanged: onChanged,
+              ),
+            ],
+          ),
         ),
-        value: value,
-        onChanged: onChange,
-        dense: true,
       ),
     );
   }
@@ -636,24 +1032,13 @@ class _CostCurveEditor extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SwitchListTile(
-              secondary: Icon(Icons.show_chart_rounded,
-                  size: 20, color: active ? cs.primary : cs.onSurfaceVariant),
-              title: Text(
-                'Prefer a cost curve',
-                style: TextStyle(
-                  color: active ? cs.onSurface : cs.onSurfaceVariant,
-                  fontWeight: active ? FontWeight.w500 : FontWeight.w400,
-                  fontSize: 14,
-                ),
-              ),
-              subtitle: Text(
-                'Bias generation toward cheap, mid-cost, and expensive slots you choose.',
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-              ),
+            _AdaptiveToggleHeader(
+              icon: Icons.show_chart_rounded,
+              title: 'Prefer a cost curve',
+              subtitle:
+                  'Bias generation toward cheap, mid-cost, and expensive slots you choose.',
               value: active,
               onChanged: onEnabledChanged,
-              dense: true,
             ),
             if (active) ...[
               const Divider(height: 1),
@@ -797,24 +1182,12 @@ class _MaxCostRow extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SwitchListTile(
-              secondary: Icon(Icons.paid_outlined,
-                  size: 20, color: active ? cs.primary : cs.onSurfaceVariant),
-              title: Text(
-                active ? 'Max cost: \$$currentMax' : 'Enable max cost',
-                style: TextStyle(
-                  color: active ? cs.onSurface : cs.onSurfaceVariant,
-                  fontWeight: active ? FontWeight.w500 : FontWeight.w400,
-                  fontSize: 14,
-                ),
-              ),
-              subtitle: Text(
-                'Exclude cards that cost more than this.',
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-              ),
+            _AdaptiveToggleHeader(
+              icon: Icons.paid_outlined,
+              title: active ? 'Max cost: \$$currentMax' : 'Enable max cost',
+              subtitle: 'Exclude cards that cost more than this.',
               value: active,
               onChanged: (v) => onChange(v ? 6 : null),
-              dense: true,
             ),
             if (active) ...[
               SliderTheme(
@@ -1028,24 +1401,12 @@ class _MaxAttacksRow extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SwitchListTile(
-              secondary: Icon(Icons.shield_outlined,
-                  size: 20, color: active ? cs.primary : cs.onSurfaceVariant),
-              title: Text(
-                active ? 'Max attacks: $currentMax' : 'Enable attack limit',
-                style: TextStyle(
-                  color: active ? cs.onSurface : cs.onSurfaceVariant,
-                  fontWeight: active ? FontWeight.w500 : FontWeight.w400,
-                  fontSize: 14,
-                ),
-              ),
-              subtitle: Text(
-                'Limit how many Attack cards appear in the kingdom.',
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-              ),
+            _AdaptiveToggleHeader(
+              icon: Icons.shield_outlined,
+              title: active ? 'Max attacks: $currentMax' : 'Enable attack limit',
+              subtitle: 'Limit how many Attack cards appear in the kingdom.',
               value: active,
               onChanged: (v) => onChange(v ? 2 : null),
-              dense: true,
             ),
             if (active) ...[
               SliderTheme(
@@ -1093,13 +1454,18 @@ class _MaxAttacksRow extends StatelessWidget {
 
 class _ActiveRulesSummary extends StatelessWidget {
   final List<String> descriptions;
-  const _ActiveRulesSummary({required this.descriptions});
+  final ValueChanged<String>? onDescriptionTap;
+
+  const _ActiveRulesSummary({
+    required this.descriptions,
+    this.onDescriptionTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1107,22 +1473,38 @@ class _ActiveRulesSummary extends StatelessWidget {
             'ACTIVE RULES',
             style: Theme.of(context).textTheme.labelMedium,
           ),
+          const SizedBox(height: 4),
+          Text(
+            'Tap a chip to jump to the matching section.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 6,
             runSpacing: 6,
             children: descriptions
-                .map((d) => Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: cs.primary.withValues(alpha: 0.10),
-                        border: Border.all(color: cs.primary),
+                .map((d) => Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: onDescriptionTap == null
+                            ? null
+                            : () => onDescriptionTap!(d),
                         borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        d,
-                        style: TextStyle(color: cs.primary, fontSize: 12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: cs.primary.withValues(alpha: 0.10),
+                            border: Border.all(color: cs.primary),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            d,
+                            style: TextStyle(color: cs.primary, fontSize: 13),
+                          ),
+                        ),
                       ),
                     ))
                 .toList(),
@@ -1131,12 +1513,4 @@ class _ActiveRulesSummary extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Divider extends StatelessWidget {
-  const _Divider();
-
-  @override
-  Widget build(BuildContext context) =>
-      const Divider(height: 24, indent: 20, endIndent: 20);
 }

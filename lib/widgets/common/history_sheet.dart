@@ -15,6 +15,8 @@ void showHistorySheet(BuildContext context, WidgetRef ref) {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
+    showDragHandle: true,
+    useSafeArea: true,
     builder: (_) => const _HistorySheet(),
   );
 }
@@ -66,9 +68,7 @@ class _HistorySheet extends ConsumerWidget {
                   const Spacer(),
                   if (history.isNotEmpty)
                     TextButton(
-                      onPressed: () {
-                        ref.read(historyProvider.notifier).clearHistory();
-                      },
+                      onPressed: () => _confirmClearHistory(context, ref),
                       child: Text(
                         'Clear history',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -161,6 +161,48 @@ class _HistorySheet extends ConsumerWidget {
     final navigator = Navigator.of(context);
     navigator.pop();
     navigator.push(buildResultsRoute());
+  }
+
+  Future<void> _confirmClearHistory(BuildContext context, WidgetRef ref) async {
+    final snapshot = [...ref.read(historyProvider).history];
+    final shouldClear = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Clear recent history?'),
+            content: const Text(
+              'This removes recent kingdoms from the library, but saved presets will stay available.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Clear history'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!shouldClear || !context.mounted) return;
+
+    await ref.read(historyProvider.notifier).clearHistory();
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Recent history cleared. Saved presets were kept.'),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () {
+            ref.read(historyProvider.notifier).restoreHistory(snapshot);
+          },
+        ),
+      ),
+    );
   }
 }
 

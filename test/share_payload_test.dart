@@ -98,7 +98,7 @@ void main() {
         name: 'Sauna',
       ),
     ];
-    final payload = SharePayload(
+    const payload = SharePayload(
       kingdomCardIds: [
         'artisan',
         'bandit',
@@ -163,7 +163,7 @@ void main() {
       _project('academy'),
       _event('advance'),
     ];
-    final payload = SharePayload(
+    const payload = SharePayload(
       kingdomCardIds: [
         'artisan',
         'bandit',

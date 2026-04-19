@@ -39,17 +39,17 @@ TextTheme _buildTextTheme(TextTheme base) =>
     GoogleFonts.dmSansTextTheme(base).copyWith(
       titleLarge: GoogleFonts.dmSans(fontSize: 20, fontWeight: FontWeight.w700),
       titleMedium: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600),
-      titleSmall: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w700),
+      titleSmall: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w700),
       bodyLarge: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w400),
       bodyMedium: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w400),
-      bodySmall: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w400),
+      bodySmall: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w400),
       labelLarge: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w700),
       labelMedium: GoogleFonts.dmSans(
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: FontWeight.w700,
-        letterSpacing: 1.1,
+        letterSpacing: 0.9,
       ),
-      labelSmall: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w500),
+      labelSmall: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w500),
     );
 
 ThemeData buildLightTheme() {

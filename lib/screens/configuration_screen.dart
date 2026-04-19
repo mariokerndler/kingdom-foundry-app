@@ -20,92 +20,135 @@ import '../widgets/screens/rules_section.dart';
 
 // ── Screen ─────────────────────────────────────────────────────────────────
 
-class ConfigurationScreen extends ConsumerWidget {
+class ConfigurationScreen extends ConsumerStatefulWidget {
   const ConfigurationScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ConfigurationScreen> createState() =>
+      _ConfigurationScreenState();
+}
+
+enum _ConfigTab { expansions, rules, bans }
+
+class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _ConfigTab.values.length, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(configProvider, (_, __) {
+      if (ref.read(generationStatusProvider) == GenerationStatus.error) {
+        clearGenerationFeedback(ref);
+      }
+    });
+    ref.listen<SetupFailureReason?>(generationFailureReasonProvider, (_, next) {
+      if (next != null) _jumpToTab(_tabForReason(next));
+    });
+
     final config = ref.watch(configProvider);
     final status = ref.watch(generationStatusProvider);
+    final error = ref.watch(generationErrorProvider);
+    final reason = ref.watch(generationFailureReasonProvider);
     final isLoading = status == GenerationStatus.loading;
+    final width = MediaQuery.sizeOf(context).width;
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final useScrollableTabs = width < 420 || textScale > 1.15;
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const _AppTitle(),
-          actions: [
-            IconButton(
-              icon: Icon(
-                config.useDarkMode
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
-              ),
-              tooltip: config.useDarkMode
-                  ? 'Switch to light mode'
-                  : 'Switch to dark mode',
-              onPressed: () => ref
-                  .read(configProvider.notifier)
-                  .setUseDarkMode(!config.useDarkMode),
-            ),
-            PopupMenuButton<_ConfigMenuAction>(
-              tooltip: 'More options',
-              onSelected: (value) {
-                if (value == _ConfigMenuAction.history) {
-                  showHistorySheet(context, ref);
-                } else {
-                  _showImportDialog(context, ref);
-                }
-              },
-              itemBuilder: (context) => const [
-                PopupMenuItem(
-                  value: _ConfigMenuAction.history,
-                  child: ListTile(
-                    leading: Icon(Icons.history_rounded),
-                    title: Text('Kingdom history'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-                PopupMenuItem(
-                  value: _ConfigMenuAction.import,
-                  child: ListTile(
-                    leading: Icon(Icons.paste_rounded),
-                    title: Text('Import kingdom'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ],
-            ),
-          ],
-          bottom: const TabBar(
-            tabs: [
-              Tab(icon: Icon(Icons.library_books_outlined), text: 'Expansions'),
-              Tab(icon: Icon(Icons.tune_rounded), text: 'Rules'),
-              Tab(icon: Icon(Icons.block_rounded), text: 'Ban Cards'),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const _AppTitle(),
+        actions: [
+          IconButton(
+            tooltip: 'Open kingdom library',
+            onPressed: () => showHistorySheet(context, ref),
+            icon: const Icon(Icons.collections_bookmark_rounded),
           ),
-        ),
-        body: const Column(
-          children: [
-            PlayerCountBar(),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  ExpansionPickerTab(),
-                  RulesTab(),
-                  CardBanListTab(),
-                ],
-              ),
+          IconButton(
+            tooltip: 'Import kingdom',
+            onPressed: () => _showImportDialog(context, ref),
+            icon: const Icon(Icons.paste_rounded),
+          ),
+          IconButton(
+            icon: Icon(
+              config.useDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
             ),
+            tooltip: config.useDarkMode
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
+            onPressed: () => ref
+                .read(configProvider.notifier)
+                .setUseDarkMode(!config.useDarkMode),
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: useScrollableTabs,
+          tabs: const [
+            Tab(icon: Icon(Icons.library_books_outlined), text: 'Expansions'),
+            Tab(icon: Icon(Icons.tune_rounded), text: 'Rules'),
+            Tab(icon: Icon(Icons.block_rounded), text: 'Ban Cards'),
           ],
-        ),
-        bottomNavigationBar: _GeneratePanel(
-          isLoading: isLoading,
-          config: config,
-          onGenerate: () => _generate(context, ref),
         ),
       ),
+      body: Column(
+        children: [
+          const PlayerCountBar(),
+          if (status == GenerationStatus.error && error != null)
+            _ConfigurationErrorBanner(
+              message: error,
+              reason: reason,
+              onReview: () => _jumpToTab(_tabForReason(reason)),
+              onDismiss: () => clearGenerationFeedback(ref),
+            ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: const [
+                ExpansionPickerTab(),
+                RulesTab(),
+                CardBanListTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _GeneratePanel(
+        isLoading: isLoading,
+        config: config,
+        onGenerate: () => _generate(context, ref),
+      ),
     );
+  }
+
+  void _jumpToTab(_ConfigTab tab) {
+    if (_tabController.index == tab.index) return;
+    _tabController.animateTo(tab.index);
+  }
+
+  _ConfigTab _tabForReason(SetupFailureReason? reason) {
+    switch (reason) {
+      case SetupFailureReason.requirementImpossible:
+        return _ConfigTab.rules;
+      case SetupFailureReason.varietyImpossible:
+        return _ConfigTab.expansions;
+      case SetupFailureReason.poolTooSmall:
+      case null:
+        return _ConfigTab.expansions;
+    }
   }
 
   // ── Generate ──────────────────────────────────────────────────────────────
@@ -113,25 +156,21 @@ class ConfigurationScreen extends ConsumerWidget {
   Future<void> _generate(BuildContext context, WidgetRef ref) async {
     final config = ref.read(configProvider);
     if (config.ownedExpansions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Select at least one expansion first.'),
-          backgroundColor: AppColors.errorRed,
-          behavior: SnackBarBehavior.floating,
-        ),
+      setGenerationFeedback(
+        ref,
+        message: 'Select at least one expansion before generating a kingdom.',
+        reason: SetupFailureReason.poolTooSmall,
       );
+      _jumpToTab(_ConfigTab.expansions);
       return;
     }
     if (config.rules.costCurve.enabled && !config.rules.costCurve.isValid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Complete the cost curve so it assigns exactly 10 kingdom slots.',
-          ),
-          backgroundColor: AppColors.errorRed,
-          behavior: SnackBarBehavior.floating,
-        ),
+      setGenerationFeedback(
+        ref,
+        message:
+            'Complete the cost curve so it assigns exactly 10 kingdom slots before generating.',
       );
+      _jumpToTab(_ConfigTab.rules);
       return;
     }
 
@@ -145,6 +184,10 @@ class ConfigurationScreen extends ConsumerWidget {
     } else {
       final error = ref.read(generationErrorProvider) ?? 'Unknown error.';
       final reason = ref.read(generationFailureReasonProvider);
+      if (reason != null) {
+        _jumpToTab(_tabForReason(reason));
+        return;
+      }
       _showErrorDialog(context, error, reason);
     }
   }
@@ -187,8 +230,6 @@ class ConfigurationScreen extends ConsumerWidget {
   }
 }
 
-enum _ConfigMenuAction { history, import }
-
 // ── App title ──────────────────────────────────────────────────────────────
 
 class _AppTitle extends StatelessWidget {
@@ -218,6 +259,83 @@ class _AppTitle extends StatelessWidget {
 }
 
 // ── Generate FAB ───────────────────────────────────────────────────────────
+
+class _ConfigurationErrorBanner extends StatelessWidget {
+  final String message;
+  final SetupFailureReason? reason;
+  final VoidCallback onReview;
+  final VoidCallback onDismiss;
+
+  const _ConfigurationErrorBanner({
+    required this.message,
+    required this.reason,
+    required this.onReview,
+    required this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final (title, cta) = switch (reason) {
+      SetupFailureReason.requirementImpossible =>
+        ('A rule combination needs attention', 'Review rules'),
+      SetupFailureReason.varietyImpossible =>
+        ('Expansion variety needs attention', 'Review expansions'),
+      SetupFailureReason.poolTooSmall => ('Card pool is too small', 'Review setup'),
+      null => ('Setup needs attention', 'Review setup'),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+        decoration: BoxDecoration(
+          color: AppColors.errorRed.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          border: Border.all(color: AppColors.errorRed.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.error_outline_rounded,
+                color: AppColors.errorRed, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 4),
+                  Text(
+                    message,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.tonal(
+                        onPressed: onReview,
+                        child: Text(cta),
+                      ),
+                      TextButton(
+                        onPressed: onDismiss,
+                        child: const Text('Dismiss'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _GeneratePanel extends ConsumerWidget {
   final bool isLoading;
@@ -429,8 +547,12 @@ class _ImportDialogState extends State<_ImportDialog> {
               maxLines: 12,
               minLines: 5,
               autofocus: true,
+              textInputAction: TextInputAction.done,
               style: const TextStyle(fontSize: 13, height: 1.6),
               decoration: InputDecoration(
+                labelText: 'Kingdom list or share code',
+                helperText:
+                    'Paste 10 cards or a compact code from another player.',
                 hintText: '1. Village (\$3)\n2. Smithy (\$4)\n…',
                 alignLabelWithHint: true,
                 errorText: hasInput && !isValid
