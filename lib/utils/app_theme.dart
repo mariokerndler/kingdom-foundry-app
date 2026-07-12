@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 abstract class AppColors {
   static const statAttack = Color(0xFFBE123C);
@@ -35,21 +34,20 @@ abstract class AppRadii {
   static const double pill = 999;
 }
 
-TextTheme _buildTextTheme(TextTheme base) =>
-    GoogleFonts.dmSansTextTheme(base).copyWith(
-      titleLarge: GoogleFonts.dmSans(fontSize: 20, fontWeight: FontWeight.w700),
-      titleMedium: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600),
-      titleSmall: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w700),
-      bodyLarge: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w400),
-      bodyMedium: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w400),
-      bodySmall: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w400),
-      labelLarge: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w700),
-      labelMedium: GoogleFonts.dmSans(
+TextTheme _buildTextTheme(TextTheme base) => base.copyWith(
+      titleLarge: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+      titleMedium: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+      titleSmall: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+      bodyLarge: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+      bodyMedium: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+      bodySmall: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+      labelLarge: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+      labelMedium: const TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.9,
       ),
-      labelSmall: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w500),
+      labelSmall: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
     );
 
 ThemeData buildLightTheme() {

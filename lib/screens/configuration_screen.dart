@@ -9,6 +9,7 @@ import '../providers/config_provider.dart';
 import '../providers/generation_provider.dart';
 import '../screens/results_screen.dart';
 import '../utils/app_theme.dart';
+import '../utils/open_web_page.dart';
 import '../widgets/common/history_sheet.dart';
 import '../widgets/common/player_count_bar.dart';
 import '../widgets/common/ui_primitives.dart';
@@ -455,6 +456,24 @@ class _GeneratePanel extends ConsumerWidget {
                     isLoading ? 'Generating kingdom...' : 'Generate kingdom',
                   ),
                 ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => openWebPage('impressum.html'),
+                    child: const Text('Impressum'),
+                  ),
+                  Text(
+                    '/',
+                    style: TextStyle(color: cs.onSurfaceVariant),
+                  ),
+                  TextButton(
+                    onPressed: () => openWebPage('privacy.html'),
+                    child: const Text('Privacy'),
+                  ),
+                ],
               ),
             ],
           ),

@@ -1,0 +1,8 @@
+AddType application/wasm .wasm
+AddType application/javascript .js .mjs
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(wasm)$">
+    Header set Content-Type "application/wasm"
+  </FilesMatch>
+</IfModule>
