@@ -90,7 +90,8 @@ class _RulesTabState extends ConsumerState<RulesTab>
         _SectionAccordion(
           key: _sectionKeys[_RuleSection.gameVibe],
           title: 'Game Vibe',
-          subtitle: 'Apply a curated preset before fine-tuning the rules below.',
+          subtitle:
+              'Apply a curated preset before fine-tuning the rules below.',
           expanded: _expandedSections[_RuleSection.gameVibe]!,
           onChanged: (value) => _setExpanded(_RuleSection.gameVibe, value),
           child: _PresetSelector(
@@ -107,10 +108,10 @@ class _RulesTabState extends ConsumerState<RulesTab>
           trailing: hasRules
               ? TextButton(
                   onPressed: notifier.resetRules,
-                  child: const Text(
-                    'Reset all',
-                    style: TextStyle(color: AppColors.errorRed),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
                   ),
+                  child: const Text('Reset all'),
                 )
               : null,
           child: Column(
@@ -317,7 +318,8 @@ class _RulesTabState extends ConsumerState<RulesTab>
         _SectionAccordion(
           key: _sectionKeys[_RuleSection.display],
           title: 'Display',
-          subtitle: 'Control what extra guidance appears on the results screen.',
+          subtitle:
+              'Control what extra guidance appears on the results screen.',
           expanded: _expandedSections[_RuleSection.display]!,
           onChanged: (value) => _setExpanded(_RuleSection.display, value),
           child: Column(
@@ -354,8 +356,8 @@ class _RulesTabState extends ConsumerState<RulesTab>
       if (targetContext == null) return;
       Scrollable.ensureVisible(
         targetContext,
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeOut,
+        duration: AppMotion.duration(targetContext, 260),
+        curve: Curves.easeInOut,
         alignment: 0.08,
       );
     });
@@ -376,7 +378,8 @@ class _RulesTabState extends ConsumerState<RulesTab>
         description == 'No landscape cards') {
       return _RuleSection.landscapes;
     }
-    if (description.startsWith('Must include') || description == 'Auto-Reaction') {
+    if (description.startsWith('Must include') ||
+        description == 'Auto-Reaction') {
       return _RuleSection.requirements;
     }
     if (description.contains('curve')) return _RuleSection.costCurve;
@@ -425,7 +428,9 @@ class _SectionAccordion extends StatelessWidget {
           color: cs.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: expanded ? cs.primary.withValues(alpha: 0.35) : cs.outlineVariant,
+            color: expanded
+                ? cs.primary.withValues(alpha: 0.35)
+                : cs.outlineVariant,
           ),
         ),
         child: Column(
@@ -444,12 +449,18 @@ class _SectionAccordion extends StatelessWidget {
                         children: [
                           Text(
                             title.toUpperCase(),
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: expanded ? cs.primary : cs.onSurfaceVariant,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: expanded
+                                      ? cs.primary
+                                      : cs.onSurfaceVariant,
                                 ),
                           ),
                           const SizedBox(height: 4),
-                          Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+                          Text(subtitle,
+                              style: Theme.of(context).textTheme.bodyMedium),
                         ],
                       ),
                     ),
@@ -459,7 +470,9 @@ class _SectionAccordion extends StatelessWidget {
                     ],
                     const SizedBox(width: 4),
                     Icon(
-                      expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                      expanded
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
                       color: cs.onSurfaceVariant,
                     ),
                   ],
@@ -467,7 +480,7 @@ class _SectionAccordion extends StatelessWidget {
               ),
             ),
             AnimatedSize(
-              duration: const Duration(milliseconds: 220),
+              duration: AppMotion.duration(context, 220),
               curve: Curves.easeOut,
               child: expanded
                   ? Padding(
@@ -508,9 +521,11 @@ class _RulesConflictHint extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.errorRed.withValues(alpha: 0.06),
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.errorRed.withValues(alpha: 0.22)),
+          border: Border.all(
+              color:
+                  Theme.of(context).colorScheme.error.withValues(alpha: 0.22)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -544,54 +559,57 @@ class _PresetSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final presets = GameVibePresets.all.skip(1).toList();
-    final width = MediaQuery.sizeOf(context).width;
     final textScale = MediaQuery.textScalerOf(context).scale(1);
-    final useWrap = width < 520 || textScale > 1.15;
 
-    if (useWrap) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: presets
-              .map((preset) => SizedBox(
-                    width: width > 640 ? 280 : width - 42,
-                    child: _PresetCard(
-                      preset: preset,
-                      selected: preset.id == selectedPresetId,
-                      onTap: () => onChanged(
-                        preset.id == selectedPresetId
-                            ? GameVibePresets.noneId
-                            : preset.id,
-                      ),
-                    ),
-                  ))
-              .toList(),
-        ),
-      );
-    }
-
-    return SizedBox(
-      height: 240,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: presets.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (_, i) => SizedBox(
-          width: 240,
-          child: _PresetCard(
-            preset: presets[i],
-            selected: presets[i].id == selectedPresetId,
-            onTap: () => onChanged(
-              presets[i].id == selectedPresetId
-                  ? GameVibePresets.noneId
-                  : presets[i].id,
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 10.0;
+        const horizontalPadding = 32.0;
+        final available = constraints.maxWidth - horizontalPadding;
+        final columns = textScale > 1.15
+            ? 1
+            : available >= 1080
+                ? 4
+                : available >= 760
+                    ? 3
+                    : available >= 500
+                        ? 2
+                        : 1;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              for (var start = 0; start < presets.length; start += columns) ...[
+                if (start > 0) const SizedBox(height: spacing),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var column = 0; column < columns; column++) ...[
+                        if (column > 0) const SizedBox(width: spacing),
+                        Expanded(
+                          child: start + column < presets.length
+                              ? _buildCard(presets[start + column])
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
-        ),
-      ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCard(GameVibePreset preset) {
+    final selected = preset.id == selectedPresetId;
+    return _PresetCard(
+      preset: preset,
+      selected: selected,
+      onTap: () => onChanged(selected ? GameVibePresets.noneId : preset.id),
     );
   }
 }
@@ -621,10 +639,12 @@ class _PresetCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
+            duration: AppMotion.duration(context, 180),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: selected ? cs.primary.withValues(alpha: 0.10) : cs.surfaceContainer,
+              color: selected
+                  ? cs.primary.withValues(alpha: 0.10)
+                  : cs.surfaceContainer,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: selected ? cs.primary : cs.outlineVariant,
@@ -632,7 +652,6 @@ class _PresetCard extends StatelessWidget {
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   preset.name,
@@ -645,9 +664,12 @@ class _PresetCard extends StatelessWidget {
                   preset.description,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+                const Spacer(),
                 const SizedBox(height: 10),
                 Text(
-                  selected ? 'Preset active - tap again to remove vibe' : 'Tap to apply defaults',
+                  selected
+                      ? 'Preset active - tap again to remove vibe'
+                      : 'Tap to apply defaults',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: selected ? cs.primary : cs.onSurfaceVariant,
                       ),
@@ -709,6 +731,7 @@ class _LanguageSelector extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 initialValue:
                     packs.any((p) => p.languageCode == selectedLanguageCode)
                         ? selectedLanguageCode
@@ -761,6 +784,7 @@ class _LanguageSelector extends ConsumerWidget {
         return error.toString();
       }
     }
+
     final rawJson = await showDialog<String>(
       context: context,
       builder: (context) {
@@ -784,8 +808,8 @@ class _LanguageSelector extends ConsumerWidget {
                     maxLines: 14,
                     minLines: 6,
                     textInputAction: TextInputAction.done,
-                    onChanged: (_) =>
-                        setState(() => errorText = validationMessage(controller.text)),
+                    onChanged: (_) => setState(
+                        () => errorText = validationMessage(controller.text)),
                     decoration: InputDecoration(
                       labelText: 'Translation pack JSON',
                       helperText: 'Paste a full translation pack payload.',
@@ -829,7 +853,6 @@ class _LanguageSelector extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Could not import translation pack'),
-            backgroundColor: AppColors.errorRed,
           ),
         );
       }
@@ -858,7 +881,7 @@ class _RuleTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
+      duration: AppMotion.duration(context, 180),
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
       decoration: BoxDecoration(
         color: value ? cs.primary.withValues(alpha: 0.08) : cs.surfaceContainer,
@@ -901,7 +924,8 @@ class _RuleTile extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         detail,
-                        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+                        style:
+                            TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
                       ),
                     ],
                   ),
@@ -972,7 +996,8 @@ class _AdaptiveToggleHeader extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+                      style:
+                          TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
                     ),
                   ],
                 ),
@@ -1022,7 +1047,7 @@ class _CostCurveEditor extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: AppMotion.duration(context, 180),
         decoration: BoxDecoration(
           color:
               active ? cs.primary.withValues(alpha: 0.08) : cs.surfaceContainer,
@@ -1078,19 +1103,21 @@ class _CostCurveEditor extends StatelessWidget {
                 child: Text(
                   'Assigned $total / ${CostCurveRule.targetSlotCount} slots',
                   style: TextStyle(
-                    color: isValid ? cs.onSurface : AppColors.errorRed,
+                    color: isValid
+                        ? cs.onSurface
+                        : Theme.of(context).colorScheme.error,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               if (!isValid)
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                   child: Text(
                     'Finish assigning all 10 kingdom slots before generating.',
                     style: TextStyle(
-                      color: AppColors.errorRed,
+                      color: Theme.of(context).colorScheme.error,
                       fontSize: 12,
                     ),
                   ),
@@ -1172,7 +1199,7 @@ class _MaxCostRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: AppMotion.duration(context, 180),
         decoration: BoxDecoration(
           color:
               active ? cs.primary.withValues(alpha: 0.08) : cs.surfaceContainer,
@@ -1254,7 +1281,7 @@ class _LandscapeCountTile extends StatelessWidget {
     final nonDefault = value != _default;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
+      duration: AppMotion.duration(context, 180),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       decoration: BoxDecoration(
         color: nonDefault
@@ -1327,7 +1354,9 @@ class _Stepper extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: value == 0
-                  ? AppColors.errorRed // keep — signals invalid zero count
+                  ? Theme.of(context)
+                      .colorScheme
+                      .error // keep — signals invalid zero count
                   : Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
               fontSize: 15,
@@ -1391,7 +1420,7 @@ class _MaxAttacksRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: AppMotion.duration(context, 180),
         decoration: BoxDecoration(
           color:
               active ? cs.primary.withValues(alpha: 0.08) : cs.surfaceContainer,
@@ -1403,7 +1432,8 @@ class _MaxAttacksRow extends StatelessWidget {
           children: [
             _AdaptiveToggleHeader(
               icon: Icons.shield_outlined,
-              title: active ? 'Max attacks: $currentMax' : 'Enable attack limit',
+              title:
+                  active ? 'Max attacks: $currentMax' : 'Enable attack limit',
               subtitle: 'Limit how many Attack cards appear in the kingdom.',
               value: active,
               onChanged: (v) => onChange(v ? 2 : null),
@@ -1463,49 +1493,25 @@ class _ActiveRulesSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'ACTIVE RULES',
+            'Active rules',
             style: Theme.of(context).textTheme.labelMedium,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Tap a chip to jump to the matching section.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
           ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 6,
             runSpacing: 6,
             children: descriptions
-                .map((d) => Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: onDescriptionTap == null
-                            ? null
-                            : () => onDescriptionTap!(d),
-                        borderRadius: BorderRadius.circular(6),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: cs.primary.withValues(alpha: 0.10),
-                            border: Border.all(color: cs.primary),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            d,
-                            style: TextStyle(color: cs.primary, fontSize: 13),
-                          ),
-                        ),
-                      ),
+                .map((d) => ActionChip(
+                      label: Text(d),
+                      onPressed: onDescriptionTap == null
+                          ? null
+                          : () => onDescriptionTap!(d),
                     ))
                 .toList(),
           ),

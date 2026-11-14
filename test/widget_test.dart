@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -159,7 +162,33 @@ void main() {
   });
 
   group('Game vibe presets', () {
-    testWidgets('tapping an active preset clears the vibe and resets preset rules',
+    testWidgets('preset cards and action labels align across a row',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1232, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await pumpRulesTab(tester);
+
+      Rect cardRect(String title) => tester.getRect(
+            find
+                .ancestor(
+                  of: find.text(title),
+                  matching: find.byType(AnimatedContainer),
+                )
+                .first,
+          );
+
+      final engine = cardRect('Engine Builder');
+      final money = cardRect('Big Money / Simple');
+      expect(engine.top, money.top);
+      expect(engine.bottom, money.bottom);
+
+      final actions = find.text('Tap to apply defaults');
+      expect(tester.getTopLeft(actions.at(0)).dy,
+          tester.getTopLeft(actions.at(1)).dy);
+    });
+
+    testWidgets(
+        'tapping an active preset clears the vibe and resets preset rules',
         (tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -171,17 +200,17 @@ void main() {
       addTearDown(container.dispose);
 
       container.read(configProvider.notifier).state = const ConfigState(
-            ownedExpansions: {Expansion.baseSecondEdition},
-            rules: SetupRules(
-              requireVillage: true,
-              requireDraw: true,
-              requireTrashing: true,
-              maxAttacks: 1,
-            ),
-            disabledCardIds: {},
-            playerCount: 2,
-            selectedPresetId: 'engine_builder',
-          );
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: SetupRules(
+          requireVillage: true,
+          requireDraw: true,
+          requireTrashing: true,
+          maxAttacks: 1,
+        ),
+        disabledCardIds: {},
+        playerCount: 2,
+        selectedPresetId: 'engine_builder',
+      );
 
       await tester.pumpWidget(
         UncontrolledProviderScope(
@@ -193,7 +222,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Preset active - tap again to remove vibe'), findsOneWidget);
+      expect(find.text('Preset active - tap again to remove vibe'),
+          findsOneWidget);
 
       await tester.tap(find.text('Engine Builder'));
       await tester.pumpAndSettle();
@@ -292,7 +322,8 @@ void main() {
       await tester.pumpAndSettle();
 
       final cardFinder = find.byType(KingdomCardWidget);
-      final bottomTapPoint = tester.getBottomRight(cardFinder) - const Offset(90, 20);
+      final bottomTapPoint =
+          tester.getBottomRight(cardFinder) - const Offset(90, 20);
 
       await tester.tapAt(bottomTapPoint);
       await tester.pumpAndSettle();
@@ -318,8 +349,10 @@ void main() {
             ),
             expansionStatsProvider.overrideWith(
               (ref) async => {
-                Expansion.baseSecondEdition:
-                    (kingdom: sampleCards.length, landscape: 0),
+                Expansion.baseSecondEdition: (
+                  kingdom: sampleCards.length,
+                  landscape: 0
+                ),
               },
             ),
           ],
@@ -351,8 +384,10 @@ void main() {
           ),
           expansionStatsProvider.overrideWith(
             (ref) async => {
-              Expansion.baseSecondEdition:
-                  (kingdom: sampleCards.length, landscape: 0),
+              Expansion.baseSecondEdition: (
+                kingdom: sampleCards.length,
+                landscape: 0
+              ),
             },
           ),
         ],
@@ -414,8 +449,70 @@ void main() {
       final cardZero = tester.getTopLeft(find.text('Village 0'));
       final cardOne = tester.getTopLeft(find.text('Village 1'));
       expect(cardZero.dx, equals(cardOne.dx));
-      expect(find.text('Tap for details'), findsWidgets);
     });
+  });
+
+  testWidgets(
+      'reroll keeps the locked card visible until the new board is ready',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1440, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final cards = Completer<List<KingdomCard>>();
+    final replacementPool = List.generate(9, (i) => sampleCard(i + 10));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          allCardsProvider.overrideWith((ref) => cards.future),
+          setupResultProvider.overrideWith((ref) => sampleResult.copyWith(
+                lockedSlotIds: {sampleCards.first.id},
+              )),
+        ],
+        child: MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              size: const Size(1440, 900),
+              disableAnimations: true,
+            ),
+            child: child!,
+          ),
+          home: const ResultsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final tiles = find.byType(KingdomCardWidget);
+    expect(
+        tester.getTopLeft(tiles.at(0)).dy, tester.getTopLeft(tiles.at(4)).dy);
+    await tester.tap(find.byTooltip('More reroll options'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reroll only kingdom cards'), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('Reroll only kingdom cards'), findsNothing);
+
+    final reroll = find.widgetWithText(FilledButton, 'Reroll unlocked cards');
+    await tester.tap(reroll);
+    await tester.pump();
+
+    expect(find.text('Village 0'), findsOneWidget);
+    expect(find.text('Village 1'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    final loading = find.widgetWithText(FilledButton, 'Rerolling kingdom…');
+    expect(tester.widget<FilledButton>(loading).onPressed, isNull);
+
+    cards.complete([sampleCards.first, ...replacementPool]);
+    await tester.pumpAndSettle();
+
+    expect(reroll, findsOneWidget);
+    expect(find.text('Village 0'), findsOneWidget);
+    expect(find.text('Village 1'), findsNothing);
+    expect(find.text('Village 10'), findsOneWidget);
+    expect(find.text('Kingdom updated · 1 locked'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   group('Saved kingdom presets', () {

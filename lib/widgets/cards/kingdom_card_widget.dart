@@ -15,6 +15,7 @@ class KingdomCardWidget extends ConsumerWidget {
   final int index; // 1-based display number
   final bool locked;
   final VoidCallback? onToggleLock;
+  final bool canToggleLock;
 
   const KingdomCardWidget({
     super.key,
@@ -23,6 +24,7 @@ class KingdomCardWidget extends ConsumerWidget {
     required this.index,
     this.locked = false,
     this.onToggleLock,
+    this.canToggleLock = true,
   });
 
   @override
@@ -34,7 +36,7 @@ class KingdomCardWidget extends ConsumerWidget {
         .map((c) => ref.watch(localizedCardProvider(c)).name)
         .join(' / ');
     final detailLabel =
-        '${localized.name}${isSplit ? ' / $splitLabel' : ''}, ${card.typeString}. Cost: ${card.costString}. Tap for details.';
+        '${localized.name}${isSplit ? ' / $splitLabel' : ''}, ${card.typeString}. Cost: ${card.costString}.';
 
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainer,
@@ -42,7 +44,8 @@ class KingdomCardWidget extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainer,
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          border:
+              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -52,11 +55,22 @@ class KingdomCardWidget extends ConsumerWidget {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final canFillHeight =
-                      constraints.hasBoundedHeight && constraints.maxHeight.isFinite;
+                  final canFillHeight = constraints.hasBoundedHeight &&
+                      constraints.maxHeight.isFinite;
+
+                  final rulesPreview = Text(
+                    localized.text,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.45,
+                        ),
+                    maxLines: canFillHeight && isSplit ? 3 : 4,
+                    overflow: TextOverflow.ellipsis,
+                  );
 
                   Widget body = Semantics(
                     label: detailLabel,
+                    hint: 'Open card details',
                     button: true,
                     child: Material(
                       color: Colors.transparent,
@@ -64,42 +78,50 @@ class KingdomCardWidget extends ConsumerWidget {
                         onTap: () => _showDetail(context, accent),
                         borderRadius: BorderRadius.circular(10),
                         child: Padding(
-                          padding: EdgeInsets.fromLTRB(
+                          padding: const EdgeInsets.fromLTRB(
                             12,
                             12,
-                            onToggleLock != null ? 72 : 12,
+                            12,
                             12,
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize:
-                                canFillHeight ? MainAxisSize.max : MainAxisSize.min,
+                            mainAxisSize: canFillHeight
+                                ? MainAxisSize.max
+                                : MainAxisSize.min,
                             children: [
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Card $index',
+                                          'Slot $index',
                                           style: Theme.of(context)
                                               .textTheme
-                                              .labelMedium
-                                              ?.copyWith(color: accent),
+                                              .labelSmall
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
                                           localized.name,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                           style: Theme.of(context)
                                               .textTheme
-                                              .titleSmall
+                                              .titleMedium
                                               ?.copyWith(
                                                 color: Theme.of(context)
                                                     .colorScheme
                                                     .onSurface,
-                                                height: 1.25,
+                                                height: 1.2,
                                               ),
                                         ),
                                       ],
@@ -107,41 +129,43 @@ class KingdomCardWidget extends ConsumerWidget {
                                   ),
                                   const SizedBox(width: 12),
                                   _CostBadge(cost: card.costString),
+                                  if (onToggleLock != null)
+                                    const SizedBox(width: 50),
                                 ],
                               ),
                               const SizedBox(height: 10),
                               _TypePills(types: card.types),
                               const SizedBox(height: 10),
-                              Text(
-                                localized.text,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                      height: 1.45,
-                                    ),
-                                maxLines: 4,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              if (canFillHeight)
+                                Expanded(
+                                    child: Align(
+                                        alignment: Alignment.topLeft,
+                                        child: rulesPreview))
+                              else
+                                rulesPreview,
                               if (isSplit) ...[
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 8),
                                 Row(
                                   children: [
                                     Icon(
                                       Icons.layers_rounded,
                                       size: 14,
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                     ),
                                     const SizedBox(width: 6),
                                     Expanded(
                                       child: Text(
                                         'Split pile with $splitLabel',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodySmall
                                             ?.copyWith(
-                                              color:
-                                                  Theme.of(context).colorScheme.primary,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
                                               fontWeight: FontWeight.w600,
                                             ),
                                       ),
@@ -149,30 +173,9 @@ class KingdomCardWidget extends ConsumerWidget {
                                   ],
                                 ),
                               ],
-                              if (canFillHeight) const Spacer() else const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  ExpansionBadge(expansion: card.expansion, fontSize: 12),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Tap for details',
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.end,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              ExpansionBadge(
+                                  expansion: card.expansion, fontSize: 12),
                             ],
                           ),
                         ),
@@ -193,7 +196,9 @@ class KingdomCardWidget extends ConsumerWidget {
                           top: 6,
                           right: 6,
                           child: Semantics(
-                            label: locked ? 'Unlock card $index' : 'Lock card $index',
+                            label: locked
+                                ? 'Unlock card $index'
+                                : 'Lock card $index',
                             hint: locked
                                 ? 'Double tap to unlock this card for rerolls'
                                 : 'Double tap to keep this card locked during rerolls',
@@ -202,7 +207,7 @@ class KingdomCardWidget extends ConsumerWidget {
                             child: Tooltip(
                               message: locked ? 'Unlock card' : 'Lock card',
                               child: IconButton(
-                                onPressed: onToggleLock,
+                                onPressed: canToggleLock ? onToggleLock : null,
                                 icon: Icon(
                                   locked
                                       ? Icons.lock_rounded
@@ -494,7 +499,7 @@ class _TypePills extends StatelessWidget {
           child: Text(
             t.displayName,
             style: TextStyle(
-              color: color,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),

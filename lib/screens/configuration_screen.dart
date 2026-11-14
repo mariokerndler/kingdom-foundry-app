@@ -12,7 +12,6 @@ import '../utils/app_theme.dart';
 import '../utils/open_web_page.dart';
 import '../widgets/common/history_sheet.dart';
 import '../widgets/common/player_count_bar.dart';
-import '../widgets/common/ui_primitives.dart';
 import '../widgets/screens/card_ban_list.dart';
 import '../widgets/screens/expansion_picker.dart';
 import '../widgets/screens/rules_section.dart';
@@ -34,15 +33,19 @@ enum _ConfigTab { expansions, rules, bans }
 class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  bool _importing = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _ConfigTab.values.length, vsync: this);
+    _tabController =
+        TabController(length: _ConfigTab.values.length, vsync: this);
+    _tabController.addListener(_handleTabChanged);
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_handleTabChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -54,9 +57,6 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
         clearGenerationFeedback(ref);
       }
     });
-    ref.listen<SetupFailureReason?>(generationFailureReasonProvider, (_, next) {
-      if (next != null) _jumpToTab(_tabForReason(next));
-    });
 
     final config = ref.watch(configProvider);
     final status = ref.watch(generationStatusProvider);
@@ -65,36 +65,40 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
     final isLoading = status == GenerationStatus.loading;
     final width = MediaQuery.sizeOf(context).width;
     final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final useWideLayout = width >= 1200 && textScale <= 1.15;
     final useScrollableTabs = width < 420 || textScale > 1.15;
+    final actions = _appActions(config, isLoading);
+
+    if (useWideLayout) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const _AppTitle(),
+          actions: actions,
+        ),
+        body: _WideConfigurationBody(
+          selectedIndex: _tabController.index,
+          onTabSelected: (index) => _jumpToTab(_ConfigTab.values[index]),
+          errorBanner: status == GenerationStatus.error && error != null
+              ? _ConfigurationErrorBanner(
+                  message: error,
+                  reason: reason,
+                  onReview: () => _jumpToTab(_tabForReason(reason)),
+                  onDismiss: () => clearGenerationFeedback(ref),
+                )
+              : null,
+          generatePanel: _GeneratePanel(
+            isLoading: isLoading,
+            importing: _importing,
+            onGenerate: () => _generate(context, ref),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: const _AppTitle(),
-        actions: [
-          IconButton(
-            tooltip: 'Open kingdom library',
-            onPressed: () => showHistorySheet(context, ref),
-            icon: const Icon(Icons.collections_bookmark_rounded),
-          ),
-          IconButton(
-            tooltip: 'Import kingdom',
-            onPressed: () => _showImportDialog(context, ref),
-            icon: const Icon(Icons.paste_rounded),
-          ),
-          IconButton(
-            icon: Icon(
-              config.useDarkMode
-                  ? Icons.light_mode_rounded
-                  : Icons.dark_mode_rounded,
-            ),
-            tooltip: config.useDarkMode
-                ? 'Switch to light mode'
-                : 'Switch to dark mode',
-            onPressed: () => ref
-                .read(configProvider.notifier)
-                .setUseDarkMode(!config.useDarkMode),
-          ),
-        ],
+        actions: actions,
         bottom: TabBar(
           controller: _tabController,
           isScrollable: useScrollableTabs,
@@ -129,15 +133,62 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
       ),
       bottomNavigationBar: _GeneratePanel(
         isLoading: isLoading,
-        config: config,
+        importing: _importing,
         onGenerate: () => _generate(context, ref),
       ),
     );
   }
 
+  List<Widget> _appActions(ConfigState config, bool isLoading) => [
+        PopupMenuButton<String>(
+          tooltip: 'Legal information',
+          popUpAnimationStyle: AppMotion.menu(context),
+          icon: const Icon(Icons.info_outline_rounded),
+          onSelected: openWebPage,
+          itemBuilder: (_) => const [
+            PopupMenuItem(
+              value: 'impressum.html',
+              child: Text('Impressum'),
+            ),
+            PopupMenuItem(
+              value: 'privacy.html',
+              child: Text('Privacy'),
+            ),
+          ],
+        ),
+        IconButton(
+          tooltip: 'Open kingdom library',
+          onPressed: isLoading ? null : () => showHistorySheet(context, ref),
+          icon: const Icon(Icons.collections_bookmark_rounded),
+        ),
+        IconButton(
+          tooltip: 'Import kingdom',
+          onPressed: isLoading ? null : () => _showImportDialog(context, ref),
+          icon: const Icon(Icons.paste_rounded),
+        ),
+        IconButton(
+          icon: Icon(
+            config.useDarkMode
+                ? Icons.light_mode_rounded
+                : Icons.dark_mode_rounded,
+          ),
+          tooltip: config.useDarkMode
+              ? 'Switch to light mode'
+              : 'Switch to dark mode',
+          onPressed: () => ref
+              .read(configProvider.notifier)
+              .setUseDarkMode(!config.useDarkMode),
+        ),
+      ];
+
+  void _handleTabChanged() {
+    if (mounted) setState(() {});
+  }
+
   void _jumpToTab(_ConfigTab tab) {
     if (_tabController.index == tab.index) return;
-    _tabController.animateTo(tab.index);
+    _tabController.animateTo(tab.index,
+        duration: AppMotion.duration(context, 220));
   }
 
   _ConfigTab _tabForReason(SetupFailureReason? reason) {
@@ -204,9 +255,11 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
     if (text == null || !context.mounted) return;
 
     HapticFeedback.mediumImpact();
+    setState(() => _importing = true);
     final success = await importKingdom(ref, text);
 
     if (!context.mounted) return;
+    setState(() => _importing = false);
 
     if (success) {
       Navigator.of(context).push(buildResultsRoute());
@@ -227,6 +280,96 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
     showDialog<void>(
       context: context,
       builder: (_) => _SetupErrorDialog(message: message, reason: reason),
+    );
+  }
+}
+
+class _WideConfigurationBody extends StatelessWidget {
+  final int selectedIndex;
+  final ValueChanged<int> onTabSelected;
+  final Widget? errorBanner;
+  final Widget generatePanel;
+
+  const _WideConfigurationBody({
+    required this.selectedIndex,
+    required this.onTabSelected,
+    required this.errorBanner,
+    required this.generatePanel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: cs.surface,
+            border: Border(right: BorderSide(color: cs.outlineVariant)),
+          ),
+          child: NavigationRail(
+            selectedIndex: selectedIndex,
+            onDestinationSelected: onTabSelected,
+            labelType: NavigationRailLabelType.all,
+            minWidth: 116,
+            destinations: const [
+              NavigationRailDestination(
+                icon: Icon(Icons.library_books_outlined),
+                selectedIcon: Icon(Icons.library_books_rounded),
+                label: Text('Expansions'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.tune_rounded),
+                label: Text('Rules'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.block_rounded),
+                selectedIcon: Icon(Icons.block),
+                label: Text('Ban Cards'),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: Column(
+            children: [
+              const PlayerCountBar(),
+              if (errorBanner != null) errorBanner!,
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1680),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: IndexedStack(
+                            index: selectedIndex,
+                            children: const [
+                              ExpansionPickerTab(),
+                              RulesTab(),
+                              CardBanListTab(),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+                        SizedBox(
+                          width: 420,
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: generatePanel,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -278,11 +421,18 @@ class _ConfigurationErrorBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final (title, cta) = switch (reason) {
-      SetupFailureReason.requirementImpossible =>
-        ('A rule combination needs attention', 'Review rules'),
-      SetupFailureReason.varietyImpossible =>
-        ('Expansion variety needs attention', 'Review expansions'),
-      SetupFailureReason.poolTooSmall => ('Card pool is too small', 'Review setup'),
+      SetupFailureReason.requirementImpossible => (
+          'A rule combination needs attention',
+          'Review rules'
+        ),
+      SetupFailureReason.varietyImpossible => (
+          'Expansion variety needs attention',
+          'Review expansions'
+        ),
+      SetupFailureReason.poolTooSmall => (
+          'Card pool is too small',
+          'Review setup'
+        ),
       null => ('Setup needs attention', 'Review setup'),
     };
 
@@ -291,15 +441,16 @@ class _ConfigurationErrorBanner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
         decoration: BoxDecoration(
-          color: AppColors.errorRed.withValues(alpha: 0.08),
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(AppRadii.md),
-          border: Border.all(color: AppColors.errorRed.withValues(alpha: 0.35)),
+          border: Border.all(
+              color:
+                  Theme.of(context).colorScheme.error.withValues(alpha: 0.35)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.error_outline_rounded,
-                color: AppColors.errorRed, size: 20),
+            Icon(Icons.error_outline_rounded, color: cs.error, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -340,143 +491,78 @@ class _ConfigurationErrorBanner extends StatelessWidget {
 
 class _GeneratePanel extends ConsumerWidget {
   final bool isLoading;
-  final ConfigState config;
+  final bool importing;
   final VoidCallback onGenerate;
 
   const _GeneratePanel({
     required this.isLoading,
-    required this.config,
+    required this.importing,
     required this.onGenerate,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final poolCountAsync = ref.watch(selectedPoolCountProvider);
-    final chips = [
-      AppSummaryChip(
-        icon: Icons.library_books_outlined,
-        label: 'sets',
-        value: '${config.ownedExpansions.length}',
-      ),
-      AppSummaryChip(
-        icon: Icons.tune_rounded,
-        label: 'rules',
-        value: '${config.rules.activeRuleDescriptions.length}',
-      ),
-      AppSummaryChip(
-        icon: Icons.block_rounded,
-        label: 'banned',
-        value: '${config.disabledCardIds.length}',
-        color: config.disabledCardIds.isEmpty ? null : AppColors.errorRed,
-      ),
-      AppSummaryChip(
-        icon: Icons.grid_view_rounded,
-        label: 'pool',
-        value: poolCountAsync.maybeWhen(
-          data: (count) => '$count',
-          orElse: () => '...',
-        ),
-        color: poolCountAsync.maybeWhen(
-          data: (count) => count >= 10 ? AppColors.successGreen : AppColors.errorRed,
-          orElse: () => null,
-        ),
-      ),
-    ];
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final pool = ref.watch(selectedPoolCountProvider);
+    final count = pool.valueOrNull;
+    final status = switch (count) {
+      null => pool.hasError ? 'Card pool unavailable' : 'Loading card pool…',
+      < 10 => '$count eligible · At least 10 needed',
+      _ => '$count eligible cards',
+    };
 
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-            border: Border.all(color: cs.outlineVariant),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          border: Border.all(color: cs.outlineVariant),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Current setup', style: theme.textTheme.titleSmall),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              status,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: count != null && count < 10
+                    ? cs.error
+                    : cs.onSurfaceVariant,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Current setup',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const Spacer(),
-                  if (poolCountAsync.maybeWhen(
-                    data: (count) => count < 10,
-                    orElse: () => false,
-                  ))
-                    Text(
-                      'Need at least 10 cards',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: AppColors.errorRed,
-                          ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    for (final chip in chips) ...[
-                      chip,
-                      const SizedBox(width: AppSpacing.sm),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              SizedBox(
-                width: double.infinity,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: Semantics(
+                liveRegion: isLoading,
                 child: FilledButton.icon(
                   onPressed: isLoading ? null : onGenerate,
-                  icon: isLoading
-                      ? SizedBox(
-                          width: 18,
-                          height: 18,
+                  icon: isLoading && !MediaQuery.disableAnimationsOf(context)
+                      ? SizedBox.square(
+                          dimension: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(cs.onPrimary),
+                            color: cs.onSurfaceVariant,
                           ),
                         )
-                      : const Icon(Icons.casino_rounded),
-                  label: Text(
-                    isLoading ? 'Generating kingdom...' : 'Generate kingdom',
-                  ),
+                      : Icon(isLoading
+                          ? Icons.hourglass_top_rounded
+                          : Icons.casino_rounded),
+                  label: Text(isLoading
+                      ? (importing
+                          ? 'Importing kingdom…'
+                          : 'Generating kingdom…')
+                      : 'Generate kingdom'),
                 ),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: () => openWebPage('impressum.html'),
-                    child: const Text('Impressum'),
-                  ),
-                  Text(
-                    '/',
-                    style: TextStyle(color: cs.onSurfaceVariant),
-                  ),
-                  TextButton(
-                    onPressed: () => openWebPage('privacy.html'),
-                    child: const Text('Privacy'),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -502,13 +588,13 @@ class _ImportDialogState extends State<_ImportDialog> {
     super.initState();
     _ctrl.addListener(_onChanged);
     // Pre-fill if the clipboard already contains a kingdom list.
-      Clipboard.getData('text/plain').then((data) {
-        if (!mounted || data?.text == null) return;
-        final names = parseKingdomText(data!.text!);
-        if (names.length == 10 || SharePayload.looksLikeShareCode(data.text!)) {
-          _ctrl.text = data.text!;
-        }
-      });
+    Clipboard.getData('text/plain').then((data) {
+      if (!mounted || _ctrl.text.isNotEmpty || data?.text == null) return;
+      final names = parseKingdomText(data!.text!);
+      if (names.length == 10 || SharePayload.looksLikeShareCode(data.text!)) {
+        _ctrl.text = data.text!;
+      }
+    }, onError: (Object _) {});
   }
 
   void _onChanged() {
@@ -530,88 +616,41 @@ class _ImportDialogState extends State<_ImportDialog> {
     final hasInput = _ctrl.text.trim().isNotEmpty;
 
     return AlertDialog(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      title: Row(
-        children: [
-          Icon(Icons.paste_rounded,
-              color: Theme.of(context).colorScheme.primary, size: 20),
-          const SizedBox(width: 8),
-          Text('Import Kingdom',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-              )),
-        ],
-      ),
-      content: SizedBox(
-        width: double.maxFinite,
+      scrollable: true,
+      title: const Text('Import a kingdom'),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 440),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Paste either a kingdom list or a compact share code from another player.',
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-
-            // Text area
             TextField(
               controller: _ctrl,
-              maxLines: 12,
-              minLines: 5,
+              maxLines: 8,
+              minLines: 4,
               autofocus: true,
-              textInputAction: TextInputAction.done,
-              style: const TextStyle(fontSize: 13, height: 1.6),
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Kingdom list or share code',
-                helperText:
-                    'Paste 10 cards or a compact code from another player.',
                 hintText: '1. Village (\$3)\n2. Smithy (\$4)\n…',
                 alignLabelWithHint: true,
-                errorText: hasInput && !isValid
-                    ? 'Paste 10 cards or a valid share code.'
-                    : null,
               ),
             ),
-
-            const SizedBox(height: 10),
-
-            // Live validation feedback
-            if (hasInput)
+            if (hasInput) ...[
+              const SizedBox(height: AppSpacing.md),
               _ParsePreview(
-                parsed: _parsed,
-                isValid: isValid,
-                isShareCode: _isShareCode,
-              ),
-
-            const SizedBox(height: 4),
+                  parsed: _parsed, isValid: isValid, isShareCode: _isShareCode),
+            ],
           ],
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancel',
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          child: const Text('Cancel'),
         ),
-        TextButton(
+        FilledButton(
           onPressed: isValid ? () => Navigator.pop(context, _ctrl.text) : null,
-          child: Text(
-            'Import Kingdom',
-            style: TextStyle(
-              color: isValid
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outlineVariant,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          child: const Text('Import kingdom'),
         ),
       ],
     );
@@ -633,57 +672,16 @@ class _ParsePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isValid ? AppColors.successGreen : AppColors.errorRed;
-    final count = parsed.length;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        border: Border.all(color: color.withValues(alpha: 0.45)),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                isValid
-                    ? Icons.check_circle_outline_rounded
-                    : Icons.info_outline_rounded,
-                color: color,
-                size: 15,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                isShareCode
-                    ? 'Share code found — ready to import'
-                    : isValid
-                        ? '$count cards found — ready to import'
-                        : '$count of 10 cards found',
-                style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          if (!isShareCode && parsed.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              parsed.join(' · '),
-              style: TextStyle(
-                color: color.withValues(alpha: 0.75),
-                fontSize: 11,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ],
-      ),
+    final cs = Theme.of(context).colorScheme;
+    final color = isValid ? AppColors.success(cs) : cs.error;
+    final feedback = isShareCode
+        ? 'Share code found. Ready to import.'
+        : isValid
+            ? '10 cards found. Ready to import.'
+            : '${parsed.length} of 10 cards found. Paste the full list or a share code.';
+    return Semantics(
+      liveRegion: true,
+      child: Text(feedback, style: TextStyle(color: color)),
     );
   }
 }
@@ -706,7 +704,7 @@ class _SetupErrorDialog extends StatelessWidget {
       contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       title: Row(
         children: [
-          Icon(icon, color: AppColors.errorRed, size: 22),
+          Icon(icon, color: Theme.of(context).colorScheme.error, size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

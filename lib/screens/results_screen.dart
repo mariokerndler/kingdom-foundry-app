@@ -66,15 +66,20 @@ Route<void> buildResultsRoute() => PageRouteBuilder<void>(
       pageBuilder: (_, __, ___) => const ResultsScreen(),
       transitionDuration: const Duration(milliseconds: 340),
       reverseTransitionDuration: const Duration(milliseconds: 260),
-      transitionsBuilder: (_, animation, __, child) => FadeTransition(
-        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-        child: SlideTransition(
-          position: Tween(begin: const Offset(0, 0.04), end: Offset.zero)
-              .animate(
-                  CurvedAnimation(parent: animation, curve: Curves.easeOut)),
-          child: child,
-        ),
-      ),
+      transitionsBuilder: (context, animation, _, child) =>
+          MediaQuery.disableAnimationsOf(context)
+              ? child
+              : FadeTransition(
+                  opacity:
+                      CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                  child: SlideTransition(
+                    position:
+                        Tween(begin: const Offset(0, 0.04), end: Offset.zero)
+                            .animate(CurvedAnimation(
+                                parent: animation, curve: Curves.easeOut)),
+                    child: child,
+                  ),
+                ),
     );
 
 class ResultsScreen extends ConsumerWidget {
@@ -103,53 +108,33 @@ class ResultsScreen extends ConsumerWidget {
         result: result,
         isRegenerating: isRegenerating,
         isFavorite: ref.watch(historyProvider).isFavorite(result),
-        onCopy: () => _copyKingdom(context, result),
-        onCopyShare: () => _copyShareCode(context, ref, result),
+        onCopy: () => _copy(context, _kingdomList(result), 'Kingdom list'),
+        onCopyShare: () =>
+            _copy(context, encodeSharePayload(result), 'Share code'),
         onToggleFavorite: () => _toggleFavorite(context, ref, result),
       ),
-      body: Stack(
-        children: [
-          _ResultsBody(result: result),
-          if (isRegenerating)
-            const Positioned(
-              left: 16,
-              right: 16,
-              top: 16,
-              child: AppLoadingStrip(
-                label:
-                    'Rerolling unlocked cards. Your previous kingdom stays visible until the refresh completes.',
-              ),
-            ),
-        ],
-      ),
+      body: _ResultsBody(result: result, isRegenerating: isRegenerating),
     );
   }
 
-  void _copyKingdom(BuildContext context, SetupResult result) {
+  String _kingdomList(SetupResult result) {
     final slots = _splitPileSlots(result.kingdomCards);
-    final lines = slots.asMap().entries.map((e) {
+    return slots.asMap().entries.map((e) {
       final slot = e.value;
       return '${e.key + 1}. ${slot.label} (${slot.primary.costString})';
     }).join('\n');
-    Clipboard.setData(ClipboardData(text: lines));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Kingdom copied to clipboard'),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
-      ),
-    );
   }
 
-  void _copyShareCode(BuildContext context, WidgetRef ref, SetupResult result) {
-    final code = encodeSharePayload(result);
-    Clipboard.setData(ClipboardData(text: code));
+  Future<void> _copy(BuildContext context, String text, String label) async {
+    var message = '$label copied to clipboard';
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+    } catch (_) {
+      message = 'Could not copy to clipboard';
+    }
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Share code copied to clipboard'),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
-      ),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
   }
 
@@ -212,7 +197,7 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 18);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
@@ -222,17 +207,17 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return AppBar(
       title: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text('Kingdom Board', style: tt.titleLarge),
           const SizedBox(height: 2),
           Text(
             '10 cards · $expansionCount expansion${expansionCount == 1 ? '' : 's'}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: tt.labelSmall?.copyWith(
-              color:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
-            ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -249,6 +234,7 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         PopupMenuButton<_ResultsMenuAction>(
           tooltip: 'Kingdom actions',
+          popUpAnimationStyle: AppMotion.menu(context),
           enabled: !isRegenerating,
           onSelected: (action) {
             switch (action) {
@@ -293,49 +279,42 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
 
 class _ResultsBody extends ConsumerWidget {
   final SetupResult result;
-  const _ResultsBody({required this.result});
+  final bool isRegenerating;
+
+  const _ResultsBody({required this.result, required this.isRegenerating});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playerCount = ref.watch(playerCountProvider);
     final showStrategyTips = ref.watch(configProvider).rules.showStrategyTips;
-    final genKey = result.generatedAt.millisecondsSinceEpoch;
     final slots = _splitPileSlots(result.kingdomCards);
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final useWideLayout = viewportWidth >= 1200 && textScale <= 1.15;
     final useSingleColumn = viewportWidth < 720 || textScale > 1.15;
+    final boardPadding =
+        useWideLayout ? max(24.0, (viewportWidth - 1360) / 2) : 12.0;
+    final crossAxisCount = useWideLayout ? 5 : (useSingleColumn ? 1 : 2);
+    final cardHeight = (useSingleColumn ? 222.0 : 232.0) * max(1.0, textScale);
     const spacing = 12.0;
 
     return CustomScrollView(
       slivers: [
-        // ── Archetype summary banner ──────────────────────────────────────
-        if (showStrategyTips && result.archetypes.isNotEmpty)
-          SliverToBoxAdapter(child: _ArchetypeBanner(result: result)),
-
         SliverToBoxAdapter(
-          child: _RerollControls(result: result),
-        ),
-
-        if (result.selectionRationale.isNotEmpty)
-          SliverToBoxAdapter(
-            child: _SelectionRationaleSection(lines: result.selectionRationale),
-          ),
-
-        // ── Kingdom board header ──────────────────────────────────────────
-        const SliverToBoxAdapter(
-          child: SectionHeader(
-            title: 'Kingdom Board',
-            subtitle: 'Tap a card to see its full rules text.',
+          child: _ResultWidthBox(
+            enabled: useWideLayout,
+            child:
+                _RerollControls(result: result, isRegenerating: isRegenerating),
           ),
         ),
 
         // ── 10-card grid (staggered entrance) ────────────────────────────
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: EdgeInsets.symmetric(horizontal: boardPadding),
           sliver: SliverGrid(
             delegate: SliverChildBuilderDelegate(
               (_, i) => _StaggeredEntry(
-                key: ValueKey('${genKey}_$i'),
+                key: ValueKey((i, slots[i].primary.id)),
                 index: i,
                 child: KingdomCardWidget(
                   card: slots[i].primary,
@@ -344,6 +323,7 @@ class _ResultsBody extends ConsumerWidget {
                   locked: result.isSlotLocked(
                     slots[i].primary.splitPileId ?? slots[i].primary.id,
                   ),
+                  canToggleLock: !isRegenerating,
                   onToggleLock: () => toggleKingdomSlotLock(
                     ref,
                     slots[i].primary.splitPileId ?? slots[i].primary.id,
@@ -353,46 +333,78 @@ class _ResultsBody extends ConsumerWidget {
               childCount: slots.length,
             ),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: useSingleColumn ? 1 : 2,
-              mainAxisExtent: useSingleColumn ? 278 : 248,
+              crossAxisCount: crossAxisCount,
+              mainAxisExtent: cardHeight,
               crossAxisSpacing: spacing,
               mainAxisSpacing: spacing,
             ),
           ),
         ),
 
+        if (result.selectionRationale.isNotEmpty)
+          SliverToBoxAdapter(
+            child: _ResultWidthBox(
+              enabled: useWideLayout,
+              child:
+                  _SelectionRationaleSection(lines: result.selectionRationale),
+            ),
+          ),
+
         // ── Landscape cards (Events / Landmarks / Projects / Ways / Allies)
         if (result.landscapeCards.isNotEmpty)
           SliverToBoxAdapter(
-            child: _LandscapeSection(result: result),
+            child: _ResultWidthBox(
+              enabled: useWideLayout,
+              child: _LandscapeSection(result: result),
+            ),
           ),
 
         // ── Setup notes ───────────────────────────────────────────────────
         if (result.setupNotes.isNotEmpty)
           SliverToBoxAdapter(
-            child: _SetupNotesSection(notes: result.setupNotes),
+            child: _ResultWidthBox(
+              enabled: useWideLayout,
+              child: _SetupNotesSection(notes: result.setupNotes),
+            ),
           ),
 
         // ── Random first player ───────────────────────────────────────────
         SliverToBoxAdapter(
-          child: _RandomFirstPlayer(playerCount: playerCount),
+          child: _ResultWidthBox(
+            enabled: useWideLayout,
+            child: _RandomFirstPlayer(playerCount: playerCount),
+          ),
         ),
 
         // ── Strategy guide ────────────────────────────────────────────────
         if (showStrategyTips && result.archetypes.isNotEmpty) ...[
-          const SliverToBoxAdapter(
-            child: SectionHeader(
-              title: 'Strategy Guide',
-              subtitle: 'Heuristic archetypes detected for this kingdom.',
+          SliverToBoxAdapter(
+            child: _ResultWidthBox(
+              enabled: useWideLayout,
+              child: const SectionHeader(
+                title: 'Strategy Guide',
+                subtitle: 'Heuristic archetypes detected for this kingdom.',
+              ),
             ),
           ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (_, i) => ArchetypeCard(
-                archetype: result.archetypes[i],
-                isPrimary: i == 0,
+          SliverToBoxAdapter(
+            child: _ResultWidthBox(
+              enabled: useWideLayout,
+              child: _ArchetypeBanner(result: result),
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.symmetric(
+              horizontal: useWideLayout ? boardPadding : 0,
+            ),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (_, i) => ArchetypeCard(
+                  archetype: result.archetypes[i],
+                  isPrimary: i == 0,
+                ),
+                childCount: result.archetypes.length,
               ),
-              childCount: result.archetypes.length,
             ),
           ),
         ],
@@ -425,11 +437,11 @@ class _StaggeredEntryState extends State<_StaggeredEntry>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 380));
+        vsync: this, duration: const Duration(milliseconds: 220));
     _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
     _slide = Tween(begin: const Offset(0, 0.07), end: Offset.zero)
         .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-    _delayTimer = Timer(Duration(milliseconds: widget.index * 50), () {
+    _delayTimer = Timer(Duration(milliseconds: min(widget.index, 5) * 30), () {
       if (mounted) _ctrl.forward();
     });
   }
@@ -442,10 +454,34 @@ class _StaggeredEntryState extends State<_StaggeredEntry>
   }
 
   @override
-  Widget build(BuildContext context) => FadeTransition(
-        opacity: _opacity,
-        child: SlideTransition(position: _slide, child: widget.child),
-      );
+  Widget build(BuildContext context) => MediaQuery.disableAnimationsOf(context)
+      ? widget.child
+      : FadeTransition(
+          opacity: _opacity,
+          child: SlideTransition(position: _slide, child: widget.child),
+        );
+}
+
+class _ResultWidthBox extends StatelessWidget {
+  final bool enabled;
+  final Widget child;
+
+  const _ResultWidthBox({
+    required this.enabled,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!enabled) return child;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1360),
+        child: child,
+      ),
+    );
+  }
 }
 
 // ── Landscape section ──────────────────────────────────────────────────────
@@ -587,11 +623,14 @@ class _LandscapeGroup extends ConsumerWidget {
                                     ? AppColors.landscapeAccent
                                         .withValues(alpha: 0.10)
                                     : Theme.of(context).colorScheme.surface,
-                                borderRadius: BorderRadius.circular(AppRadii.pill),
+                                borderRadius:
+                                    BorderRadius.circular(AppRadii.pill),
                                 border: Border.all(
                                   color: isLocked
                                       ? AppColors.landscapeAccent
-                                      : Theme.of(context).colorScheme.outlineVariant,
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .outlineVariant,
                                 ),
                               ),
                               child: Text(
@@ -611,7 +650,10 @@ class _LandscapeGroup extends ConsumerWidget {
                               ),
                             ),
                             OutlinedButton.icon(
-                              onPressed: () => toggleLandscapeLock(ref, c.id),
+                              onPressed: ref.watch(generationStatusProvider) ==
+                                      GenerationStatus.loading
+                                  ? null
+                                  : () => toggleLandscapeLock(ref, c.id),
                               icon: Icon(
                                 isLocked
                                     ? Icons.lock_open_rounded
@@ -637,112 +679,142 @@ class _LandscapeGroup extends ConsumerWidget {
   }
 }
 
-class _RerollControls extends ConsumerWidget {
-  final SetupResult result;
+enum _RerollAction { kingdom, landscapes, clearLocks }
 
-  const _RerollControls({required this.result});
+class _RerollControls extends ConsumerStatefulWidget {
+  final SetupResult result;
+  final bool isRegenerating;
+
+  const _RerollControls({required this.result, required this.isRegenerating});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_RerollControls> createState() => _RerollControlsState();
+}
+
+class _RerollControlsState extends ConsumerState<_RerollControls> {
+  bool _rerolled = false;
+
+  Future<void> _reroll({_RerollAction? action}) async {
+    final container = ProviderScope.containerOf(context, listen: false);
+    final success = await rerollCurrentResult(
+      container,
+      rerollKingdom: action != _RerollAction.landscapes,
+      rerollLandscapes: action != _RerollAction.kingdom,
+    );
+    if (!mounted) return;
+    if (success) {
+      setState(() => _rerolled = true);
+      return;
+    }
+    setState(() => _rerolled = false);
+    final message =
+        ref.read(generationErrorProvider) ?? 'Could not reroll this kingdom.';
+    clearGenerationFeedback(ref);
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final result = widget.result;
+    final isRegenerating = widget.isRegenerating;
     final lockedCount =
         result.lockedSlotIds.length + result.lockedLandscapeIds.length;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outlineVariant,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text('Reroll controls',
-                    style: Theme.of(context).textTheme.titleSmall),
-                const Spacer(),
-                if (lockedCount > 0)
-                  Text(
-                    '$lockedCount locked',
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Lock any cards or landscapes you want to keep, then reroll only the unlocked parts.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(AppRadii.md),
-                border: Border.all(
-                  color:
-                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.tips_and_updates_outlined,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Tip: locked cards keep their exact slot, so you can iterate on the rest of the kingdom without losing your favorites.',
-                      style: Theme.of(context).textTheme.bodySmall,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: Semantics(
+                      liveRegion: isRegenerating,
+                      child: FilledButton.icon(
+                        onPressed: isRegenerating ? null : () => _reroll(),
+                        icon: isRegenerating &&
+                                !MediaQuery.disableAnimationsOf(context)
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : Icon(isRegenerating
+                                ? Icons.hourglass_top_rounded
+                                : Icons.casino_rounded),
+                        label: Text(isRegenerating
+                            ? 'Rerolling kingdom…'
+                            : 'Reroll unlocked cards'),
+                      ),
                     ),
                   ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              PopupMenuButton<_RerollAction>(
+                enabled: !isRegenerating,
+                tooltip: 'More reroll options',
+                requestFocus: true,
+                popUpAnimationStyle: AppMotion.menu(context),
+                icon: const Icon(Icons.more_horiz_rounded),
+                onSelected: (action) {
+                  if (action == _RerollAction.clearLocks) {
+                    clearAllLocks(ref);
+                  } else {
+                    _reroll(action: action);
+                  }
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                      value: _RerollAction.kingdom,
+                      child: Text('Reroll only kingdom cards')),
+                  const PopupMenuItem(
+                      value: _RerollAction.landscapes,
+                      child: Text('Reroll only landscapes')),
+                  PopupMenuItem(
+                      value: _RerollAction.clearLocks,
+                      enabled: lockedCount > 0,
+                      child: const Text('Clear all locks')),
                 ],
               ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Semantics(
+            liveRegion: _rerolled,
+            child: TweenAnimationBuilder<double>(
+              key: ValueKey(result.generatedAt),
+              tween: Tween(begin: _rerolled ? 1 : 0, end: 0),
+              duration: AppMotion.duration(context, 420),
+              curve: Curves.easeOut,
+              builder: (context, pulse, child) => DecoratedBox(
+                decoration: BoxDecoration(
+                  color:
+                      theme.colorScheme.primary.withValues(alpha: pulse * 0.12),
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
+                ),
+                child: child,
+              ),
+              child: Text(
+                _rerolled
+                    ? (lockedCount > 0
+                        ? 'Kingdom updated · $lockedCount locked'
+                        : 'Kingdom updated.')
+                    : (lockedCount > 0
+                        ? '$lockedCount locked · Kept on reroll'
+                        : 'Lock cards you want to keep.'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
             ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton.icon(
-                  onPressed: () => rerollCurrentResult(ref),
-                  icon: const Icon(Icons.casino_rounded, size: 16),
-                  label: const Text('Reroll unlocked cards'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => rerollCurrentResult(
-                    ref,
-                    rerollKingdom: true,
-                    rerollLandscapes: false,
-                  ),
-                  icon: const Icon(Icons.view_module_rounded, size: 16),
-                  label: const Text('Reroll only kingdom cards'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => rerollCurrentResult(
-                    ref,
-                    rerollKingdom: false,
-                    rerollLandscapes: true,
-                  ),
-                  icon: const Icon(Icons.landscape_rounded, size: 16),
-                  label: const Text('Reroll only landscapes'),
-                ),
-                TextButton.icon(
-                  onPressed: lockedCount == 0 ? null : () => clearAllLocks(ref),
-                  icon: const Icon(Icons.lock_reset_rounded, size: 16),
-                  label: const Text('Clear all locks'),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -814,28 +886,17 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
   bool _rolling = false;
 
   Future<void> _roll() async {
-    HapticFeedback.mediumImpact();
-    setState(() {
-      _rolling = true;
-      _picked = null;
-    });
-
-    // Quick slot-machine flicker: cycle through values 4×
-    for (var i = 0; i < widget.playerCount * 4; i++) {
-      await Future.delayed(const Duration(milliseconds: 60));
+    final playerCount = widget.playerCount;
+    HapticFeedback.selectionClick();
+    if (!MediaQuery.disableAnimationsOf(context)) {
+      setState(() => _rolling = true);
+      await Future<void>.delayed(const Duration(milliseconds: 240));
       if (!mounted) return;
-      setState(() => _picked = (i % widget.playerCount) + 1);
     }
-
-    // Final pick
-    final result = Random().nextInt(widget.playerCount) + 1;
-    await Future.delayed(const Duration(milliseconds: 80));
-    if (!mounted) return;
     setState(() {
-      _picked = result;
+      _picked = Random().nextInt(playerCount) + 1;
       _rolling = false;
     });
-    HapticFeedback.heavyImpact();
   }
 
   @override
@@ -858,82 +919,45 @@ class _RandomFirstPlayerState extends State<_RandomFirstPlayer> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'FIRST PLAYER',
-                    style: Theme.of(context).textTheme.labelMedium,
+                    'Pick the first player',
+                    style: Theme.of(context).textTheme.titleSmall,
                   ),
-                  const SizedBox(height: 6),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 80),
-                    child: _picked == null
-                        ? Text(
-                            'Tap to pick randomly from ${widget.playerCount} players',
-                            key: const ValueKey('prompt'),
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          )
-                        : Text(
-                            'Player $_picked goes first!',
-                            key: ValueKey(_picked),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyLarge
-                                ?.copyWith(
-                                  color: _rolling
-                                      ? Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant
-                                      : Theme.of(context).colorScheme.onSurface,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Semantics(
+                    liveRegion: true,
+                    child: AnimatedSwitcher(
+                      duration: AppMotion.duration(context, 200),
+                      reverseDuration: AppMotion.duration(context, 160),
+                      switchInCurve: Curves.easeOut,
+                      layoutBuilder: (current, previous) => Stack(
+                        alignment: Alignment.centerLeft,
+                        children: [
+                          ...previous
+                              .map((child) => ExcludeSemantics(child: child)),
+                          if (current != null) current
+                        ],
+                      ),
+                      child: Text(
+                        _picked == null
+                            ? 'Choose from ${widget.playerCount} players.'
+                            : 'Player $_picked goes first.',
+                        key: ValueKey(_picked),
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-
-            // Roll button
-            Semantics(
-              label: 'Pick random first player',
-              button: true,
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                child: InkWell(
-                  onTap: _rolling ? null : _roll,
-                  borderRadius: BorderRadius.circular(10),
-                  splashColor: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.16),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: _rolling
-                          ? Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withValues(alpha: 0.7)
-                          : Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    alignment: Alignment.center,
-                    child: _rolling
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(
-                                  Theme.of(context).colorScheme.onPrimary),
-                            ),
-                          )
-                        : Icon(Icons.casino_rounded,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            size: 22),
-                  ),
-                ),
-              ),
+            const SizedBox(width: AppSpacing.sm),
+            IconButton.filled(
+              onPressed: _rolling ? null : _roll,
+              tooltip: 'Pick random first player',
+              icon: _rolling
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.casino_rounded),
             ),
           ],
         ),
@@ -1121,9 +1145,8 @@ class _Stat extends StatelessWidget {
           Text(
             '$value',
             style: TextStyle(
-              color: active
-                  ? color
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurface,
+              fontFeatures: const [FontFeature.tabularFigures()],
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),

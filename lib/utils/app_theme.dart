@@ -8,7 +8,10 @@ abstract class AppColors {
   static const landscapeAccent = Color(0xFF1D4ED8);
 
   static const errorRed = Color(0xFFB42318);
-  static const successGreen = Color(0xFF15803D);
+  static Color success(ColorScheme colors) =>
+      colors.brightness == Brightness.dark
+          ? const Color(0xFF86EFAC)
+          : const Color(0xFF166534);
 
   static const debtBadgeFill = Color(0xFF334155);
   static const debtBadgeBorder = Color(0xFF64748B);
@@ -16,6 +19,37 @@ abstract class AppColors {
   static const debtBadgeFillDark = Color(0xFF37474F);
   static const debtBadgeBorderDark = Color(0xFF78909C);
   static const debtBadgeTextDark = Color(0xFFB0BEC5);
+}
+
+abstract class AppMotion {
+  static Duration duration(BuildContext context, int milliseconds) =>
+      MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : Duration(milliseconds: milliseconds);
+
+  static AnimationStyle menu(BuildContext context) =>
+      MediaQuery.disableAnimationsOf(context)
+          ? AnimationStyle.noAnimation
+          : const AnimationStyle(
+              duration: Duration(milliseconds: 200),
+              reverseDuration: Duration(milliseconds: 160),
+              curve: Curves.easeOut,
+            );
+
+  static Widget buttonLayer(
+    BuildContext context,
+    Set<WidgetState> states,
+    Widget? child,
+  ) =>
+      AnimatedScale(
+        scale: states.contains(WidgetState.pressed) &&
+                !MediaQuery.disableAnimationsOf(context)
+            ? 0.97
+            : 1,
+        duration: duration(context, 100),
+        curve: Curves.easeOut,
+        child: child,
+      );
 }
 
 abstract class AppSpacing {
@@ -60,7 +94,7 @@ ThemeData buildLightTheme() {
     onSecondary: Color(0xFFFFFFFF),
     onSurface: Color(0xFF0F172A),
     onSurfaceVariant: Color(0xFF475569),
-    outline: Color(0xFF94A3B8),
+    outline: Color(0xFF64748B),
     outlineVariant: Color(0xFFE2E8F0),
     error: Color(0xFFB42318),
     onError: Color(0xFFFFFFFF),
@@ -82,8 +116,8 @@ ThemeData buildDarkTheme() {
     secondary: Color(0xFFE4BC52),
     onSecondary: Color(0xFF1F1700),
     onSurface: Color(0xFFE6EDF3),
-    onSurfaceVariant: Color(0xFF7D8590),
-    outline: Color(0xFF4D5566),
+    onSurfaceVariant: Color(0xFFA4AEBC),
+    outline: Color(0xFF758297),
     outlineVariant: Color(0xFF30363D),
     error: Color(0xFFF87171),
     onError: Color(0xFF1A0000),
@@ -114,7 +148,8 @@ ThemeData _buildTheme({
       centerTitle: false,
       elevation: 0,
       scrolledUnderElevation: 1,
-      titleTextStyle: textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
+      titleTextStyle:
+          textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
     ),
     tabBarTheme: TabBarThemeData(
       labelColor: colorScheme.primary,
@@ -146,7 +181,8 @@ ThemeData _buildTheme({
       backgroundColor: colorScheme.surfaceContainer,
       selectedColor: colorScheme.primary,
       labelStyle: TextStyle(color: colorScheme.onSurface, fontSize: 13),
-      secondaryLabelStyle: TextStyle(color: colorScheme.onPrimary, fontSize: 13),
+      secondaryLabelStyle:
+          TextStyle(color: colorScheme.onPrimary, fontSize: 13),
       side: BorderSide(color: colorScheme.outlineVariant),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),
@@ -167,8 +203,8 @@ ThemeData _buildTheme({
         borderRadius: BorderRadius.circular(AppRadii.md),
         borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
       ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+      contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg, vertical: AppSpacing.md),
     ),
     dividerTheme: DividerThemeData(
       color: colorScheme.outlineVariant,
@@ -179,8 +215,8 @@ ThemeData _buildTheme({
       tileColor: Colors.transparent,
       textColor: colorScheme.onSurface,
       iconColor: colorScheme.onSurfaceVariant,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.xs),
+      contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl, vertical: AppSpacing.xs),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -190,7 +226,7 @@ ThemeData _buildTheme({
           borderRadius: BorderRadius.circular(AppRadii.md),
         ),
         textStyle: textTheme.labelLarge,
-      ),
+      ).copyWith(foregroundBuilder: AppMotion.buttonLayer),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
@@ -200,7 +236,7 @@ ThemeData _buildTheme({
           borderRadius: BorderRadius.circular(AppRadii.md),
         ),
         textStyle: textTheme.labelLarge,
-      ),
+      ).copyWith(foregroundBuilder: AppMotion.buttonLayer),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
@@ -210,7 +246,7 @@ ThemeData _buildTheme({
           borderRadius: BorderRadius.circular(AppRadii.md),
         ),
         textStyle: textTheme.labelLarge,
-      ),
+      ).copyWith(foregroundBuilder: AppMotion.buttonLayer),
     ),
     iconButtonTheme: IconButtonThemeData(
       style: IconButton.styleFrom(minimumSize: const Size(48, 48)),

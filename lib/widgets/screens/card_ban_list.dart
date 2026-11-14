@@ -6,7 +6,6 @@ import '../../models/expansion.dart';
 import '../../providers/card_data_providers.dart';
 import '../../providers/config_provider.dart';
 import '../../utils/app_theme.dart';
-import '../common/expansion_badge.dart';
 import '../common/section_header.dart';
 import '../common/ui_primitives.dart';
 
@@ -90,7 +89,7 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
               child: filtered.isEmpty
                   ? _NoResults(query: _query)
                   : ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 100),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
                       itemCount: _flatItemCount(filtered),
                       itemBuilder: (ctx, i) =>
                           _buildItem(ctx, i, filtered, config, ref),
@@ -180,11 +179,17 @@ class _SearchBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Search cards',
                 helperText: 'Filter by card name or type.',
-                hintText: 'Search cards...',
-                prefixIcon: Icon(Icons.search_rounded),
+                prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                suffixIcon: controller.text.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Clear card search',
+                        onPressed: controller.clear,
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                      ),
               ),
             ),
           ),
@@ -193,10 +198,9 @@ class _SearchBar extends StatelessWidget {
             TextButton.icon(
               onPressed: onClearAll,
               icon: const Icon(Icons.restore, size: 16),
-              label: Text('Unban all ($disabledCount)',
-                  style: const TextStyle(fontSize: 12)),
+              label: const Text('Unban all'),
               style: TextButton.styleFrom(
-                foregroundColor: AppColors.errorRed,
+                foregroundColor: Theme.of(context).colorScheme.error,
               ),
             ),
           ],
@@ -221,14 +225,11 @@ class _ExpansionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 6),
       child: Row(
         children: [
-          ExpansionBadge(expansion: expansion, fontSize: 11),
-          const SizedBox(width: 10),
-          Text(
-            expansion.displayName,
-            style: TextStyle(
-                color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+          Expanded(
+            child: Text(expansion.displayName,
+                style: Theme.of(context).textTheme.titleSmall),
           ),
-          const Spacer(),
+          const SizedBox(width: AppSpacing.sm),
           Text(
             '$count cards',
             style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
@@ -258,92 +259,22 @@ class _CardRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: isDisabled
-            ? AppColors.errorRed.withValues(alpha: 0.08)
-            : cs.surfaceContainer,
+        color:
+            isDisabled ? cs.error.withValues(alpha: 0.08) : cs.surfaceContainer,
         border: Border.all(
-          color: isDisabled ? AppColors.errorRed : cs.outlineVariant,
+          color: isDisabled ? cs.error : cs.outlineVariant,
         ),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _CostBadge(cost: card.cost),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              card.name,
-                              style: TextStyle(
-                                color: cs.onSurface,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              card.typeString,
-                              style: TextStyle(
-                                color: cs.onSurfaceVariant,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Semantics(
-                        label:
-                            '${isDisabled ? "Ban enabled" : "Ban disabled"} for ${card.name}',
-                        toggled: isDisabled,
-                        child: Switch.adaptive(
-                          value: isDisabled,
-                          onChanged: (_) => onToggle(),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        isDisabled
-                            ? Icons.block_rounded
-                            : Icons.check_circle_outline_rounded,
-                        size: 16,
-                        color:
-                            isDisabled ? AppColors.errorRed : AppColors.successGreen,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        isDisabled ? 'Banned from generation' : 'Allowed in generation',
-                        style: TextStyle(
-                          color: isDisabled
-                              ? AppColors.errorRed
-                              : AppColors.successGreen,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      child: SwitchListTile.adaptive(
+        value: isDisabled,
+        onChanged: (_) => onToggle(),
+        title: Text(card.name, style: Theme.of(context).textTheme.titleSmall),
+        subtitle:
+            Text(isDisabled ? '${card.typeString} · Banned' : card.typeString),
+        secondary: Semantics(
+            label: 'Cost: ${card.costString}',
+            child: ExcludeSemantics(child: _CostBadge(cost: card.cost))),
       ),
     );
   }

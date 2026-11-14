@@ -172,12 +172,15 @@ Future<bool> importKingdom(WidgetRef ref, String rawText) async {
 }
 
 Future<bool> rerollCurrentResult(
-  WidgetRef ref, {
+  ProviderContainer ref, {
   bool rerollKingdom = true,
   bool rerollLandscapes = true,
 }) async {
   final current = ref.read(setupResultProvider);
-  if (current == null) return false;
+  if (current == null ||
+      ref.read(generationStatusProvider) == GenerationStatus.loading) {
+    return false;
+  }
 
   ref.read(_generationStatusProvider.notifier).state = GenerationStatus.loading;
   ref.read(_generationErrorProvider.notifier).state = null;

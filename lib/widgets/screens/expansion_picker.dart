@@ -62,12 +62,6 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
         final owned = config.ownedExpansions;
         final allOwned = owned.length == available.length;
 
-        // Total kingdom cards from owned expansions.
-        final totalKingdom = statsAsync.whenOrNull(
-          data: (s) =>
-              owned.fold<int>(0, (sum, e) => sum + (s[e]?.kingdom ?? 0)),
-        );
-
         return Column(
           children: [
             // ── Search bar ──────────────────────────────────────────────
@@ -79,11 +73,10 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
                 onChanged: (v) => setState(() => _query = v.toLowerCase()),
                 decoration: InputDecoration(
                   labelText: 'Search expansions',
-                  helperText: 'Filter the expansion library by name.',
-                  hintText: 'Search expansions…',
                   prefixIcon: const Icon(Icons.search_rounded, size: 20),
                   suffixIcon: _query.isNotEmpty
                       ? IconButton(
+                          tooltip: 'Clear expansion search',
                           icon: const Icon(Icons.close_rounded, size: 18),
                           onPressed: () {
                             _searchCtrl.clear();
@@ -100,12 +93,11 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
               padding: const EdgeInsets.fromLTRB(16, 10, 8, 4),
               child: Row(
                 children: [
-                  _KingdomCountChip(
-                    count: totalKingdom,
-                    owned: owned.length,
-                    total: available.length,
+                  Expanded(
+                    child: Text(
+                        '${owned.length} of ${available.length} expansions selected',
+                        style: Theme.of(context).textTheme.bodySmall),
                   ),
-                  const Spacer(),
                   TextButton(
                     onPressed: () {
                       HapticFeedback.selectionClick();
@@ -117,7 +109,7 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
                       allOwned ? 'Clear all' : 'Select all',
                       style: TextStyle(
                         color: allOwned
-                            ? AppColors.errorRed // keep — destructive action
+                            ? Theme.of(context).colorScheme.error
                             : Theme.of(context).colorScheme.primary,
                         fontSize: 13,
                       ),
@@ -195,9 +187,9 @@ class _GroupedList extends StatelessWidget {
     }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
       children: [
-        _GroupHeader(title: 'Large Expansions', count: large.length),
+        const _GroupHeader(title: 'Large Expansions'),
         ...large.map((e) => Padding(
               padding: const EdgeInsets.only(bottom: 6),
               child: _ExpansionTile(
@@ -208,7 +200,7 @@ class _GroupedList extends StatelessWidget {
               ),
             )),
         const SizedBox(height: 10),
-        _GroupHeader(title: 'Small Expansions', count: small.length),
+        const _GroupHeader(title: 'Small Expansions'),
         ...small.map((e) => Padding(
               padding: const EdgeInsets.only(bottom: 6),
               child: _ExpansionTile(
@@ -239,7 +231,7 @@ class _FlatList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
       itemCount: expansions.length,
       separatorBuilder: (_, __) => const SizedBox(height: 6),
       itemBuilder: (_, i) {
@@ -259,46 +251,13 @@ class _FlatList extends StatelessWidget {
 
 class _GroupHeader extends StatelessWidget {
   final String title;
-  final int count;
-
-  const _GroupHeader({required this.title, required this.count});
+  const _GroupHeader({required this.title});
 
   @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 4, 0, 8),
-      child: Row(
-        children: [
-          Text(
-            title.toUpperCase(),
-            style: TextStyle(
-              color: primary,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.3,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-            decoration: BoxDecoration(
-              color: primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              '$count',
-              style: TextStyle(
-                color: primary,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: Text(title, style: Theme.of(context).textTheme.titleSmall),
+      );
 }
 
 // ── Single expansion tile ──────────────────────────────────────────────────
@@ -318,7 +277,6 @@ class _ExpansionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final badgeColor = Color(expansion.badgeColorValue);
     final cs = Theme.of(context).colorScheme;
 
     return Semantics(
@@ -328,13 +286,13 @@ class _ExpansionTile extends StatelessWidget {
           '${selected ? "Selected" : "Not selected"}. Tap to toggle.',
       button: true,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: AppMotion.duration(context, 180),
         decoration: BoxDecoration(
           color: selected
-              ? badgeColor.withValues(alpha: 0.10)
+              ? cs.primary.withValues(alpha: 0.07)
               : cs.surfaceContainer,
           border: Border.all(
-            color: selected ? badgeColor : cs.outlineVariant,
+            color: selected ? cs.primary : cs.outlineVariant,
             width: selected ? 1.5 : 1,
           ),
           borderRadius: BorderRadius.circular(10),
@@ -352,18 +310,6 @@ class _ExpansionTile extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
               child: Row(
                 children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: selected
-                          ? badgeColor
-                          : cs.onSurfaceVariant.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,46 +325,32 @@ class _ExpansionTile extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 3),
-                        Row(
-                          children: [
-                            _CountPill(
-                              icon: Icons.grid_view_rounded,
-                              label: '${stats.kingdom} kingdom',
-                              color: selected
-                                  ? cs.onSurfaceVariant
-                                  : cs.onSurfaceVariant.withValues(alpha: 0.55),
-                            ),
-                            if (stats.landscape > 0) ...[
-                              const SizedBox(width: 8),
-                              _CountPill(
-                                icon: Icons.map_outlined,
-                                label: '${stats.landscape} landscape',
-                                color: selected
-                                    ? cs.primary.withValues(alpha: 0.85)
-                                    : cs.primary.withValues(alpha: 0.45),
-                              ),
-                            ],
-                          ],
+                        Text(
+                          '${stats.kingdom} kingdom${stats.landscape > 0 ? ' · ${stats.landscape} landscape' : ''}',
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                  ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 10),
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
+                    duration: AppMotion.duration(context, 180),
                     width: 26,
                     height: 26,
                     decoration: BoxDecoration(
-                      color: selected ? badgeColor : Colors.transparent,
+                      color: selected ? cs.primary : Colors.transparent,
                       border: Border.all(
-                        color: selected ? badgeColor : cs.outlineVariant,
+                        color: selected ? cs.primary : cs.outline,
                         width: 1.5,
                       ),
                       borderRadius: BorderRadius.circular(5),
                     ),
                     child: selected
-                        ? const Icon(Icons.check_rounded,
-                            size: 14, color: Colors.white)
+                        ? Icon(Icons.check_rounded,
+                            size: 16, color: cs.onPrimary)
                         : null,
                   ),
                 ],
@@ -426,89 +358,6 @@ class _ExpansionTile extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ── Tiny icon + label pill ─────────────────────────────────────────────────
-
-class _CountPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _CountPill({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 3),
-          Text(label, style: TextStyle(color: color, fontSize: 12)),
-        ],
-      );
-}
-
-// ── Top status chip ────────────────────────────────────────────────────────
-
-class _KingdomCountChip extends StatelessWidget {
-  final int? count; // null while loading
-  final int owned;
-  final int total;
-
-  const _KingdomCountChip({
-    required this.count,
-    required this.owned,
-    required this.total,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (count == null) {
-      return const SizedBox(
-        width: 18,
-        height: 18,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    final enough = count! >= 10;
-    final color = enough ? AppColors.successGreen : AppColors.errorRed;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            enough
-                ? Icons.check_circle_outline_rounded
-                : Icons.warning_amber_rounded,
-            size: 13,
-            color: color,
-          ),
-          const SizedBox(width: 5),
-          Text(
-            '$count kingdom · $owned/$total sets',
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }

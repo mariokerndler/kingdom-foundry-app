@@ -1,7 +1,7 @@
 'use strict';
 
 // ponytail: bump this cache name when changing the offline shell.
-const CACHE_NAME = 'kingdom-foundry-v2';
+const CACHE_NAME = 'kingdom-foundry-v4';
 const APP_SHELL = [
   './',
   './index.html',
