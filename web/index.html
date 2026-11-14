@@ -19,13 +19,13 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="Kingdom Foundry — automated kingdom generation for a deck-building card game.">
-  <meta name="theme-color" content="#0F0F1A">
+  <meta name="theme-color" content="#0F172A">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Kingdom Foundry">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
@@ -38,7 +38,7 @@
       margin: 0;
       padding: 0;
       height: 100%;
-      background-color: #0F0F1A;  /* AppColors.background — no white flash */
+      background-color: #0F172A;
     }
 
     /* Splash shown while the Flutter engine boots */
@@ -49,21 +49,22 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background-color: #0F0F1A;
-      gap: 20px;
+      background-color: #0F172A;
+      gap: 16px;
     }
 
     #splash h1 {
-      color: #FFD700;            /* AppColors.gold */
-      font-family: sans-serif;
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 1px;
       margin: 0;
     }
 
+    #splash img {
+      display: block;
+      width: min(280px, 80vw);
+      height: auto;
+    }
+
     #splash p {
-      color: #8A7A6A;            /* AppColors.parchmentDim */
+      color: #FFF8E7;
       font-family: sans-serif;
       font-size: 13px;
       margin: 0;
@@ -71,10 +72,10 @@
 
     /* Gold spinner */
     #splash .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid #2A2A45;
-      border-top-color: #FFD700;
+      width: 22px;
+      height: 22px;
+      border: 2px solid #334155;
+      border-top-color: #E4BC52;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -88,9 +89,9 @@
 </head>
 <body>
   <div id="splash">
-    <div class="spinner"></div>
-    <h1>Kingdom Foundry</h1>
-    <p>Loading kingdom…</p>
+    <h1><img src="crown-deal.svg" width="690" height="256" alt="Kingdom Foundry"></h1>
+    <div class="spinner" aria-hidden="true"></div>
+    <p role="status">Loading kingdom…</p>
   </div>
 
   <script src="flutter_bootstrap.js" async></script>

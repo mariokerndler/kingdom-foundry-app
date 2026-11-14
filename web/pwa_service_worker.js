@@ -1,7 +1,7 @@
 'use strict';
 
 // ponytail: bump this cache name when changing the offline shell.
-const CACHE_NAME = 'kingdom-foundry-v4';
+const CACHE_NAME = 'kingdom-foundry-v5';
 const APP_SHELL = [
   './',
   './index.html',
@@ -10,12 +10,14 @@ const APP_SHELL = [
   './main.dart.js',
   './manifest.json',
   './favicon.png',
+  './crown-deal.svg',
   './privacy.html',
   './impressum.html',
   './icons/Icon-192.png',
   './icons/Icon-512.png',
   './icons/Icon-maskable-192.png',
   './icons/Icon-maskable-512.png',
+  './icons/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', (event) => {

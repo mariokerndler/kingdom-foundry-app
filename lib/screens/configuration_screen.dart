@@ -382,21 +382,44 @@ class _AppTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final logoMode = cs.brightness == Brightness.dark ? 'dark' : 'light';
+    return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Kingdom Foundry',
-            style: TextStyle(
-              color: cs.onSurface,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            )),
-        Text('Kingdom Generator',
-            style: TextStyle(
-              color: cs.primary.withValues(alpha: 0.8),
-              fontSize: 12,
-            )),
+        Image.asset(
+          'assets/images/crown-deal-$logoMode.png',
+          width: 32,
+          height: 32,
+          excludeFromSemantics: true,
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Kingdom Foundry',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                'Kingdom Generator',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: cs.primary.withValues(alpha: 0.8),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
