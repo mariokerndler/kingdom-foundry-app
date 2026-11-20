@@ -68,6 +68,41 @@ flutter build web --release
 dart run tool/prepare_web_release.dart
 ```
 
+## Deploying to Hostinger
+
+The verification workflow publishes the prepared `build/web/` contents using SFTP after all checks pass. Deployment runs only for pushes to `main` or manual runs on `main`, and remains disabled until configured. Pull requests never deploy. Uploads run one at a time.
+
+Enable SSH access in Hostinger and use the host, username and port shown there. Hostinger normally uses port **65002** for SFTP. See the [Hostinger SFTP guide](https://www.hostinger.com/support/5972689-how-to-connect-to-your-hosting-using-sftp-in-hostinger/).
+
+Run the key setup commands in Bash (Git Bash on Windows), from a private folder outside this repository. Create a dedicated deployment SSH key using `ssh-keygen -t ed25519 -C "github-hostinger-deploy" -f hostinger_deploy`. Leave its passphrase empty for unattended deployment. Add only `hostinger_deploy.pub` to Hostinger's SSH keys. See [Hostinger's SSH key instructions](https://www.hostinger.com/support/5634532-how-to-generate-ssh-keys-and-add-them-to-hostinger-dashboard/).
+
+Save the server's public host key with `ssh-keyscan -p 65002 -t ed25519 YOUR_SFTP_HOST > hostinger_known_hosts`. Run `ssh-keygen -lf hostinger_known_hosts` and compare the SHA256 fingerprint with the ED25519 fingerprint in Hostinger's SSH Access page. Only use this file after the fingerprints match. The workflow requires this trusted key and refuses unknown or changed servers.
+
+If Windows reports `choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com`, use Git Bash's `/usr/bin/ssh-keyscan` explicitly in that command. Some Windows OpenSSH versions advertise this exchange method without implementing it in `ssh-keyscan`. In PowerShell, use `& 'C:\Program Files\Git\usr\bin\ssh-keyscan.exe' -p 65002 -t ed25519 YOUR_SFTP_HOST | Set-Content -Encoding ascii hostinger_known_hosts`, then verify the fingerprint as above. This changes only the local key collection tool; server verification stays enabled.
+
+In the GitHub repository, open **Settings → Secrets and variables → Actions** and add these repository secrets:
+
+| Secret | Value |
+| --- | --- |
+| `HOSTINGER_SFTP_HOST` | SFTP host or IPv4 address from SSH Access, without a protocol prefix |
+| `HOSTINGER_SFTP_USERNAME` | SSH/SFTP username from SSH Access |
+| `HOSTINGER_SSH_PRIVATE_KEY` | Complete contents of the private `hostinger_deploy` file, including its header and footer |
+| `HOSTINGER_SSH_KNOWN_HOSTS` | Complete contents of the verified `hostinger_known_hosts` file, not just its fingerprint |
+
+Then add these repository variables:
+
+| Variable | Value |
+| --- | --- |
+| `HOSTINGER_SERVER_DIR` | Existing SFTP path to the website, ending in `/`, e.g. `domains/example.com/public_html/` relative to the login directory; use `./` only if the account opens directly inside `public_html` |
+| `HOSTINGER_SFTP_PORT` | Optional; defaults to `65002` |
+| `HOSTINGER_DEPLOY_ENABLED` | `true` to enable publishing |
+
+Confirm the destination using an SFTP client before enabling deployment. Paths support letters, digits, `_`, `-`, `.`, and `/`. This configuration serves the app at the domain root. For a URL subfolder, change the Flutter build command to use the matching `--base-href /subfolder/` and set the SFTP destination to that folder. The workflow uses SSH key authentication; it does not need the old FTP secrets or the `HOSTINGER_FTP_PROTOCOL` variable.
+
+Once this workflow is pushed and configured, use **Actions → Verify Kingdom Foundry → Run workflow** on `main` for the first deployment. Later pushes to `main` publish automatically. Set `HOSTINGER_DEPLOY_ENABLED` to `false` to stop publishing while keeping checks enabled. Local deployment checks run with `python3 -m unittest discover -s tool -p 'test_*.py'` (Python and Bash required).
+
+Back up the current website first: matching files in the destination will be replaced. The upload copies all visible release files and directories, retaining old assets and unrelated files on the server. It does not delete remote files. Updates are not atomic, so visitors may briefly encounter a partially uploaded release; rerun the workflow if an upload fails. Live Hostinger connectivity and the hosted workflow require verification after configuration.
+
 ## Getting Started
 
 The web release preparation step packages the app and catalogue for offline reopening after an online visit. Deploy all of `build/web` together. A newly cached release takes over after all tabs running the previous release close. On a kingdom board, **Kingdom actions → Print table setup** opens a print-friendly view with the Supply, landscapes, and resolved setup choices.

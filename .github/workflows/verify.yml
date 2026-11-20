@@ -1,6 +1,11 @@
 name: Verify Kingdom Foundry
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
+
+# Finish an upload before another run can publish to the same destination.
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -17,6 +22,17 @@ jobs:
       - run: flutter pub get --enforce-lockfile
       - run: flutter analyze
       - run: flutter test
+      - run: python3 -m unittest discover -s tool -p 'test_*.py'
       - run: dart run tool/catalogue_summary.dart --check
       - run: flutter build web --release
       - run: dart run tool/prepare_web_release.dart
+      - name: Deploy prepared web build to Hostinger
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.HOSTINGER_DEPLOY_ENABLED == 'true'
+        env:
+          HOSTINGER_SFTP_HOST: ${{ secrets.HOSTINGER_SFTP_HOST }}
+          HOSTINGER_SFTP_USERNAME: ${{ secrets.HOSTINGER_SFTP_USERNAME }}
+          HOSTINGER_SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
+          HOSTINGER_SSH_KNOWN_HOSTS: ${{ secrets.HOSTINGER_SSH_KNOWN_HOSTS }}
+          HOSTINGER_SFTP_PORT: ${{ vars.HOSTINGER_SFTP_PORT || '65002' }}
+          HOSTINGER_SERVER_DIR: ${{ vars.HOSTINGER_SERVER_DIR }}
+        run: bash tool/deploy_web_sftp.sh
