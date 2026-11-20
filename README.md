@@ -93,11 +93,13 @@ Then add these repository variables:
 
 | Variable | Value |
 | --- | --- |
-| `HOSTINGER_SERVER_DIR` | Existing SFTP path to the website, ending in `/`, e.g. `domains/example.com/public_html/` relative to the login directory; use `./` only if the account opens directly inside `public_html` |
+| `HOSTINGER_SERVER_DIR` | Existing SFTP path to the website, e.g. `domains/example.com/public_html/` relative to the login directory; use `./` only if the account opens directly inside `public_html`. A trailing slash is optional. |
 | `HOSTINGER_SFTP_PORT` | Optional; defaults to `65002` |
 | `HOSTINGER_DEPLOY_ENABLED` | `true` to enable publishing |
 
 Confirm the destination using an SFTP client before enabling deployment. Paths support letters, digits, `_`, `-`, `.`, and `/`. This configuration serves the app at the domain root. For a URL subfolder, change the Flutter build command to use the matching `--base-href /subfolder/` and set the SFTP destination to that folder. The workflow uses SSH key authentication; it does not need the old FTP secrets or the `HOSTINGER_FTP_PROTOCOL` variable.
+
+Enter configuration values without surrounding quotes, spaces or extra line breaks. The host must not include `sftp://` or `:65002`; the port is configured separately. Validation errors identify the setting to correct without printing its value.
 
 Once this workflow is pushed and configured, use **Actions → Verify Kingdom Foundry → Run workflow** on `main` for the first deployment. Later pushes to `main` publish automatically. Set `HOSTINGER_DEPLOY_ENABLED` to `false` to stop publishing while keeping checks enabled. Local deployment checks run with `python3 -m unittest discover -s tool -p 'test_*.py'` (Python and Bash required).
 

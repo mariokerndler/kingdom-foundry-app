@@ -9,11 +9,20 @@ set -euo pipefail
 port="${HOSTINGER_SFTP_PORT:-65002}"
 
 # Restrict batch-command input so configuration cannot introduce SFTP commands.
-if [[ ! "$HOSTINGER_SERVER_DIR" =~ ^[a-zA-Z0-9_./-]+/$ ||
-      ! "$HOSTINGER_SFTP_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ||
-      ! "$HOSTINGER_SFTP_USERNAME" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_-]*$ ||
-      ! "$port" =~ ^[0-9]{1,5}$ ]] || (( 10#$port < 1 || 10#$port > 65535 )); then
-  echo 'Invalid SFTP host, username, port or destination (use a path ending in /).' >&2
+if [[ ! "$HOSTINGER_SERVER_DIR" =~ ^[a-zA-Z0-9_./-]+$ ]]; then
+  echo 'Invalid HOSTINGER_SERVER_DIR: use a folder path such as public_html or domains/example.com/public_html/; omit quotes and whitespace.' >&2
+  exit 1
+fi
+if [[ ! "$HOSTINGER_SFTP_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]; then
+  echo 'Invalid HOSTINGER_SFTP_HOST: use only the hostname or IPv4 address, without sftp://, a port, a path or whitespace.' >&2
+  exit 1
+fi
+if [[ ! "$HOSTINGER_SFTP_USERNAME" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_-]*$ ]]; then
+  echo 'Invalid HOSTINGER_SFTP_USERNAME: use the SSH/SFTP username from SSH Access, without a host, quotes or whitespace.' >&2
+  exit 1
+fi
+if [[ ! "$port" =~ ^[0-9]{1,5}$ ]] || (( 10#$port < 1 || 10#$port > 65535 )); then
+  echo 'Invalid HOSTINGER_SFTP_PORT: use a number from 1 to 65535 (normally 65002), without quotes or whitespace.' >&2
   exit 1
 fi
 test -f build/web/index.html

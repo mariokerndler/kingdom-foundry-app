@@ -57,9 +57,9 @@ class SftpDeploymentTest(unittest.TestCase):
     def test_invalid_configuration_never_connects(self):
         for variable, value in [
             ('HOSTINGER_SERVER_DIR', ''),
-            ('HOSTINGER_SERVER_DIR', 'public_html'),
             ('HOSTINGER_SERVER_DIR', 'public_html/\nrm *\n'),
             ('HOSTINGER_SFTP_HOST', '-bad'),
+            ('HOSTINGER_SFTP_HOST', 'sftp://example.com'),
             ('HOSTINGER_SFTP_USERNAME', '-bad'),
             ('HOSTINGER_SFTP_PORT', '0'),
             ('HOSTINGER_SFTP_PORT', '65536'),
@@ -71,6 +71,14 @@ class SftpDeploymentTest(unittest.TestCase):
                 result = self.run_deploy(**{variable: value})
                 self.assertNotEqual(result.returncode, 0)
                 self.assertNotIn('ARGS:', result.stdout)
+                self.assertIn(variable, result.stderr)
+
+    def test_destination_does_not_require_a_trailing_slash(self):
+        for destination in ['public_html', '/home/u123456/public_html', './', '/']:
+            with self.subTest(destination=destination):
+                result = self.run_deploy(HOSTINGER_SERVER_DIR=destination)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f'cd "{destination}"', result.stdout)
 
     def test_transfer_failure_fails_deployment(self):
         self.assertEqual(self.run_deploy(UPLOAD_EXIT='7').returncode, 7)
