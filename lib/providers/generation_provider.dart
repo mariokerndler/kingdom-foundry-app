@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/heuristic_engine.dart';
@@ -8,13 +10,36 @@ import '../models/kingdom_card.dart';
 import '../models/share_codebook.dart';
 import '../models/share_payload.dart';
 import '../models/setup_result.dart';
+import '../models/setup_rules.dart';
+import '../models/teaching_kingdom.dart';
+import '../models/translation_pack.dart';
+import '../services/history_service.dart';
 import 'card_data_providers.dart';
 import 'config_provider.dart';
 import 'history_provider.dart';
+import 'translation_provider.dart';
 
 // ── Last generated result (null until first run) ──────────────────────────
 
 final setupResultProvider = StateProvider<SetupResult?>((ref) => null);
+
+final _lastRerollProvider =
+    StateProvider<({SetupResult before, SetupResult after})?>((ref) => null);
+final canUndoRerollProvider = Provider<bool>((ref) {
+  final last = ref.watch(_lastRerollProvider);
+  return last != null &&
+      ref.watch(setupResultProvider)?.generatedAt == last.after.generatedAt;
+});
+
+void undoLastReroll(ProviderContainer ref) {
+  if (!ref.read(canUndoRerollProvider) ||
+      ref.read(generationStatusProvider) == GenerationStatus.loading) {
+    return;
+  }
+  ref.read(setupResultProvider.notifier).state =
+      ref.read(_lastRerollProvider)!.before;
+  ref.read(_lastRerollProvider.notifier).state = null;
+}
 
 // ── Generation status ─────────────────────────────────────────────────────
 
@@ -66,7 +91,11 @@ final _heuristicEngine = HeuristicEngine();
 ///
 /// Returns `true` on success, `false` on [SetupException].
 /// Updates [setupResultProvider] and [generationStatusProvider] reactively.
-Future<bool> generateKingdom(WidgetRef ref) async {
+Future<bool> generateKingdom(
+  WidgetRef ref, {
+  TeachingKingdom? teaching,
+  GameVibePreset? presetOverride,
+}) async {
   ref.read(_generationStatusProvider.notifier).state = GenerationStatus.loading;
   ref.read(_generationErrorProvider.notifier).state = null;
   ref.read(_generationReasonProvider.notifier).state = null;
@@ -75,20 +104,43 @@ Future<bool> generateKingdom(WidgetRef ref) async {
     final allRaw = await ref.read(allCardsProvider.future);
     final config = ref.read(configProvider);
 
-    // Stamp disabled flags from the ban list onto card objects
-    final cards = allRaw
-        .map((c) =>
-            config.isCardDisabled(c.id) ? c.copyWith(isDisabled: true) : c)
-        .toList();
+    final rules = teaching != null
+        ? SetupRules(
+            includeLandscape: false,
+            showStrategyTips: config.rules.showStrategyTips)
+        : presetOverride?.rulesAppliedTo(config.rules) ?? config.rules;
+    final SetupResult result;
+    if (teaching != null) {
+      final kingdom = resolveTeachingKingdom(teaching, allRaw, config);
+      if (kingdom == null) {
+        throw const SetupException(
+            'This teaching kingdom needs cards outside the current selection. Review your expansions and bans.',
+            SetupFailureReason.poolTooSmall);
+      }
+      result = SetupResult(
+        kingdomCards: _sortImportedKingdomCards(kingdom),
+        archetypes: const [],
+        setupNotes: _setupEngine.generateSetupNotes(kingdom, const []),
+        selectionRationale: ['${teaching.name}: ${teaching.lesson}'],
+        generatedAt: DateTime.now(),
+      );
+    } else {
+      result = _setupEngine.generate(
+        allCards: allRaw,
+        excludedCardIds: config.excludedCardIds(allRaw),
+        ownedExpansions: config.ownedExpansions,
+        rules: rules,
+        preset: presetOverride ?? GameVibePresets.byId(config.selectedPresetId),
+        recentSlots: config.preferFreshPiles
+            ? await _recentSlots(ref.read(historyServiceProvider))
+            : const {},
+      );
+    }
 
-    final result = _setupEngine.generate(
-      allCards: cards,
-      ownedExpansions: config.ownedExpansions,
-      rules: config.rules,
-      preset: GameVibePresets.byId(config.selectedPresetId),
-    );
-
-    final enriched = _heuristicEngine.enrich(result);
+    final enriched = _heuristicEngine.enrich(result).copyWith(
+          rulesSnapshot: rules,
+          playerCount: config.playerCount,
+        );
 
     ref.read(setupResultProvider.notifier).state = enriched;
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
@@ -104,6 +156,35 @@ Future<bool> generateKingdom(WidgetRef ref) async {
         'Unexpected error: ${e.toString()}';
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
     return false;
+  }
+}
+
+List<KingdomCard>? resolveTeachingKingdom(
+    TeachingKingdom teaching, List<KingdomCard> catalogue, ConfigState config) {
+  final byId = {for (final card in catalogue) card.id: card};
+  final selected = <KingdomCard>[];
+  for (final id in teaching.cardIds) {
+    final card = byId[id];
+    if (card == null ||
+        !card.isKingdomCard ||
+        !config.usesCard(card) ||
+        config.isCardDisabled(id)) {
+      return null;
+    }
+    selected.add(card);
+  }
+  validateImportedKingdom(catalogue, selected);
+  return selected;
+}
+
+Future<Set<String>> _recentSlots(HistoryService history) async {
+  try {
+    return (await history.loadCommittedHistory())
+        .take(3)
+        .expand((result) => result.kingdomSlotIds)
+        .toSet();
+  } catch (_) {
+    return const {};
   }
 }
 
@@ -123,45 +204,32 @@ Future<bool> importKingdom(WidgetRef ref, String rawText) async {
     final allCards = await ref.read(allCardsProvider.future);
     final sharePayload = SharePayload.tryDecodeAny(rawText, allCards);
     if (sharePayload != null) {
-      return _importSharePayload(ref, sharePayload);
-    }
-
-    final names = parseKingdomText(rawText);
-
-    if (names.length != 10) {
-      ref.read(_generationErrorProvider.notifier).state =
-          'Need exactly 10 cards but found ${names.length}. '
-          'Make sure you paste the complete kingdom list.';
+      final result = _resolveSharePayload(
+          sharePayload, allCards, ref.read(configProvider));
+      ref.read(setupResultProvider.notifier).state = result;
       ref.read(_generationStatusProvider.notifier).state =
-          GenerationStatus.error;
-      return false;
+          GenerationStatus.idle;
+      await ref.read(historyProvider.notifier).push(result);
+      return true;
     }
 
-    final resolution = resolveImportedKingdomCards(allCards, names);
-    final kingdom = resolution.cards;
-    final notFound = resolution.notFound;
-
-    if (notFound.isNotEmpty) {
-      final missing = notFound.join(', ');
-      ref.read(_generationErrorProvider.notifier).state =
-          'Could not find in the card database: $missing.\n\n'
-          'The app may not have data for that expansion yet.';
-      ref.read(_generationStatusProvider.notifier).state =
-          GenerationStatus.error;
-      return false;
-    }
-
+    final packs = await ref.read(translationPacksProvider.future);
+    final (kingdom: kingdom, landscapes: landscapes) =
+        resolveSetupText(allCards, rawText, packs: packs);
     final baseResult = SetupResult(
       kingdomCards: kingdom,
+      landscapeCards: landscapes,
       archetypes: [],
-      setupNotes: [],
+      setupNotes: const [],
       selectionRationale: const ['Imported from plain text list.'],
       generatedAt: DateTime.now(),
     );
-    final enriched = _heuristicEngine.enrich(baseResult);
+    final enriched = _heuristicEngine.enrich(
+        _importTableSetup(baseResult, allCards, ref.read(configProvider)));
 
     ref.read(setupResultProvider.notifier).state = enriched;
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
+    await ref.read(historyProvider.notifier).push(enriched);
     return true;
   } catch (e) {
     ref.read(_generationErrorProvider.notifier).state =
@@ -171,10 +239,33 @@ Future<bool> importKingdom(WidgetRef ref, String rawText) async {
   }
 }
 
+Future<Map<String, PileReplacement>> previewPileReplacements(
+    ProviderContainer ref, String slotId) async {
+  final cards = await ref.read(allCardsProvider.future);
+  final current = ref.read(setupResultProvider);
+  if (current == null) return {};
+  return _replacementOptions(cards, ref.read(configProvider), current, slotId);
+}
+
+Map<String, PileReplacement> _replacementOptions(List<KingdomCard> cards,
+        ConfigState config, SetupResult current, String slotId,
+        {String? incomingSlotId}) =>
+    _setupEngine.replacementOptions(
+      allCards: cards,
+      excludedCardIds: config.excludedCardIds(cards),
+      ownedExpansions: config.ownedExpansions,
+      rules: current.rulesSnapshot ?? config.rules,
+      current: current,
+      outgoingSlotId: slotId,
+      incomingSlotId: incomingSlotId,
+    );
+
 Future<bool> rerollCurrentResult(
   ProviderContainer ref, {
   bool rerollKingdom = true,
   bool rerollLandscapes = true,
+  String? replaceSlotId,
+  String? incomingSlotId,
 }) async {
   final current = ref.read(setupResultProvider);
   if (current == null ||
@@ -189,34 +280,74 @@ Future<bool> rerollCurrentResult(
   try {
     final allRaw = await ref.read(allCardsProvider.future);
     final config = ref.read(configProvider);
-    final preset = GameVibePresets.byId(config.selectedPresetId);
-    final cards = allRaw
-        .map((c) =>
-            config.isCardDisabled(c.id) ? c.copyWith(isDisabled: true) : c)
-        .toList();
+    final rules = current.rulesSnapshot ?? config.rules;
+    final playerCount = current.playerCount ?? config.playerCount;
+    final preset = GameVibePresets.byId(current.rulesSnapshot == null
+        ? config.selectedPresetId
+        : current.presetId);
+    final SetupResult result;
+    if (replaceSlotId != null) {
+      final options = _replacementOptions(
+          allRaw, config, current, replaceSlotId,
+          incomingSlotId: incomingSlotId);
+      final replacement = incomingSlotId == null && options.isNotEmpty
+          ? options.values.elementAt(Random().nextInt(options.length))
+          : options[incomingSlotId];
+      if (replacement == null) {
+        throw const SetupException(
+            'No legal replacement matches this choice. Check your rules, collection, and landscape locks.',
+            SetupFailureReason.requirementImpossible);
+      }
+      final byId = {for (final card in allRaw) card.id: card};
+      final cards = [
+        for (final card in current.kingdomCards)
+          if ((card.pileId) != replaceSlotId) byId[card.id]!,
+        ...replacement.cards,
+      ];
+      result = SetupResult(
+        kingdomCards: _sortImportedKingdomCards(cards),
+        landscapeCards: replacement.landscapes,
+        archetypes: const [],
+        setupChoices: replacement.setupChoices,
+        setupNotes: replacement.setupNotes,
+        selectionRationale: const ['One pile was replaced.'],
+        presetId: preset.id,
+        generatedAt: DateTime.now(),
+      );
+    } else {
+      result = _setupEngine.generate(
+        allCards: allRaw,
+        excludedCardIds: config.excludedCardIds(allRaw),
+        ownedExpansions: config.ownedExpansions,
+        rules: rules,
+        preset: preset,
+        previousSetupChoices: current.setupChoices,
+        recentSlots: config.preferFreshPiles && rerollKingdom
+            ? await _recentSlots(ref.read(historyServiceProvider))
+            : const {},
+        lockedKingdomCards: rerollKingdom
+            ? current.kingdomCards
+                .where((card) => current.isSlotLocked(card.pileId))
+                .toList()
+            : current.kingdomCards,
+        lockedLandscapeCards: rerollLandscapes
+            ? current.landscapeCards
+                .where((card) => current.isLandscapeLocked(card.id))
+                .toList()
+            : current.landscapeCards,
+      );
+    }
 
-    final lockedKingdomCards = rerollKingdom
-        ? current.kingdomCards
-            .where((card) =>
-                current.lockedSlotIds.contains(card.splitPileId ?? card.id))
-            .toList()
-        : current.kingdomCards;
-    final lockedLandscapeCards = rerollLandscapes
-        ? current.landscapeCards
-            .where((card) => current.lockedLandscapeIds.contains(card.id))
-            .toList()
-        : current.landscapeCards;
-
-    final result = _setupEngine.generate(
-      allCards: cards,
-      ownedExpansions: config.ownedExpansions,
-      rules: config.rules,
-      preset: preset,
-      lockedKingdomCards: lockedKingdomCards,
-      lockedLandscapeCards: lockedLandscapeCards,
-    );
-
-    final enriched = _heuristicEngine.enrich(result);
+    final enriched = _heuristicEngine.enrich(result).copyWith(
+          lockedSlotIds: current.lockedSlotIds,
+          lockedLandscapeIds: current.lockedLandscapeIds,
+          rulesSnapshot: rules,
+          playerCount: playerCount,
+          platinumColonyChoice: current.platinumColonyChoice,
+          sheltersChoice: current.sheltersChoice,
+        );
+    ref.read(_lastRerollProvider.notifier).state =
+        (before: current, after: enriched);
     ref.read(setupResultProvider.notifier).state = enriched;
     ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
     ref.read(historyProvider.notifier).push(enriched);
@@ -269,35 +400,91 @@ void clearAllLocks(WidgetRef ref) {
   );
 }
 
-String encodeSharePayload(SetupResult result) {
-  return ShareCodebook.encode(
-    kingdomSlotKeys: ShareCodebook.extractKingdomSlotKeys(result.kingdomCards),
-    landscapeIds: ShareCodebook.extractLandscapeIds(result.landscapeCards),
-  );
+SetupResult restoreKingdom(WidgetRef ref, SetupResult saved) {
+  final catalogue = ref.read(allCardsProvider).valueOrNull;
+  var result = saved;
+  if (catalogue != null) {
+    final byId = {for (final card in catalogue) card.id: card};
+    result = _heuristicEngine.enrich(_importTableSetup(
+        saved.copyWith(kingdomCards: [
+          for (final card in saved.kingdomCards) byId[card.id] ?? card
+        ], landscapeCards: [
+          for (final card in saved.landscapeCards) byId[card.id] ?? card
+        ]),
+        catalogue,
+        ref.read(configProvider)));
+  } else if (saved.setupNotes.isEmpty) {
+    result = saved.copyWith(
+        setupNotes: _setupEngine.generateSetupNotes(
+            saved.kingdomCards, saved.landscapeCards));
+  }
+  ref.read(_lastRerollProvider.notifier).state = null;
+  clearGenerationFeedback(ref);
+  ref.read(setupResultProvider.notifier).state = result;
+  return result;
 }
 
-Future<bool> _importSharePayload(WidgetRef ref, SharePayload payload) async {
-  final allCards = await ref.read(allCardsProvider.future);
+String encodeSharePayload(SetupResult result) {
+  try {
+    return ShareCodebook.encode(
+      kingdomSlotKeys:
+          ShareCodebook.extractKingdomSlotKeys(result.kingdomCards),
+      landscapeIds: ShareCodebook.extractLandscapeIds(result.landscapeCards),
+    );
+  } on ArgumentError {
+    // The ID-based format also supports cards added after KF2 was published.
+    return SharePayload(
+      kingdomCardIds: result.kingdomCards.map((card) => card.id).toList(),
+      landscapeCardIds: result.landscapeCards.map((card) => card.id).toList(),
+    ).encode();
+  }
+}
+
+String encodeFullSetup(SetupResult result) => SharePayload(
+      kingdomCardIds: result.kingdomCards.map((card) => card.id).toList(),
+      landscapeCardIds: result.landscapeCards.map((card) => card.id).toList(),
+      presetId: result.presetId,
+      rulesSnapshot: result.rulesSnapshot ?? const SetupRules(),
+      playerCount: result.playerCount ?? 2,
+      hasSettings: result.rulesSnapshot != null && result.playerCount != null,
+      setupChoices: result.setupChoices,
+      platinumColonyChoice: result.platinumColonyChoice,
+      sheltersChoice: result.sheltersChoice,
+    ).encode();
+
+SetupResult resolveSharedKingdom(
+    String code, List<KingdomCard> allCards, ConfigState config) {
+  final payload = SharePayload.tryDecodeAny(code, allCards);
+  if (payload == null) throw const FormatException('Invalid share code.');
+  return _resolveSharePayload(payload, allCards, config);
+}
+
+SetupResult _resolveSharePayload(
+    SharePayload payload, List<KingdomCard> allCards, ConfigState config) {
+  if (payload.version != 1 && payload.version != 2) {
+    throw const FormatException('Unsupported share-code version.');
+  }
   final byId = {for (final card in allCards) card.id: card};
   final kingdom = <KingdomCard>[];
   final landscape = <KingdomCard>[];
 
   for (final id in payload.kingdomCardIds) {
     final card = byId[id];
-    if (card != null) kingdom.add(card);
+    if (card == null) throw FormatException('Unknown kingdom card: $id');
+    kingdom.add(card);
   }
   for (final id in payload.landscapeCardIds) {
     final card = byId[id];
-    if (card != null) landscape.add(card);
+    if (card == null) throw FormatException('Unknown landscape card: $id');
+    landscape.add(card);
   }
 
   if (kingdom.isEmpty) {
-    ref.read(_generationErrorProvider.notifier).state =
-        'Share code could not be resolved with the current card database.';
-    ref.read(_generationStatusProvider.notifier).state = GenerationStatus.error;
-    return false;
+    throw const FormatException(
+        'Share code could not be resolved with the current card database.');
   }
 
+  validateImportedKingdom(allCards, kingdom, landscapes: landscape);
   final sortedKingdom = _sortImportedKingdomCards(kingdom);
   final sortedLandscape = _sortImportedLandscapeCards(landscape);
 
@@ -305,7 +492,10 @@ Future<bool> _importSharePayload(WidgetRef ref, SharePayload payload) async {
     kingdomCards: sortedKingdom,
     landscapeCards: sortedLandscape,
     archetypes: const [],
-    setupNotes: payload.notes,
+    setupNotes: const [],
+    setupChoices: payload.setupChoices,
+    platinumColonyChoice: payload.platinumColonyChoice,
+    sheltersChoice: payload.sheltersChoice,
     selectionRationale: [
       if (payload.presetId != null)
         'Imported from a shared ${GameVibePresets.byId(payload.presetId).name} kingdom.'
@@ -313,18 +503,60 @@ Future<bool> _importSharePayload(WidgetRef ref, SharePayload payload) async {
         'Imported from a shared kingdom code.',
     ],
     presetId: payload.presetId,
+    rulesSnapshot: payload.hasSettings ? payload.rulesSnapshot : null,
+    playerCount: payload.hasSettings ? payload.playerCount.clamp(2, 6) : null,
     generatedAt: DateTime.now(),
   );
-  final enriched = _heuristicEngine.enrich(baseResult);
-  ref.read(setupResultProvider.notifier).state = enriched;
-  ref.read(_generationStatusProvider.notifier).state = GenerationStatus.idle;
-  return true;
+  return _heuristicEngine
+      .enrich(_importTableSetup(baseResult, allCards, config, validate: true));
+}
+
+SetupResult _importTableSetup(
+    SetupResult result, List<KingdomCard> catalogue, ConfigState config,
+    {bool validate = false}) {
+  final sharedTargets = result.setupChoices.values.toSet();
+  final expansions = {
+    ...config.ownedExpansions,
+    ...result.kingdomCards.map((card) => card.expansion),
+    ...result.landscapeCards.map((card) => card.expansion),
+    ...catalogue
+        .where((card) => sharedTargets.contains(card.id))
+        .map((card) => card.expansion),
+  };
+  final sharedSlots = catalogue
+      .where((card) =>
+          sharedTargets.contains(card.id) ||
+          ((card.id == 'knights' || card.id == 'castles') &&
+              card.pileCardIds.any(sharedTargets.contains)))
+      .map((card) => card.pileId)
+      .toSet();
+  final eligible = _setupEngine.eligibleKingdomPool(
+    catalogue,
+    expansions,
+    const SetupRules(),
+    excludedCardIds: {
+      for (final card in catalogue)
+        if (!config.ownsCard(card) && !sharedSlots.contains(card.pileId))
+          card.id,
+    },
+  );
+  return _setupEngine.completeTableSetup(result, eligible,
+      previous: result.setupChoices,
+      validatePrevious: validate,
+      catalogue: catalogue,
+      landscapePool: [
+        for (final card in catalogue)
+          if (card.isLandscape &&
+              expansions.contains(card.expansion) &&
+              !config.disabledCardIds.contains(card.id))
+            card,
+      ]);
 }
 
 List<KingdomCard> _sortImportedKingdomCards(List<KingdomCard> cards) {
   final slotInfo = <String, ({int cost, String name})>{};
   for (final card in cards) {
-    final slotId = card.splitPileId ?? card.id;
+    final slotId = card.pileId;
     final current = slotInfo[slotId];
     if (current == null ||
         card.cost < current.cost ||
@@ -335,8 +567,8 @@ List<KingdomCard> _sortImportedKingdomCards(List<KingdomCard> cards) {
 
   final sorted = [...cards];
   sorted.sort((a, b) {
-    final aInfo = slotInfo[a.splitPileId ?? a.id]!;
-    final bInfo = slotInfo[b.splitPileId ?? b.id]!;
+    final aInfo = slotInfo[a.pileId]!;
+    final bInfo = slotInfo[b.pileId]!;
     final slotCost = aInfo.cost.compareTo(bInfo.cost);
     if (slotCost != 0) return slotCost;
     final slotName = aInfo.name.compareTo(bInfo.name);
@@ -371,26 +603,68 @@ int _landscapeSortOrder(KingdomCard card) {
 
 // ── Text parsing ──────────────────────────────────────────────────────────
 
-/// Extracts card names from a shared kingdom list.
-///
-/// Expects lines in the format produced by the copy action:
-/// ```
-/// 1. Village ($3)
-/// 2. Smithy ($4)
-/// ```
-/// Extra whitespace and unrecognised lines are silently ignored.
-/// Exported so the import dialog can show a live preview as the user pastes.
-List<String> parseKingdomText(String text) {
-  // Matches: "<number>. <name> (<cost>)"
-  // Cost can contain $, digits, P, D, + — use [^)] to capture anything.
-  final re = RegExp(r'^\d+\.\s+(.+?)\s+\([^)]+\)$');
-  return text
-      .replaceAll('\r\n', '\n')
-      .split('\n')
-      .map((line) => re.firstMatch(line.trim()))
-      .whereType<RegExpMatch>()
-      .map((m) => m.group(1)!)
-      .toList();
+List<String> parseKingdomText(String text) => parseSetupText(text).kingdom;
+
+/// Accepts numbered exports, one name per line, or a comma-separated list.
+({List<String> kingdom, List<String> landscapes}) parseSetupText(String text) {
+  final sections = text.split(
+      RegExp(r'^\s*Landscapes:\s*$', multiLine: true, caseSensitive: false));
+
+  List<String> parseNames(String section) {
+    final lines = section
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    final numbered = RegExp(r'^\d+\.\s+(.+?)(?:\s+\([^)]+\))?$');
+    final exported = lines
+        .map(numbered.firstMatch)
+        .whereType<RegExpMatch>()
+        .map((match) => match.group(1)!)
+        .toList();
+    if (exported.isNotEmpty) return exported;
+    if (lines.length != 1) return lines;
+    return lines.single
+        .split(',')
+        .map((name) => name.trim())
+        .where((name) => name.isNotEmpty)
+        .toList();
+  }
+
+  return (
+    kingdom: parseNames(sections.first),
+    landscapes: sections.skip(1).expand(parseNames).toList(),
+  );
+}
+
+/// Resolves and validates the same selection for preview and import.
+({List<KingdomCard> kingdom, List<KingdomCard> landscapes}) resolveSetupText(
+  List<KingdomCard> allCards,
+  String text, {
+  List<TranslationPack> packs = const [],
+}) {
+  final (kingdom: names, landscapes: landscapeNames) = parseSetupText(text);
+  if (names.length != 10) {
+    throw FormatException('Enter 10 pile names. Found ${names.length}.');
+  }
+  final resolution = resolveImportedKingdomCards(allCards, names, packs: packs);
+  final landscapesByName =
+      _importNames(allCards.where((card) => card.isLandscape), packs);
+  final landscapes = <KingdomCard>[];
+  final notFound = [...resolution.notFound];
+  for (final name in landscapeNames) {
+    final card = landscapesByName[name.toLowerCase()];
+    if (card == null) {
+      notFound.add(name);
+    } else {
+      landscapes.add(card);
+    }
+  }
+  if (notFound.isNotEmpty) {
+    throw FormatException('Unknown card names: ${notFound.join(', ')}.');
+  }
+  validateImportedKingdom(allCards, resolution.cards, landscapes: landscapes);
+  return (kingdom: resolution.cards, landscapes: landscapes);
 }
 
 /// Resolves imported kingdom-list labels back into cards.
@@ -399,22 +673,22 @@ List<String> parseKingdomText(String text) {
 /// into their constituent cards.
 ({List<KingdomCard> cards, List<String> notFound}) resolveImportedKingdomCards(
   List<KingdomCard> allCards,
-  List<String> importedNames,
-) {
-  final byLowerName = {
-    for (final card in allCards.where((c) => c.isKingdomCard))
-      card.name.toLowerCase(): card,
-  };
+  List<String> importedNames, {
+  List<TranslationPack> packs = const [],
+}) {
+  final byLowerName =
+      _importNames(allCards.where((c) => c.isKingdomCard), packs);
   final cards = <KingdomCard>[];
   final notFound = <String>[];
-  final seenIds = <String>{};
 
   for (final rawName in importedNames) {
-    final parts = rawName
-        .split('/')
-        .map((part) => part.trim())
-        .where((part) => part.isNotEmpty)
-        .toList();
+    final parts = byLowerName.containsKey(rawName.toLowerCase())
+        ? [rawName]
+        : rawName
+            .split('/')
+            .map((part) => part.trim())
+            .where((part) => part.isNotEmpty)
+            .toList();
     if (parts.isEmpty) {
       notFound.add(rawName);
       continue;
@@ -432,9 +706,7 @@ List<String> parseKingdomText(String text) {
         continue;
       }
       matchedAny = true;
-      if (seenIds.add(card.id)) {
-        cards.add(card);
-      }
+      cards.add(card);
     }
 
     if (!matchedAny && !notFound.contains(rawName)) {
@@ -445,17 +717,33 @@ List<String> parseKingdomText(String text) {
   return (cards: cards, notFound: notFound);
 }
 
-// ── Derived: available card count ─────────────────────────────────────────
-
-/// Used to warn the user if they have fewer than 10 selectable cards.
-final availableCardCountProvider = Provider<AsyncValue<int>>((ref) {
-  final allAsync = ref.watch(allCardsProvider);
-  final config = ref.watch(configProvider);
-
-  return allAsync.whenData((all) => all
-      .where((c) =>
-          config.isExpansionOwned(c.expansion) &&
-          c.isKingdomCard &&
-          !config.isCardDisabled(c.id))
-      .length);
-});
+Map<String, KingdomCard> _importNames(
+    Iterable<KingdomCard> cards, List<TranslationPack> packs) {
+  final aliases = <String, Set<KingdomCard>>{};
+  // Printed translations take precedence over legacy alternate names.
+  final localizedNames = {
+    for (final card in cards)
+      for (final pack in packs)
+        if (pack.lookup(card.id) case final entry?)
+          entry.name.trim().toLowerCase(),
+  };
+  for (final card in cards) {
+    final names = [
+      ...card.alternateNames
+          .where((name) => !localizedNames.contains(name.trim().toLowerCase())),
+      for (final pack in packs)
+        if (pack.lookup(card.id) case final entry?) entry.name,
+    ];
+    for (final name in names) {
+      final alias = name.trim().toLowerCase();
+      if (alias.isNotEmpty) {
+        (aliases[alias] ??= {}).add(card);
+      }
+    }
+  }
+  return {
+    for (final entry in aliases.entries)
+      if (entry.value.length == 1) entry.key: entry.value.single,
+    for (final card in cards) card.name.toLowerCase(): card,
+  };
+}

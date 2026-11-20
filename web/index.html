@@ -80,6 +80,16 @@
       animation: spin 0.8s linear infinite;
     }
 
+    #startup-retry {
+      border: 1px solid #E4BC52;
+      border-radius: 6px;
+      padding: 8px 14px;
+      background: #E4BC52;
+      color: #0F172A;
+      font: inherit;
+      cursor: pointer;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       #splash .spinner { animation: none; }
     }
@@ -91,16 +101,32 @@
   <div id="splash">
     <h1><img src="crown-deal.svg" width="690" height="256" alt="Kingdom Foundry"></h1>
     <div class="spinner" aria-hidden="true"></div>
-    <p role="status">Loading kingdom…</p>
+    <p id="startup-status" role="status">Loading kingdom…</p>
+    <button id="startup-retry" type="button" hidden>Retry</button>
   </div>
 
-  <script src="flutter_bootstrap.js" async></script>
   <script>
-    // Hide the splash once Flutter renders its first frame
-    window.addEventListener('flutter-first-frame', function () {
-      var splash = document.getElementById('splash');
-      if (splash) splash.style.display = 'none';
-    });
+    (() => {
+      const splash = document.getElementById('splash');
+      const retry = document.getElementById('startup-retry');
+      let rendered = false;
+      const showError = () => {
+        if (rendered) return;
+        splash.querySelector('.spinner').hidden = true;
+        document.getElementById('startup-status').textContent = 'Kingdom Foundry could not start.';
+        retry.hidden = false;
+      };
+      const timer = window.setTimeout(showError, 20000);
+      retry.addEventListener('click', () => window.location.reload());
+      window.addEventListener('kingdom-startup-error', showError);
+      window.addEventListener('flutter-first-frame', () => {
+        rendered = true;
+        window.clearTimeout(timer);
+        splash.style.display = 'none';
+      }, { once: true });
+    })();
   </script>
+  <script src="print_setup.js" defer></script>
+  <script src="flutter_bootstrap.js" async onerror="window.dispatchEvent(new Event('kingdom-startup-error'))"></script>
 </body>
 </html>

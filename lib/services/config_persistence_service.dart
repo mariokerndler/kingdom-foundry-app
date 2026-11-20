@@ -3,11 +3,14 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/cost_curve_rule.dart';
+import '../models/collection_profile.dart';
 import '../models/expansion.dart';
 import '../models/game_vibe_preset.dart';
+import '../models/kingdom_card.dart';
 import '../models/setup_rules.dart';
 import '../providers/config_provider.dart';
 
+const _kSnapshot = 'cfg_snapshot_v1';
 const _kExpansions = 'cfg_expansions';
 const _kNoAttacks = 'cfg_no_attacks';
 const _kNoDuration = 'cfg_no_duration';
@@ -39,13 +42,105 @@ const _kSelectedLanguageCode = 'cfg_selected_language_code';
 
 class ConfigPersistenceService {
   final SharedPreferences _prefs;
+  Future<void> _pendingSave = Future.value();
   ConfigPersistenceService(this._prefs);
 
+  T? _read<T>(String key) {
+    final value = _prefs.get(key);
+    return value is T ? value : null;
+  }
+
+  List<String>? _readNames(String key) {
+    final raw = _read<String>(key);
+    if (raw == null) return null;
+    try {
+      final values = jsonDecode(raw);
+      return values is List ? values.whereType<String>().toList() : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  CostCurveRule _readCostCurve() {
+    final raw = _read<String>(_kCostCurve);
+    if (raw != null) {
+      try {
+        final curve = CostCurveRule.fromJsonString(raw);
+        if (curve.bucketCounts.values
+            .every((count) => count >= 0 && count <= 10)) {
+          return curve;
+        }
+      } catch (_) {
+        // Preserve other preferences when just the cost curve is damaged.
+      }
+    }
+    return const CostCurveRule();
+  }
+
   ConfigState load() {
-    final expansionJson = _prefs.getString(_kExpansions);
+    final raw = _read<String>(_kSnapshot);
+    if (raw != null) {
+      try {
+        final json = jsonDecode(raw) as Map<String, dynamic>;
+        T? read<T>(String key) {
+          final value = json[key];
+          return value is T ? value : null;
+        }
+
+        final collections = <String, CollectionProfile>{};
+        for (final entry in (read<Map>('collections') ?? const {}).entries) {
+          if (entry.key is! String ||
+              (entry.key as String).trim().isEmpty ||
+              entry.value is! Map<String, dynamic>) {
+            continue;
+          }
+          try {
+            collections[entry.key as String] =
+                CollectionProfile.fromJson(entry.value);
+          } on TypeError {
+            // One damaged profile should not affect other settings.
+          }
+        }
+        final selectedName = read<String>('activeCollection') ?? '';
+        final active = collections[selectedName];
+        Set<Expansion> readExpansions(List names) => Expansion.values
+            .where((expansion) => names.contains(expansion.name))
+            .toSet();
+        final quick = read<List>('quickSetupExpansions');
+        final current = read<List>('expansions');
+
+        return ConfigState(
+          ownedExpansions: active?.selected ??
+              (current == null
+                  ? {Expansion.baseSecondEdition}
+                  : readExpansions(current)),
+          collections: collections,
+          activeCollection: active == null ? '' : selectedName,
+          quickSetupExpansions: quick == null ? null : readExpansions(quick),
+          rules: SetupRules.fromJson(read<Map<String, dynamic>>('rules') ?? {}),
+          disabledCardIds: (read<List>('bans') ?? [])
+              .whereType<String>()
+              .map(canonicalCardId)
+              .toSet(),
+          playerCount: (read<int>('players') ?? 2).clamp(2, 6),
+          useDarkMode: read<bool>('darkMode') ?? false,
+          selectedPresetId: GameVibePresets.byId(read<String>('preset')).id,
+          selectedLanguageCode: read<String>('language') ?? 'en',
+          preferFreshPiles: read<bool>('preferFreshPiles') ?? false,
+        );
+      } on FormatException {
+        // Fall back to the legacy settings if the snapshot is damaged.
+      } on TypeError {
+        // The snapshot can be edited or corrupted outside the app.
+      }
+    }
+    return _loadLegacy();
+  }
+
+  ConfigState _loadLegacy() {
+    final names = _readNames(_kExpansions);
     Set<Expansion> ownedExpansions;
-    if (expansionJson != null) {
-      final names = (jsonDecode(expansionJson) as List).cast<String>();
+    if (names != null) {
       ownedExpansions = names
           .map((n) => Expansion.values.where((e) => e.name == n).firstOrNull)
           .whereType<Expansion>()
@@ -54,103 +149,78 @@ class ConfigPersistenceService {
       ownedExpansions = {Expansion.baseSecondEdition};
     }
 
-    final maxCostVal = _prefs.getInt(_kMaxCost);
-    final maxAttacksVal = _prefs.getInt(_kMaxAttacks);
-    final rawCostCurve = _prefs.getString(_kCostCurve);
+    final maxCostVal = _read<int>(_kMaxCost)?.clamp(2, 8);
+    final maxAttacksVal = _read<int>(_kMaxAttacks)?.clamp(0, 5);
     final rules = SetupRules(
-      noAttacks: _prefs.getBool(_kNoAttacks) ?? false,
-      noDuration: _prefs.getBool(_kNoDuration) ?? false,
-      noPotions: _prefs.getBool(_kNoPotions) ?? false,
-      noDebt: _prefs.getBool(_kNoDebt) ?? false,
-      noCursers: _prefs.getBool(_kNoCursers) ?? false,
-      noTravellers: _prefs.getBool(_kNoTravellers) ?? false,
-      requirePlusBuy: _prefs.getBool(_kRequireBuy) ?? false,
-      requireTrashing: _prefs.getBool(_kRequireTrash) ?? false,
-      requireVillage: _prefs.getBool(_kRequireVillage) ?? false,
-      requireDraw: _prefs.getBool(_kRequireDraw) ?? false,
+      noAttacks: _read<bool>(_kNoAttacks) ?? false,
+      noDuration: _read<bool>(_kNoDuration) ?? false,
+      noPotions: _read<bool>(_kNoPotions) ?? false,
+      noDebt: _read<bool>(_kNoDebt) ?? false,
+      noCursers: _read<bool>(_kNoCursers) ?? false,
+      noTravellers: _read<bool>(_kNoTravellers) ?? false,
+      requirePlusBuy: _read<bool>(_kRequireBuy) ?? false,
+      requireTrashing: _read<bool>(_kRequireTrash) ?? false,
+      requireVillage: _read<bool>(_kRequireVillage) ?? false,
+      requireDraw: _read<bool>(_kRequireDraw) ?? false,
       requireReactionIfAttacks:
-          _prefs.getBool(_kRequireReactionIfAttacks) ?? false,
+          _read<bool>(_kRequireReactionIfAttacks) ?? false,
       maxCost: maxCostVal,
       maxAttacks: maxAttacksVal,
-      includeLandscape: _prefs.getBool(_kIncludeLandscape) ?? true,
-      showStrategyTips: _prefs.getBool(_kShowStrategyTips) ?? true,
-      landscapeEvents: _prefs.getInt(_kLandscapeEvents) ?? 2,
-      landscapeProjects: _prefs.getInt(_kLandscapeProjects) ?? 2,
-      landscapeLandmarks: _prefs.getInt(_kLandscapeLandmarks) ?? 1,
-      landscapeWays: _prefs.getInt(_kLandscapeWays) ?? 1,
-      landscapeAllies: _prefs.getInt(_kLandscapeAllies) ?? 1,
-      landscapeTraits: _prefs.getInt(_kLandscapeTraits) ?? 1,
-      costCurve: rawCostCurve == null
-          ? const CostCurveRule()
-          : CostCurveRule.fromJsonString(rawCostCurve),
+      includeLandscape: _read<bool>(_kIncludeLandscape) ?? true,
+      showStrategyTips: _read<bool>(_kShowStrategyTips) ?? true,
+      landscapeEvents: (_read<int>(_kLandscapeEvents) ?? 2).clamp(0, 4),
+      landscapeProjects: (_read<int>(_kLandscapeProjects) ?? 2).clamp(0, 4),
+      landscapeLandmarks: (_read<int>(_kLandscapeLandmarks) ?? 1).clamp(0, 3),
+      landscapeWays: (_read<int>(_kLandscapeWays) ?? 1).clamp(0, 4),
+      landscapeAllies: (_read<int>(_kLandscapeAllies) ?? 1).clamp(0, 3),
+      landscapeTraits: (_read<int>(_kLandscapeTraits) ?? 1).clamp(0, 4),
+      costCurve: _readCostCurve(),
     );
 
-    final bannedJson = _prefs.getString(_kDisabledCards);
-    final disabledCardIds = bannedJson != null
-        ? (jsonDecode(bannedJson) as List).cast<String>().toSet()
-        : <String>{};
+    final disabledCardIds =
+        (_readNames(_kDisabledCards) ?? []).map(canonicalCardId).toSet();
 
     return ConfigState(
       ownedExpansions: ownedExpansions,
       rules: rules,
       disabledCardIds: disabledCardIds,
-      playerCount: _prefs.getInt(_kPlayerCount) ?? 2,
-      useDarkMode: _prefs.getBool(_kUseDarkMode) ?? false,
+      playerCount: (_read<int>(_kPlayerCount) ?? 2).clamp(2, 6),
+      useDarkMode: _read<bool>(_kUseDarkMode) ?? false,
       selectedPresetId:
-          _prefs.getString(_kSelectedPresetId) ?? GameVibePresets.noneId,
-      selectedLanguageCode: _prefs.getString(_kSelectedLanguageCode) ?? 'en',
+          _read<String>(_kSelectedPresetId) ?? GameVibePresets.noneId,
+      selectedLanguageCode: _read<String>(_kSelectedLanguageCode) ?? 'en',
     );
   }
 
-  Future<void> save(ConfigState state) async {
-    try {
-      await Future.wait([
-        _prefs.setString(
-          _kExpansions,
-          jsonEncode(state.ownedExpansions.map((e) => e.name).toList()),
-        ),
-        _prefs.setBool(_kNoAttacks, state.rules.noAttacks),
-        _prefs.setBool(_kNoDuration, state.rules.noDuration),
-        _prefs.setBool(_kNoPotions, state.rules.noPotions),
-        _prefs.setBool(_kNoDebt, state.rules.noDebt),
-        _prefs.setBool(_kNoCursers, state.rules.noCursers),
-        _prefs.setBool(_kNoTravellers, state.rules.noTravellers),
-        _prefs.setBool(_kRequireBuy, state.rules.requirePlusBuy),
-        _prefs.setBool(_kRequireTrash, state.rules.requireTrashing),
-        _prefs.setBool(_kRequireVillage, state.rules.requireVillage),
-        _prefs.setBool(_kRequireDraw, state.rules.requireDraw),
-        _prefs.setBool(
-            _kRequireReactionIfAttacks, state.rules.requireReactionIfAttacks),
-        _prefs.setString(
-          _kDisabledCards,
-          jsonEncode(state.disabledCardIds.toList()),
-        ),
-        _prefs.setInt(_kPlayerCount, state.playerCount),
-        _prefs.setBool(_kIncludeLandscape, state.rules.includeLandscape),
-        _prefs.setBool(_kShowStrategyTips, state.rules.showStrategyTips),
-        _prefs.setBool(_kUseDarkMode, state.useDarkMode),
-        _prefs.setString(_kSelectedPresetId, state.selectedPresetId),
-        _prefs.setString(_kSelectedLanguageCode, state.selectedLanguageCode),
-        _prefs.setInt(_kLandscapeEvents, state.rules.landscapeEvents),
-        _prefs.setInt(_kLandscapeProjects, state.rules.landscapeProjects),
-        _prefs.setInt(_kLandscapeLandmarks, state.rules.landscapeLandmarks),
-        _prefs.setInt(_kLandscapeWays, state.rules.landscapeWays),
-        _prefs.setInt(_kLandscapeAllies, state.rules.landscapeAllies),
-        _prefs.setInt(_kLandscapeTraits, state.rules.landscapeTraits),
-        _prefs.setString(_kCostCurve, state.rules.costCurve.toJsonString()),
-      ]);
-      if (state.rules.maxCost != null) {
-        await _prefs.setInt(_kMaxCost, state.rules.maxCost!);
-      } else {
-        await _prefs.remove(_kMaxCost);
-      }
-      if (state.rules.maxAttacks != null) {
-        await _prefs.setInt(_kMaxAttacks, state.rules.maxAttacks!);
-      } else {
-        await _prefs.remove(_kMaxAttacks);
-      }
-    } catch (_) {
-      // Best-effort — never crash the UI.
-    }
+  Future<void> save(ConfigState state) {
+    final operation = _pendingSave.then((_) async {
+      final stored = await _prefs.setString(
+          _kSnapshot,
+          jsonEncode({
+            'expansions': state.ownedExpansions
+                .map((expansion) => expansion.name)
+                .toList(),
+            'rules': state.rules.toJson(),
+            'bans': state.disabledCardIds.toList(),
+            'players': state.playerCount,
+            'darkMode': state.useDarkMode,
+            'preset': state.selectedPresetId,
+            'language': state.selectedLanguageCode,
+            'preferFreshPiles': state.preferFreshPiles,
+            if (state.collections.isNotEmpty)
+              'collections': state.collections
+                  .map((name, profile) => MapEntry(name, profile.toJson())),
+            if (state.activeCollection.isNotEmpty)
+              'activeCollection': state.activeCollection,
+            if (state.quickSetupExpansions != null)
+              'quickSetupExpansions': state.quickSetupExpansions!
+                  .map((expansion) => expansion.name)
+                  .toList(),
+          }));
+      if (!stored) throw StateError('Settings could not be saved.');
+    });
+    _pendingSave =
+        operation.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    return operation;
   }
 }

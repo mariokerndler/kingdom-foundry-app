@@ -3,10 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/setup_exception.dart';
+import '../models/game_vibe_preset.dart';
+import '../models/kingdom_card.dart';
 import '../models/share_payload.dart';
+import '../models/teaching_kingdom.dart';
 import '../providers/card_data_providers.dart';
 import '../providers/config_provider.dart';
 import '../providers/generation_provider.dart';
+import '../providers/translation_provider.dart';
 import '../screens/results_screen.dart';
 import '../utils/app_theme.dart';
 import '../utils/open_web_page.dart';
@@ -21,7 +25,9 @@ import '../widgets/screens/rules_section.dart';
 // ── Screen ─────────────────────────────────────────────────────────────────
 
 class ConfigurationScreen extends ConsumerStatefulWidget {
-  const ConfigurationScreen({super.key});
+  const ConfigurationScreen({super.key, this.onOpenResults});
+
+  final VoidCallback? onOpenResults;
 
   @override
   ConsumerState<ConfigurationScreen> createState() =>
@@ -90,6 +96,8 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
             isLoading: isLoading,
             importing: _importing,
             onGenerate: () => _generate(context, ref),
+            onFirstGame: _showFirstGame,
+            onReview: (reason) => _jumpToTab(_tabForReason(reason)),
           ),
         ),
       );
@@ -105,7 +113,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
           tabs: const [
             Tab(icon: Icon(Icons.library_books_outlined), text: 'Expansions'),
             Tab(icon: Icon(Icons.tune_rounded), text: 'Rules'),
-            Tab(icon: Icon(Icons.block_rounded), text: 'Ban Cards'),
+            Tab(icon: Icon(Icons.style_outlined), text: 'Catalogue'),
           ],
         ),
       ),
@@ -135,6 +143,8 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
         isLoading: isLoading,
         importing: _importing,
         onGenerate: () => _generate(context, ref),
+        onFirstGame: _showFirstGame,
+        onReview: (reason) => _jumpToTab(_tabForReason(reason)),
       ),
     );
   }
@@ -158,7 +168,10 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
         ),
         IconButton(
           tooltip: 'Open kingdom library',
-          onPressed: isLoading ? null : () => showHistorySheet(context, ref),
+          onPressed: isLoading
+              ? null
+              : () => showHistorySheet(context, ref,
+                  onOpenResults: widget.onOpenResults),
           icon: const Icon(Icons.collections_bookmark_rounded),
         ),
         IconButton(
@@ -205,7 +218,8 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
 
   // ── Generate ──────────────────────────────────────────────────────────────
 
-  Future<void> _generate(BuildContext context, WidgetRef ref) async {
+  Future<void> _generate(BuildContext context, WidgetRef ref,
+      {TeachingKingdom? teaching, GameVibePreset? preset}) async {
     final config = ref.read(configProvider);
     if (config.ownedExpansions.isEmpty) {
       setGenerationFeedback(
@@ -216,7 +230,10 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
       _jumpToTab(_ConfigTab.expansions);
       return;
     }
-    if (config.rules.costCurve.enabled && !config.rules.costCurve.isValid) {
+    if (teaching == null &&
+        preset == null &&
+        config.rules.costCurve.enabled &&
+        !config.rules.costCurve.isValid) {
       setGenerationFeedback(
         ref,
         message:
@@ -227,12 +244,13 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
     }
 
     HapticFeedback.mediumImpact();
-    final success = await generateKingdom(ref);
+    final success =
+        await generateKingdom(ref, teaching: teaching, presetOverride: preset);
 
     if (!context.mounted) return;
 
     if (success) {
-      Navigator.of(context).push(buildResultsRoute());
+      _openResults();
     } else {
       final error = ref.read(generationErrorProvider) ?? 'Unknown error.';
       final reason = ref.read(generationFailureReasonProvider);
@@ -242,6 +260,76 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
       }
       _showErrorDialog(context, error, reason);
     }
+  }
+
+  Future<void> _showFirstGame() async {
+    final List<KingdomCard> cards;
+    try {
+      cards = await ref.read(allCardsProvider.future);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Could not load the teaching kingdoms.')),
+        );
+      }
+      return;
+    }
+    if (!mounted) return;
+    final config = ref.read(configProvider);
+    final available = teachingKingdoms
+        .where((board) => resolveTeachingKingdom(board, cards, config) != null)
+        .toList();
+    final choice =
+        await showDialog<({TeachingKingdom? teaching, GameVibePreset? preset})>(
+      context: context,
+      builder: (context) => AlertDialog(
+        scrollable: true,
+        title: const Text('Set up your first game'),
+        content: SizedBox(
+            width: 440,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                    'Choose a fixed teaching kingdom or roll a board with beginner rules. Your saved setup settings stay in place.'),
+                const SizedBox(height: 12),
+                if (available.isEmpty)
+                  const Text(
+                      'No teaching kingdoms match your selected expansions and bans.'),
+                for (final board in available)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(board.name),
+                    subtitle: Text(board.lesson),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () =>
+                        Navigator.pop(context, (teaching: board, preset: null)),
+                  ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Roll Beginner Friendly'),
+                  subtitle: const Text(
+                      'Prefers simple cards, leaves out Curse givers, and uses at most one Attack pile.'),
+                  trailing: const Icon(Icons.casino_outlined),
+                  onTap: () => Navigator.pop(context, (
+                    teaching: null,
+                    preset: GameVibePresets.byId('beginner_friendly')
+                  )),
+                ),
+              ],
+            )),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'))
+        ],
+      ),
+    );
+    if (choice == null || !mounted) return;
+    await _generate(context, ref,
+        teaching: choice.teaching, preset: choice.preset);
   }
 
   // ── Import ────────────────────────────────────────────────────────────────
@@ -255,6 +343,11 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
     if (text == null || !context.mounted) return;
 
     HapticFeedback.mediumImpact();
+    await _importText(context, ref, text);
+  }
+
+  Future<void> _importText(
+      BuildContext context, WidgetRef ref, String text) async {
     setState(() => _importing = true);
     final success = await importKingdom(ref, text);
 
@@ -262,11 +355,20 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen>
     setState(() => _importing = false);
 
     if (success) {
-      Navigator.of(context).push(buildResultsRoute());
+      _openResults();
     } else {
       final error = ref.read(generationErrorProvider) ?? 'Unknown error.';
       final reason = ref.read(generationFailureReasonProvider);
       _showErrorDialog(context, error, reason);
+    }
+  }
+
+  void _openResults() {
+    final onOpenResults = widget.onOpenResults;
+    if (onOpenResults != null) {
+      onOpenResults();
+    } else {
+      Navigator.of(context).push(buildResultsRoute());
     }
   }
 
@@ -324,9 +426,9 @@ class _WideConfigurationBody extends StatelessWidget {
                 label: Text('Rules'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.block_rounded),
-                selectedIcon: Icon(Icons.block),
-                label: Text('Ban Cards'),
+                icon: Icon(Icons.style_outlined),
+                selectedIcon: Icon(Icons.style_rounded),
+                label: Text('Catalogue'),
               ),
             ],
           ),
@@ -516,11 +618,15 @@ class _GeneratePanel extends ConsumerWidget {
   final bool isLoading;
   final bool importing;
   final VoidCallback onGenerate;
+  final VoidCallback onFirstGame;
+  final ValueChanged<SetupFailureReason> onReview;
 
   const _GeneratePanel({
     required this.isLoading,
     required this.importing,
     required this.onGenerate,
+    required this.onFirstGame,
+    required this.onReview,
   });
 
   @override
@@ -529,10 +635,11 @@ class _GeneratePanel extends ConsumerWidget {
     final cs = theme.colorScheme;
     final pool = ref.watch(selectedPoolCountProvider);
     final count = pool.valueOrNull;
+    final conflict = ref.watch(selectedPoolConflictProvider);
     final status = switch (count) {
       null => pool.hasError ? 'Card pool unavailable' : 'Loading card pool…',
       < 10 => '$count eligible · At least 10 needed',
-      _ => '$count eligible cards',
+      _ => '$count eligible piles',
     };
 
     return SafeArea(
@@ -548,7 +655,14 @@ class _GeneratePanel extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Current setup', style: theme.textTheme.titleSmall),
+            Row(children: [
+              Expanded(
+                  child:
+                      Text('Current setup', style: theme.textTheme.titleSmall)),
+              TextButton(
+                  onPressed: isLoading ? null : onFirstGame,
+                  child: const Text('First game')),
+            ]),
             const SizedBox(height: AppSpacing.xs),
             Text(
               status,
@@ -559,6 +673,18 @@ class _GeneratePanel extends ConsumerWidget {
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
+            if (conflict != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(conflict.message,
+                  style: theme.textTheme.bodySmall?.copyWith(color: cs.error)),
+              TextButton(
+                onPressed: () => onReview(conflict.reason),
+                child: Text(
+                    conflict.reason == SetupFailureReason.requirementImpossible
+                        ? 'Review rules'
+                        : 'Review expansions'),
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             SizedBox(
               width: double.infinity,
@@ -594,17 +720,15 @@ class _GeneratePanel extends ConsumerWidget {
 
 // ── Import dialog ──────────────────────────────────────────────────────────
 
-class _ImportDialog extends StatefulWidget {
+class _ImportDialog extends ConsumerStatefulWidget {
   const _ImportDialog();
 
   @override
-  State<_ImportDialog> createState() => _ImportDialogState();
+  ConsumerState<_ImportDialog> createState() => _ImportDialogState();
 }
 
-class _ImportDialogState extends State<_ImportDialog> {
+class _ImportDialogState extends ConsumerState<_ImportDialog> {
   final _ctrl = TextEditingController();
-  List<String> _parsed = [];
-  bool _isShareCode = false;
 
   @override
   void initState() {
@@ -620,12 +744,7 @@ class _ImportDialogState extends State<_ImportDialog> {
     }, onError: (Object _) {});
   }
 
-  void _onChanged() {
-    setState(() {
-      _parsed = parseKingdomText(_ctrl.text);
-      _isShareCode = SharePayload.looksLikeShareCode(_ctrl.text);
-    });
-  }
+  void _onChanged() => setState(() {});
 
   @override
   void dispose() {
@@ -635,8 +754,29 @@ class _ImportDialogState extends State<_ImportDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isValid = _parsed.length == 10 || _isShareCode;
+    final catalogue = ref.watch(allCardsProvider);
+    final packs = ref.watch(translationPacksProvider);
     final hasInput = _ctrl.text.trim().isNotEmpty;
+    var isValid = false;
+    var feedback = 'Loading the card catalogue…';
+    if (hasInput && SharePayload.looksLikeShareCode(_ctrl.text)) {
+      isValid = true;
+      feedback = 'Share code found. Import will validate its cards.';
+    } else if (hasInput && catalogue.hasError) {
+      feedback = 'Could not load the card catalogue.';
+    } else if (hasInput && catalogue.hasValue && !packs.isLoading) {
+      try {
+        final selection = resolveSetupText(catalogue.requireValue, _ctrl.text,
+            packs: packs.valueOrNull ?? const []);
+        final landscapeCount = selection.landscapes.length;
+        isValid = true;
+        feedback = landscapeCount == 0
+            ? '10 piles recognized.'
+            : '10 piles and $landscapeCount landscape cards recognized.';
+      } on FormatException catch (error) {
+        feedback = error.message;
+      }
+    }
 
     return AlertDialog(
       scrollable: true,
@@ -653,15 +793,22 @@ class _ImportDialogState extends State<_ImportDialog> {
               minLines: 4,
               autofocus: true,
               decoration: const InputDecoration(
-                labelText: 'Kingdom list or share code',
-                hintText: '1. Village (\$3)\n2. Smithy (\$4)\n…',
+                labelText: 'Kingdom list, share code, or link',
+                hintText: 'Village\nSmithy\n…',
                 alignLabelWithHint: true,
               ),
             ),
             if (hasInput) ...[
               const SizedBox(height: AppSpacing.md),
-              _ParsePreview(
-                  parsed: _parsed, isValid: isValid, isShareCode: _isShareCode),
+              Semantics(
+                liveRegion: true,
+                child: Text(feedback,
+                    style: TextStyle(
+                      color: isValid
+                          ? AppColors.success(Theme.of(context).colorScheme)
+                          : Theme.of(context).colorScheme.error,
+                    )),
+              ),
             ],
           ],
         ),
@@ -676,35 +823,6 @@ class _ImportDialogState extends State<_ImportDialog> {
           child: const Text('Import kingdom'),
         ),
       ],
-    );
-  }
-}
-
-// ── Import live-preview ────────────────────────────────────────────────────
-
-class _ParsePreview extends StatelessWidget {
-  final List<String> parsed;
-  final bool isValid;
-  final bool isShareCode;
-
-  const _ParsePreview({
-    required this.parsed,
-    required this.isValid,
-    required this.isShareCode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final color = isValid ? AppColors.success(cs) : cs.error;
-    final feedback = isShareCode
-        ? 'Share code found. Ready to import.'
-        : isValid
-            ? '10 cards found. Ready to import.'
-            : '${parsed.length} of 10 cards found. Paste the full list or a share code.';
-    return Semantics(
-      liveRegion: true,
-      child: Text(feedback, style: TextStyle(color: color)),
     );
   }
 }

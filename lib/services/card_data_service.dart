@@ -13,7 +13,7 @@ class CardDataService {
   static const _assetPath = 'assets/data/cards.json';
 
   // Lazily populated cache — null until first call to [loadAll].
-  List<KingdomCard>? _cache;
+  Future<List<KingdomCard>>? _cache;
 
   // -------------------------------------------------------------------------
   // Public API
@@ -21,17 +21,23 @@ class CardDataService {
 
   /// Returns every card in the catalogue.
   /// Parses the JSON asset on first call; subsequent calls return the cache.
-  Future<List<KingdomCard>> loadAll() async {
+  Future<List<KingdomCard>> loadAll() {
     if (_cache != null) return _cache!;
+    final pending = _load();
+    _cache = pending;
+    pending.then<void>((_) {}, onError: (Object error, StackTrace stack) {
+      if (identical(_cache, pending)) _cache = null;
+    });
+    return pending;
+  }
 
+  Future<List<KingdomCard>> _load() async {
     final raw = await rootBundle.loadString(_assetPath);
     final parsed = json.decode(raw) as List<dynamic>;
 
-    _cache = parsed
+    return parsed
         .map((e) => KingdomCard.fromJson(e as Map<String, dynamic>))
         .toList(growable: false);
-
-    return _cache!;
   }
 
   /// Returns all kingdom cards from the given [expansions].
@@ -41,26 +47,8 @@ class CardDataService {
         .where((c) =>
             expansions.contains(c.expansion) &&
             c.isKingdomCard &&
-            !c.isDisabled)
+            !c.isAuxiliary)
         .toList();
-  }
-
-  /// Returns cards grouped by expansion.
-  Future<Map<Expansion, List<KingdomCard>>> groupedByExpansion() async {
-    final all = await loadAll();
-    final map = <Expansion, List<KingdomCard>>{};
-    for (final card in all) {
-      if (card.isDisabled) continue;
-      map.putIfAbsent(card.expansion, () => []).add(card);
-    }
-    // Sort each group by cost then name for stable display ordering.
-    for (final list in map.values) {
-      list.sort((a, b) {
-        final c = a.cost.compareTo(b.cost);
-        return c != 0 ? c : a.name.compareTo(b.name);
-      });
-    }
-    return map;
   }
 
   /// Returns the set of expansions that have at least one card in the data.

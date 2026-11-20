@@ -26,21 +26,55 @@ class TranslationService {
     return byCode.values.toList()..sort((a, b) => a.label.compareTo(b.label));
   }
 
-  Future<void> importPack(String rawJson) async {
-    final candidate = TranslationPack.fromJsonString(rawJson);
+  static TranslationPack validatePack(String rawJson, Set<String> cardIds) {
+    final raw = jsonDecode(rawJson);
+    if (raw is! Map<String, dynamic> ||
+        raw['languageCode'] is! String ||
+        raw['label'] is! String ||
+        raw['cards'] is! Map<String, dynamic>) {
+      throw const FormatException(
+          'Expected a language code, label, and card map.');
+    }
+    final candidate = TranslationPack.fromJson(raw);
+    if (!RegExp(r'^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$')
+            .hasMatch(candidate.languageCode) ||
+        candidate.languageCode == 'en' ||
+        candidate.label.trim().isEmpty ||
+        candidate.version != 1 ||
+        candidate.cards.isEmpty) {
+      throw const FormatException(
+          'Use a non-English language code, a label, version 1, and at least one card.');
+    }
+    for (final entry in candidate.cards.entries) {
+      if (!cardIds.contains(entry.key)) {
+        throw FormatException('Unknown card ID: ${entry.key}.');
+      }
+      if (entry.value.name.trim().isEmpty && entry.value.text.trim().isEmpty) {
+        throw FormatException(
+            '${entry.key} needs a translated name or rules text.');
+      }
+    }
+    return candidate;
+  }
+
+  Future<void> importPack(String rawJson, Set<String> cardIds) async {
+    final candidate = validatePack(rawJson, cardIds);
     final existing = _loadImportedPacks();
     final byCode = {
       for (final pack in existing) pack.languageCode: pack,
       candidate.languageCode: candidate,
     };
     final jsonList = byCode.values.map((pack) => pack.toJson()).toList();
-    await _prefs.setString(_kImportedTranslationPacks, jsonEncode(jsonList));
+    if (!await _prefs.setString(
+        _kImportedTranslationPacks, jsonEncode(jsonList))) {
+      throw StateError('Could not save the translation pack.');
+    }
   }
 
   List<TranslationPack> _loadImportedPacks() {
-    final raw = _prefs.getString(_kImportedTranslationPacks);
-    if (raw == null) return const [];
     try {
+      final raw = _prefs.getString(_kImportedTranslationPacks);
+      if (raw == null) return const [];
       final list = jsonDecode(raw) as List<dynamic>;
       return list
           .map((item) => TranslationPack.fromJson(item as Map<String, dynamic>))

@@ -187,8 +187,7 @@ void main() {
           tester.getTopLeft(actions.at(1)).dy);
     });
 
-    testWidgets(
-        'tapping an active preset clears the vibe and resets preset rules',
+    testWidgets('removing a vibe keeps its rules and Undo restores the vibe',
         (tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -230,11 +229,14 @@ void main() {
 
       final updated = container.read(configProvider);
       expect(updated.selectedPresetId, GameVibePresets.noneId);
-      expect(updated.rules.hasActiveRules, isFalse);
-      expect(updated.rules.requireVillage, isFalse);
-      expect(updated.rules.requireDraw, isFalse);
-      expect(updated.rules.requireTrashing, isFalse);
-      expect(updated.rules.maxAttacks, isNull);
+      expect(updated.rules.requireVillage, isTrue);
+      expect(updated.rules.requireDraw, isTrue);
+      expect(updated.rules.requireTrashing, isTrue);
+      expect(updated.rules.maxAttacks, 1);
+      await tester.tap(find.text('Undo'));
+      await tester.pumpAndSettle();
+      expect(container.read(configProvider).selectedPresetId, 'engine_builder');
+      expect(container.read(configProvider).rules, same(updated.rules));
     });
   });
 
@@ -512,6 +514,69 @@ void main() {
     expect(find.text('Village 1'), findsNothing);
     expect(find.text('Village 10'), findsOneWidget);
     expect(find.text('Kingdom updated · 1 locked'), findsOneWidget);
+    await tester.tap(find.byTooltip('Undo reroll'));
+    await tester.pumpAndSettle();
+    expect(find.text('Village 1'), findsOneWidget);
+    expect(find.text('Village 10'), findsNothing);
+    expect(find.byTooltip('Undo reroll'), findsNothing);
+    await tester.tap(find.text('Compact board'));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widgetList<KingdomCardWidget>(find.byType(KingdomCardWidget))
+            .every((card) => card.compact),
+        isTrue);
+    await tester.tap(find.text('Sort by expansion'));
+    await tester.pumpAndSettle();
+    expect(find.text('Village 0'), findsOneWidget);
+    await tester.tap(find.text('Table setup'));
+    await tester.pumpAndSettle();
+    final checklist = find.byType(AlertDialog);
+    expect(
+        find.descendant(
+            of: checklist, matching: find.text('Table setup checklist')),
+        findsOneWidget);
+    expect(
+        find.descendant(
+            of: checklist,
+            matching: find.textContaining('8 Provinces and 10 Curses')),
+        findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('choose a replacement through the searchable catalogue',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final container = ProviderContainer(overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      setupResultProvider.overrideWith((ref) => sampleResult),
+      allCardsProvider.overrideWith(
+          (ref) async => [...sampleCards, sampleCard(10), sampleCard(11)]),
+    ]);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(UncontrolledProviderScope(
+        container: container, child: const MaterialApp(home: ResultsScreen())));
+    await tester.tap(find.byTooltip('More reroll options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Replace a pile…'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(
+        of: find.byType(SimpleDialog), matching: find.text('Village 0')));
+    await tester.pumpAndSettle();
+    expect(find.text('Village 10'), findsOneWidget);
+    expect(find.text('Village 11'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'village 11');
+    await tester.pumpAndSettle();
+    expect(find.text('Village 10'), findsNothing);
+    await tester.tap(find.text('Choose'));
+    await tester.pumpAndSettle();
+    final board = container.read(setupResultProvider)!;
+    expect(
+        board.kingdomSlotIds,
+        {...sampleResult.kingdomSlotIds}
+          ..remove('card_0')
+          ..add('card_11'));
     expect(tester.takeException(), isNull);
   });
 
@@ -524,6 +589,7 @@ void main() {
         ProviderScope(
           overrides: [
             sharedPreferencesProvider.overrideWithValue(prefs),
+            allCardsProvider.overrideWith((ref) async => sampleCards),
             setupResultProvider.overrideWith((ref) => sampleResult),
           ],
           child: const MaterialApp(

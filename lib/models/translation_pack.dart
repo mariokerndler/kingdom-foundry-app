@@ -9,6 +9,8 @@ class CardTranslation {
     required this.text,
   });
 
+  bool get isComplete => name.trim().isNotEmpty && text.trim().isNotEmpty;
+
   factory CardTranslation.fromJson(Map<String, dynamic> json) =>
       CardTranslation(
         name: json['name'] as String? ?? '',

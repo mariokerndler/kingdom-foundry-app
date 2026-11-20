@@ -19,6 +19,104 @@ enum AltVpPressure { none, light, medium, heavy }
 
 enum RerollAffinity { sticky, flexible, swingy }
 
+enum DrawCapability {
+  none,
+  cycling,
+  conditional,
+  net;
+
+  bool get addsCards => this == conditional || this == net;
+}
+
+enum TrashingThroughput { none, one, multiple }
+
+enum SetupDependency {
+  bane,
+  ferrymanPile,
+  riverboatCard,
+  mouseCard,
+  extraAttackPile,
+  islandMat,
+  nativeVillageMat,
+  embargoTokens,
+  pirateShipMat,
+  tradeRouteMat,
+  allies,
+  prophecies
+}
+
+/// Reviewed capabilities can override broad tags without changing card rules text.
+class CardCapabilities {
+  final int extraActions;
+  final DrawCapability draw;
+  final TrashingThroughput trashing;
+  final bool defensiveReaction;
+  final Set<SetupDependency> dependencies;
+
+  const CardCapabilities(
+      {this.extraActions = 0,
+      this.draw = DrawCapability.none,
+      this.trashing = TrashingThroughput.none,
+      this.defensiveReaction = false,
+      this.dependencies = const {}});
+
+  factory CardCapabilities.fromTags(List<CardTag> tags, List<CardType> types) =>
+      CardCapabilities(
+        extraActions: tags.contains(CardTag.villageEffect) ||
+                tags.contains(CardTag.plusTwoActions)
+            ? 1
+            : 0,
+        draw: tags.contains(CardTag.drawToX) || tags.contains(CardTag.plusCard)
+            ? DrawCapability.conditional
+            : DrawCapability.none,
+        trashing: tags.contains(CardTag.trashCards) ||
+                tags.contains(CardTag.trashForBenefit)
+            ? TrashingThroughput.one
+            : TrashingThroughput.none,
+        defensiveReaction: types.contains(CardType.reaction) &&
+            tags.contains(CardTag.blockAttack),
+        dependencies: {
+          if (types.contains(CardType.liaison)) SetupDependency.allies,
+          if (types.contains(CardType.omen)) SetupDependency.prophecies,
+        },
+      );
+
+  factory CardCapabilities.fromJson(
+      Map<String, dynamic> json, CardCapabilities fallback) {
+    T readEnum<T extends Enum>(List<T> values, Object? raw) =>
+        values.firstWhere((value) => value.name == raw,
+            orElse: () => throw FormatException('Unknown capability "$raw".'));
+    final extra = json['extraActions'] as int? ?? fallback.extraActions;
+    if (extra < 0) {
+      throw const FormatException('Extra actions cannot be negative.');
+    }
+    return CardCapabilities(
+      extraActions: extra,
+      draw: json.containsKey('draw')
+          ? readEnum(DrawCapability.values, json['draw'])
+          : fallback.draw,
+      trashing: json.containsKey('trashing')
+          ? readEnum(TrashingThroughput.values, json['trashing'])
+          : fallback.trashing,
+      defensiveReaction:
+          json['defensiveReaction'] as bool? ?? fallback.defensiveReaction,
+      dependencies: json.containsKey('dependencies')
+          ? (json['dependencies'] as List)
+              .map((entry) => readEnum(SetupDependency.values, entry))
+              .toSet()
+          : fallback.dependencies,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'extraActions': extraActions,
+        'draw': draw.name,
+        'trashing': trashing.name,
+        'defensiveReaction': defensiveReaction,
+        'dependencies': dependencies.map((entry) => entry.name).toList(),
+      };
+}
+
 extension _EnumJson on Enum {
   String get jsonName => name;
 }
@@ -117,20 +215,17 @@ class CardMetadata {
     bool isLandscape = false,
     bool isSplitPile = false,
     bool isTraveller = false,
+    CardCapabilities? capabilities,
   }) {
+    capabilities ??= CardCapabilities.fromTags(tags, types);
     final hasAttack =
         types.contains(CardType.attack) || tags.contains(CardTag.attack);
     final hasDuration =
         types.contains(CardType.duration) || tags.contains(CardTag.duration);
     final hasNight = types.contains(CardType.night);
-    final hasDraw =
-        tags.contains(CardTag.plusCard) || tags.contains(CardTag.drawToX);
-    final hasVillage = tags.contains(CardTag.villageEffect) ||
-        tags.contains(CardTag.plusTwoActions) ||
-        tags.contains(CardTag.plusAction);
-    final hasTrash = tags.contains(CardTag.trashCards) ||
-        tags.contains(CardTag.trashForBenefit) ||
-        tags.contains(CardTag.remodel);
+    final hasDraw = capabilities.draw.addsCards;
+    final hasVillage = capabilities.extraActions > 0;
+    final hasTrash = capabilities.trashing != TrashingThroughput.none;
     final hasGain = tags.contains(CardTag.gainCard) ||
         tags.contains(CardTag.gainCheaply) ||
         tags.contains(CardTag.gainTreasure) ||
@@ -143,8 +238,7 @@ class CardMetadata {
       if (isLandscape) 1,
       if (isSplitPile) 1,
       if (isTraveller) 1,
-      if (hasDuration) 1,
-      if (hasNight) 1,
+      ...capabilities.dependencies.map((_) => 1),
       if (potionCost) 1,
       if (debtCost != null) 1,
       if (tags.contains(CardTag.tokens) ||
@@ -156,7 +250,7 @@ class CardMetadata {
 
     final complexity = setupScore >= 3 || (hasAttack && hasDraw)
         ? CardComplexity.high
-        : (setupScore >= 1 || hasAttack || hasTrash)
+        : (setupScore >= 1 || hasAttack || hasTrash || hasDuration || hasNight)
             ? CardComplexity.medium
             : CardComplexity.low;
 
@@ -188,19 +282,17 @@ class CardMetadata {
             ? PayloadProfile.economy
             : PayloadProfile.support;
 
-    final trashQuality = hasTrash
-        ? tags.contains(CardTag.trashForBenefit)
-            ? QualityLevel.high
-            : tags.contains(CardTag.remodel)
-                ? QualityLevel.medium
-                : QualityLevel.low
-        : QualityLevel.none;
-
-    final drawQuality = hasDraw
-        ? (tags.contains(CardTag.drawToX) || tags.contains(CardTag.plusCard))
-            ? (hasVillage ? QualityLevel.high : QualityLevel.medium)
-            : QualityLevel.low
-        : QualityLevel.none;
+    final trashQuality = switch (capabilities.trashing) {
+      TrashingThroughput.none => QualityLevel.none,
+      TrashingThroughput.one => QualityLevel.low,
+      TrashingThroughput.multiple => QualityLevel.high,
+    };
+    final drawQuality = switch (capabilities.draw) {
+      DrawCapability.none => QualityLevel.none,
+      DrawCapability.cycling => QualityLevel.low,
+      DrawCapability.conditional => QualityLevel.medium,
+      DrawCapability.net => QualityLevel.high,
+    };
 
     final gainSpeed = hasGain
         ? (tags.contains(CardTag.gainCheaply) ||

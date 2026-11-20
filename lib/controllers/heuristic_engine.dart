@@ -1,3 +1,4 @@
+import '../models/card_metadata.dart';
 import '../models/card_tag.dart';
 import '../models/kingdom_card.dart';
 import '../models/setup_result.dart';
@@ -40,17 +41,7 @@ class HeuristicEngine {
       ...result.landscapeCards,
     ];
 
-    return SetupResult(
-      kingdomCards: result.kingdomCards,
-      landscapeCards: result.landscapeCards,
-      archetypes: analyze(analysisCards),
-      setupNotes: result.setupNotes,
-      selectionRationale: result.selectionRationale,
-      presetId: result.presetId,
-      lockedSlotIds: result.lockedSlotIds,
-      lockedLandscapeIds: result.lockedLandscapeIds,
-      generatedAt: result.generatedAt,
-    );
+    return result.copyWith(archetypes: analyze(analysisCards));
   }
 
   // ===========================================================================
@@ -74,20 +65,18 @@ class HeuristicEngine {
 
     for (final c in p.kingdom) {
       // Village role — the backbone of any engine
-      if (c.hasTag(CardTag.villageEffect)) {
+      if (c.providesExtraActions) {
         score += 2.5;
-      } else if (c.hasTag(CardTag.plusTwoActions)) {
-        score += 2.0;
       } else if (c.hasTag(CardTag.plusAction)) {
         score += 0.6;
       }
 
       // Draw role
-      if (c.hasTag(CardTag.drawToX)) {
-        score += 2.0;
-      } else if (c.hasTag(CardTag.plusCard)) {
-        score += 1.2;
-      }
+      score += switch (c.capabilities.draw) {
+        DrawCapability.net => 2.0,
+        DrawCapability.conditional => c.hasTag(CardTag.drawToX) ? 2.0 : 1.2,
+        DrawCapability.none || DrawCapability.cycling => 0.0,
+      };
 
       // Support roles
       if (c.hasTag(CardTag.sifting)) score += 0.7;
@@ -96,7 +85,10 @@ class HeuristicEngine {
     }
 
     // Require at least one action-chainer AND one draw source for a true engine
-    if (p.villageCount == 0 && p.plusActionCount < 2) return null;
+    if (p.villageCount == 0 &&
+        !p.drawCards.any((card) => card.hasTag(CardTag.plusAction))) {
+      return null;
+    }
     if (p.drawCount == 0) return null;
     if (score < _engineThreshold) return null;
 
@@ -117,7 +109,7 @@ class HeuristicEngine {
   }
 
   String _engineDescription(_KingdomProfile p) {
-    final villages = p.cardsWithTag(CardTag.villageEffect).map((c) => c.name);
+    final villages = p.villages.map((c) => c.name);
     final draws = p.drawCards.map((c) => c.name);
 
     final villagePart = villages.isEmpty
@@ -139,10 +131,10 @@ class HeuristicEngine {
     final tips = <String>[];
 
     // Opening advice
-    if (p.trashCount > 0 &&
-        p.trashCards.any((c) => c.hasTag(CardTag.trashForBenefit))) {
-      final trasher =
-          p.trashCards.firstWhere((c) => c.hasTag(CardTag.trashForBenefit));
+    if (p.trashCards
+        .any((c) => c.capabilities.trashing == TrashingThroughput.multiple)) {
+      final trasher = p.trashCards.firstWhere(
+          (c) => c.capabilities.trashing == TrashingThroughput.multiple);
       tips.add('Open with ${trasher.name} to trash Copper and Estates — a lean '
           '5-card deck churns through your engine far faster.');
     } else {
@@ -153,15 +145,15 @@ class HeuristicEngine {
 
     // Village advice
     if (p.villageCount >= 2) {
-      final vNames =
-          p.cardsWithTag(CardTag.villageEffect).map((c) => c.name).join(' or ');
+      final vNames = p.villages.map((c) => c.name).join(' or ');
       tips.add('Buy 2–3 copies of $vNames early — without sufficient Actions '
           'your draw cards become dead terminals.');
     }
 
     // Draw advice
-    if (p.cardsWithTag(CardTag.drawToX).isNotEmpty) {
-      final drawer = p.cardsWithTag(CardTag.drawToX).first;
+    if (p.drawCards.where((card) => card.hasTag(CardTag.drawToX)).isNotEmpty) {
+      final drawer =
+          p.drawCards.where((card) => card.hasTag(CardTag.drawToX)).first;
       tips.add('${drawer.name} draws to a fixed hand size — it gets stronger '
           'the smaller your deck is, so trash early and play it late.');
     } else if (p.drawCards.isNotEmpty) {
@@ -186,7 +178,7 @@ class HeuristicEngine {
 
   List<String> _engineKeyCards(_KingdomProfile p) {
     return <String>{
-      ...p.cardsWithTag(CardTag.villageEffect).map((c) => c.name),
+      ...p.villages.map((c) => c.name),
       ...p.drawCards.take(2).map((c) => c.name),
       if (p.trashCount > 0) p.trashCards.first.name,
     }.take(4).toList();
@@ -271,14 +263,7 @@ class HeuristicEngine {
 
     // Terminal draw synergy
     if (p.terminalDrawCount > 0) {
-      // Find the best draw card — may have drawToX (Library) rather than plusCard
-      final terminal = p.kingdom.firstWhere(
-        (c) =>
-            (c.hasTag(CardTag.plusCard) || c.hasTag(CardTag.drawToX)) &&
-            !c.hasTag(CardTag.plusAction) &&
-            !c.hasTag(CardTag.villageEffect),
-        orElse: () => p.kingdom.first,
-      );
+      final terminal = p.terminalDrawCards.first;
       tips.add('${terminal.name} is your terminal draw engine. Buy 1–2 copies '
           'maximum — too many collide and strand your turns without Actions.');
     }
@@ -297,10 +282,9 @@ class HeuristicEngine {
         'two turns to spike \$8 even with green cards diluting your deck.');
 
     // Attack interaction
-    if (p.attackCount > 0) {
-      tips.add('Attacks hurt Big Money more than engine decks (you rely on '
-          'consistent hand size). If a Reaction is available, consider '
-          'buying one copy as insurance.');
+    if (p.attackCount > 0 && p.attackDefenders.isNotEmpty) {
+      tips.add(
+          'Consider ${p.attackDefenders.first.name} for protection from Attacks.');
     }
 
     return tips;
@@ -311,7 +295,7 @@ class HeuristicEngine {
         .where((c) =>
             c.hasTag(CardTag.goldGain) ||
             c.hasTag(CardTag.gainTreasure) ||
-            c.hasTag(CardTag.plusCard) && !c.hasTag(CardTag.plusAction))
+            p.terminalDrawCards.contains(c))
         .map((c) => c.name)
         .take(3)
         .toList();
@@ -379,12 +363,11 @@ class HeuristicEngine {
           'must react to or fall behind.';
     }
 
-    final reactionNote = p.reactionCount > 0
-        ? ' A Reaction card is available — holding it in hand creates a '
-            'meaningful tension between using hand space and blocking attacks.'
+    final defenceNote = p.attackDefenders.isNotEmpty
+        ? ' ${p.attackDefenders.first.name} can protect players from Attacks.'
         : '';
 
-    return '$flavour$reactionNote Race to play your attacks before opponents '
+    return '$flavour$defenceNote Race to play your attacks before opponents '
         'can build a stable defence or race to end the game on their terms.';
   }
 
@@ -397,8 +380,7 @@ class HeuristicEngine {
         'when played before opponents have stabilised their decks.');
 
     if (p.curseAttackCount > 0) {
-      final curser = p.attackCards.firstWhere((c) => c.hasTag(CardTag.curse),
-          orElse: () => p.attackCards.first);
+      final curser = p.attackCards.firstWhere((c) => c.hasTag(CardTag.curse));
       tips.add('${curser.name} hands out Curses — watch the Curse pile. '
           'If it empties, the game often ends on three-pile; plan around it.');
       tips.add('Distribute Curses as fast as possible before opponents can '
@@ -407,18 +389,16 @@ class HeuristicEngine {
     }
 
     if (p.discardAttackCount > 0) {
-      final discarder = p.attackCards.firstWhere(
-          (c) => c.hasTag(CardTag.discard),
-          orElse: () => p.attackCards.first);
+      final discarder =
+          p.attackCards.firstWhere((c) => c.hasTag(CardTag.discard));
       tips.add('${discarder.name} disrupts hand size. Chain it with Actions '
           'that benefit from opponents having fewer cards (e.g., reaction-less kingdoms).');
     }
 
-    if (p.reactionCount > 0) {
-      final reactor = p.kingdom.firstWhere((c) => c.hasTag(CardTag.reaction),
-          orElse: () => p.kingdom.first);
-      tips.add('${reactor.name} blocks attacks. In a mirror-match, buying '
-          'one copy is often correct; buying two is usually excessive.');
+    if (p.attackDefenders.isNotEmpty) {
+      final defender = p.attackDefenders.first;
+      tips.add('${defender.name} can block Attacks. Check when its protection '
+          'starts and ends before planning around it.');
     }
 
     // End-game note
@@ -449,11 +429,11 @@ class HeuristicEngine {
     double score = 0;
 
     for (final c in p.kingdom) {
-      if (c.hasTag(CardTag.trashForBenefit)) {
-        score += 3.5; // Chapel / Forge
-      } else if (c.hasTag(CardTag.trashCards)) {
-        score += 1.5;
-      }
+      score += switch (c.capabilities.trashing) {
+        TrashingThroughput.multiple => 3.5,
+        TrashingThroughput.one => 1.5,
+        TrashingThroughput.none => 0.0,
+      };
       if (c.hasTag(CardTag.remodel)) {
         score += 1.2;
       }
@@ -604,7 +584,7 @@ class HeuristicEngine {
       if (c.id == 'duke') {
         return '${c.name} (1VP per Duchy — stack Duchies early)';
       }
-      if (c.id == 'harem') {
+      if (c.id == 'farm') {
         return '${c.name} (\$2 + 2VP — strong economy)';
       }
       if (c.id == 'nobles') {
@@ -743,9 +723,7 @@ class HeuristicEngine {
   // ===========================================================================
   // Archetype: Mirror Match
   //
-  // Triggered by: 2+ attacks AND 1+ reaction card.
-  // Both sides will race to attacks while the Reaction creates a meaningful
-  // decision about hand-space vs. protection.
+  // Triggered by 2+ attacks and at least one source of protection.
   // Threshold: raw >= 5.0
   // ===========================================================================
 
@@ -753,33 +731,25 @@ class HeuristicEngine {
   static const double _mirrorMax = 10.0;
 
   StrategyArchetype? _scoreMirrorMatch(_KingdomProfile p) {
-    if (p.attackCount < 2 || p.reactionCount < 1) return null;
+    if (p.attackCount < 2 || p.attackDefenders.isEmpty) return null;
 
     final score = (p.attackCount * 1.5) +
-        (p.reactionCount * 2.0) +
+        (p.attackDefenders.length * 2.0) +
         (p.discardAttackCount * 0.5);
 
     if (score < _mirrorThreshold) return null;
 
     final attackNames = p.attackCards.map((c) => c.name).join(', ');
-    final reactionNames = p.kingdom
-        .where((c) => c.hasTag(CardTag.reaction))
-        .map((c) => c.name)
-        .join(', ');
+    final defenceNames = p.attackDefenders.map((c) => c.name).join(', ');
 
     return StrategyArchetype(
       kind: ArchetypeKind.mirrorMatch,
       headline: 'Mirror Match',
-      description: 'With $attackNames available and $reactionNames providing '
-          'defence, this kingdom rewards the player who resolves the '
-          '"attack vs. react" tension most efficiently. Holding a '
-          'Reaction in hand is free insurance — the question is how '
-          'many Action slots it costs you.',
+      description: '$attackNames provide pressure, while $defenceNames can '
+          'protect players. Timing your Attacks around opponents’ protection '
+          'can make them more effective.',
       tips: [
-        'Buy one copy of $reactionNames early — it pays for itself if your '
-            'opponent attacks twice or more.',
-        'Attackers win if the Reaction player wastes too many turns building '
-            'defence. Match attack buys with your opponent to avoid falling behind.',
+        'Consider $defenceNames if opponents invest in Attacks.',
         'In a mirror, the first player to pivot from attacks to Provinces usually '
             'wins — do not over-commit to attacking past the mid-game.',
         'If attacks cost more Actions than they return economy, pivot earlier '
@@ -787,9 +757,7 @@ class HeuristicEngine {
       ],
       keyCardNames: [
         ...p.attackCards.map((c) => c.name).take(2),
-        ...p.kingdom
-            .where((c) => c.hasTag(CardTag.reaction))
-            .map((c) => c.name),
+        ...p.attackDefenders.map((c) => c.name),
       ],
       strength: (score / _mirrorMax).clamp(0.0, 1.0),
     );
@@ -815,24 +783,22 @@ class _KingdomProfile {
   List<KingdomCard> cardsWithTag(CardTag tag) => _byTag[tag]!;
 
   // ── Action chaining ────────────────────────────────────────────────────────
-  int get villageCount => cardsWithTag(CardTag.villageEffect).length;
-  int get plusActionCount =>
-      cardsWithTag(CardTag.plusAction).length +
-      cardsWithTag(CardTag.plusTwoActions).length;
+  late final villages =
+      kingdom.where((card) => card.providesExtraActions).toList();
+  int get villageCount => villages.length;
+  int get plusActionCount => kingdom
+      .where((card) =>
+          card.providesExtraActions || card.hasTag(CardTag.plusAction))
+      .length;
 
-  // ── Draw ───────────────────────────────────────────────────────────────────
-  List<KingdomCard> get drawCards => kingdom
-      .where((c) => c.hasTag(CardTag.plusCard) || c.hasTag(CardTag.drawToX))
-      .toList();
+  late final drawCards = kingdom.where((card) => card.providesDraw).toList();
   int get drawCount => drawCards.length;
 
-  /// Draw cards that do NOT also give +Actions (terminals).
-  int get terminalDrawCount => kingdom
-      .where((c) =>
-          (c.hasTag(CardTag.plusCard) || c.hasTag(CardTag.drawToX)) &&
-          !c.hasTag(CardTag.plusAction) &&
-          !c.hasTag(CardTag.villageEffect))
-      .length;
+  late final terminalDrawCards = drawCards
+      .where((card) =>
+          !card.hasTag(CardTag.plusAction) && !card.providesExtraActions)
+      .toList();
+  int get terminalDrawCount => terminalDrawCards.length;
 
   // ── Sifting ────────────────────────────────────────────────────────────────
   List<KingdomCard> get siftingCards => cardsWithTag(CardTag.sifting);
@@ -841,22 +807,25 @@ class _KingdomProfile {
   List<KingdomCard> get extraTurnCards => cardsWithTag(CardTag.extraTurn);
 
   // ── Trashing ───────────────────────────────────────────────────────────────
-  List<KingdomCard> get trashCards => kingdom
-      .where((c) =>
-          c.hasTag(CardTag.trashCards) || c.hasTag(CardTag.trashForBenefit))
-      .toList();
+  late final trashCards =
+      kingdom.where((card) => card.trashesOwnCards).toList();
   int get trashCount => trashCards.length;
 
   // ── Attacks ────────────────────────────────────────────────────────────────
-  List<KingdomCard> get attackCards =>
+  late final List<KingdomCard> attackCards =
       kingdom.where((c) => c.isAttack).toList();
   int get attackCount => attackCards.length;
-  int get discardAttackCount => cardsWithTag(CardTag.discard).length;
-  int get curseAttackCount => cardsWithTag(CardTag.curse).length;
-  int get junkingAttackCount => cardsWithTag(CardTag.junking).length;
+  int get discardAttackCount =>
+      attackCards.where((c) => c.hasTag(CardTag.discard)).length;
+  int get curseAttackCount =>
+      attackCards.where((c) => c.hasTag(CardTag.curse)).length;
+  int get junkingAttackCount =>
+      attackCards.where((c) => c.hasTag(CardTag.junking)).length;
   int get topdeckAttackCount =>
       attackCards.where((c) => c.hasTag(CardTag.topdeck)).length;
 
   // ── Reactions ─────────────────────────────────────────────────────────────
+  late final attackDefenders =
+      kingdom.where((card) => card.blocksAttacks).toList();
   int get reactionCount => cardsWithTag(CardTag.reaction).length;
 }

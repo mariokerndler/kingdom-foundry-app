@@ -1,16 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/kingdom_card.dart';
+import '../../models/card_type.dart';
 import '../../models/expansion.dart';
+import '../../models/kingdom_card.dart';
 import '../../providers/card_data_providers.dart';
 import '../../providers/config_provider.dart';
-import '../../utils/app_theme.dart';
-import '../common/section_header.dart';
+import '../../providers/translation_provider.dart';
+import '../cards/kingdom_card_widget.dart';
 import '../common/ui_primitives.dart';
 
 class CardBanListTab extends ConsumerStatefulWidget {
-  const CardBanListTab({super.key});
+  final List<KingdomCard>? replacementCards;
+  final ValueChanged<String>? onSelectPile;
+  final Map<String, String> replacementNotes;
+
+  const CardBanListTab({super.key})
+      : replacementCards = null,
+        onSelectPile = null,
+        replacementNotes = const {};
+
+  const CardBanListTab.replacements(
+      {super.key,
+      required this.replacementCards,
+      required this.onSelectPile,
+      this.replacementNotes = const {}});
 
   @override
   ConsumerState<CardBanListTab> createState() => _CardBanListTabState();
@@ -20,79 +34,185 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  final _searchCtrl = TextEditingController();
+
   String _query = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _searchCtrl.addListener(() {
-      setState(() => _query = _searchCtrl.text.toLowerCase().trim());
-    });
-  }
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
+  bool _ownedOnly = true;
+  bool _bannedOnly = false;
+  Expansion? _expansion;
+  CardType? _type;
+  int? _cost;
+  CardRole? _role;
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final cardsByExpAsync = ref.watch(cardsByExpansionProvider);
     final config = ref.watch(configProvider);
-    final disabledCount = config.disabledCardIds.length;
-
-    return cardsByExpAsync.when(
-      loading: () => const AppStateCard(
-        icon: Icons.block_rounded,
-        title: 'Loading card ban list',
-        message: 'Preparing cards from your selected expansions...',
+    final pack = ref.watch(activeTranslationPackProvider).valueOrNull;
+    final replacementCards = widget.replacementCards;
+    final choosing = replacementCards != null;
+    final catalogue =
+        choosing ? AsyncData(replacementCards) : ref.watch(allCardsProvider);
+    return catalogue.when(
+      loading: () => const AppLoadingStrip(label: 'Loading card catalogue…'),
+      error: (_, __) => AppStateCard(
+        icon: Icons.error_outline_rounded,
+        title: 'Card catalogue unavailable',
+        message: 'Could not load the card catalogue.',
+        action: TextButton(
+          onPressed: () {
+            ref.read(cardDataServiceProvider).invalidate();
+            ref.invalidate(allCardsProvider);
+          },
+          child: const Text('Retry'),
+        ),
       ),
-      error: (e, _) => _ErrorState(
-        message: 'Could not load card list.',
-        onRetry: () => ref.invalidate(cardsByExpansionProvider),
-      ),
-      data: (cardsByExp) {
-        // Filter to only owned expansions
-        final owned = Map.fromEntries(
-          cardsByExp.entries.where((e) => config.isExpansionOwned(e.key)),
-        );
-
-        if (owned.isEmpty) {
-          return const _EmptyState();
+      data: (cards) {
+        final piles = <String, List<KingdomCard>>{};
+        for (final card in cards) {
+          (piles[card.pileId] ??= []).add(card);
         }
-
-        // Apply search query
-        final filtered = _applyQuery(owned, _query);
-        final totalOwned = owned.values.fold(0, (s, l) => s + l.length);
+        bool isBanned(KingdomCard card) => piles[card.pileId]!
+            .any((member) => config.isCardDisabled(member.id));
+        final results = cards.where((card) {
+          if (!choosing &&
+              _ownedOnly &&
+              !(config.ownsCard(card) &&
+                  (config.collection != null ||
+                      config.isExpansionOwned(card.expansion)))) {
+            return false;
+          }
+          if (_bannedOnly && !isBanned(card)) return false;
+          if (_expansion != null && card.expansion != _expansion) return false;
+          if (_type != null && !card.types.contains(_type)) return false;
+          if (_role != null && card.role != _role) return false;
+          if (_cost != null && card.cost != _cost) return false;
+          final translation = pack?.lookup(card.id);
+          return [
+            card.name,
+            ...card.alternateNames,
+            card.text,
+            card.typeString,
+            translation?.name ?? '',
+            translation?.text ?? '',
+          ].any((text) => text.toLowerCase().contains(_query));
+        }).toList()
+          ..sort((a, b) => a.name.compareTo(b.name));
+        if (choosing) {
+          final seen = <String>{};
+          results.removeWhere((card) => !seen.add(card.pileId));
+        }
 
         return Column(
           children: [
-            // Search bar + clear-all
-            _SearchBar(
-              controller: _searchCtrl,
-              disabledCount: disabledCount,
-              onClearAll: () =>
-                  ref.read(configProvider.notifier).enableAllCards(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: TextField(
+                onChanged: (value) =>
+                    setState(() => _query = value.trim().toLowerCase()),
+                decoration: const InputDecoration(
+                  labelText: 'Search names, types, or rules',
+                  prefixIcon: Icon(Icons.search_rounded),
+                ),
+              ),
             ),
-
-            SectionHeader(
-              title: 'Banned Cards',
-              subtitle:
-                  '$disabledCount banned from $totalOwned cards across ${owned.length} expansion${owned.length == 1 ? '' : 's'}',
+            Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (!choosing)
+                  FilterChip(
+                    label: const Text('Owned only'),
+                    selected: _ownedOnly,
+                    onSelected: (value) => setState(() => _ownedOnly = value),
+                  ),
+                if (!choosing)
+                  FilterChip(
+                    label: const Text('Banned only'),
+                    selected: _bannedOnly,
+                    onSelected: (value) => setState(() => _bannedOnly = value),
+                  ),
+                TextButton.icon(
+                  icon: const Icon(Icons.filter_list_rounded),
+                  label: Text(_expansion == null &&
+                          _type == null &&
+                          _cost == null &&
+                          _role == null
+                      ? 'Filters'
+                      : 'Filters active'),
+                  onPressed: () => _showFilters(cards),
+                ),
+                if (!choosing && config.disabledCardIds.isNotEmpty)
+                  TextButton(
+                    onPressed: ref.read(configProvider.notifier).enableAllCards,
+                    child: const Text('Unban all'),
+                  ),
+              ],
             ),
-
-            // Grouped list
             Expanded(
-              child: filtered.isEmpty
-                  ? _NoResults(query: _query)
+              child: results.isEmpty
+                  ? const Center(child: Text('No cards match these filters.'))
                   : ListView.builder(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                      itemCount: _flatItemCount(filtered),
-                      itemBuilder: (ctx, i) =>
-                          _buildItem(ctx, i, filtered, config, ref),
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+                      itemCount: results.length,
+                      itemBuilder: (context, index) {
+                        final card = results[index];
+                        final slotId = card.pileId;
+                        final members = piles[slotId]!;
+                        final banned = isBanned(card);
+                        String localName(KingdomCard member) {
+                          final alias = pack?.lookup(member.id)?.name.trim();
+                          return alias == null || alias.isEmpty
+                              ? member.name
+                              : alias;
+                        }
+
+                        final name = choosing
+                            ? members.map(localName).join(' / ')
+                            : localName(card);
+                        final detail = [
+                          if (!choosing && name != card.name) card.name,
+                          if (!choosing)
+                            ...card.alternateNames
+                                .where((alias) => alias != name),
+                          card.printedExpansionName,
+                          card.typeString,
+                          if (card.isAuxiliary) 'Auxiliary',
+                          if (banned)
+                            members.length > 1 ? 'Pile banned' : 'Banned',
+                          if (widget.replacementNotes[slotId] case final note?)
+                            note,
+                        ].join(' · ');
+                        return ListTile(
+                          key: ValueKey(card.id),
+                          leading: Text(card.costString),
+                          title: Text(name),
+                          subtitle: Text(detail),
+                          onTap: () => KingdomCardWidget.showDetails(
+                              context, card,
+                              splitPileCards: members
+                                  .where((member) => member.id != card.id)
+                                  .toList()),
+                          trailing: choosing
+                              ? TextButton(
+                                  onPressed: () => widget.onSelectPile!(slotId),
+                                  child: Text('Choose',
+                                      semanticsLabel: 'Choose $name'),
+                                )
+                              : card.isAuxiliary
+                                  ? null
+                                  : IconButton(
+                                      tooltip:
+                                          '${banned ? 'Unban' : 'Ban'} ${members.length > 1 ? 'whole pile' : name}',
+                                      icon: Icon(banned
+                                          ? Icons.undo_rounded
+                                          : Icons.block_rounded),
+                                      onPressed: () => ref
+                                          .read(configProvider.notifier)
+                                          .togglePileBan(members
+                                              .map((member) => member.id)),
+                                    ),
+                        );
+                      },
                     ),
             ),
           ],
@@ -101,283 +221,73 @@ class _CardBanListTabState extends ConsumerState<CardBanListTab>
     );
   }
 
-  // ── List building helpers ────────────────────────────────────────────────
+  void _showFilters(List<KingdomCard> cards) {
+    final expansions = cards.map((card) => card.expansion).toSet().toList()
+      ..sort((a, b) => a.displayName.compareTo(b.displayName));
+    final types = cards.expand((card) => card.types).toSet().toList()
+      ..sort((a, b) => a.displayName.compareTo(b.displayName));
+    final costs = cards.map((card) => card.cost).toSet().toList()..sort();
+    showDialog<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, refresh) {
+          Widget filter<T>(String label, T? value, List<T> options,
+              String Function(T) display, ValueChanged<T?> onChanged) {
+            return DropdownButton<T>(
+              isExpanded: true,
+              value: value,
+              hint: Text('Any $label'),
+              items: [
+                DropdownMenuItem<T>(child: Text('Any $label')),
+                for (final option in options)
+                  DropdownMenuItem(value: option, child: Text(display(option))),
+              ],
+              onChanged: (value) {
+                setState(() => onChanged(value));
+                refresh(() {});
+              },
+            );
+          }
 
-  /// Returns an ordered list of (expansion, cards) pairs, query-filtered.
-  Map<Expansion, List<KingdomCard>> _applyQuery(
-    Map<Expansion, List<KingdomCard>> source,
-    String query,
-  ) {
-    if (query.isEmpty) return source;
-    final result = <Expansion, List<KingdomCard>>{};
-    for (final entry in source.entries) {
-      final matches = entry.value
-          .where((c) =>
-              c.name.toLowerCase().contains(query) ||
-              c.typeString.toLowerCase().contains(query))
-          .toList();
-      if (matches.isNotEmpty) result[entry.key] = matches;
-    }
-    return result;
-  }
-
-  /// Each expansion has 1 header + N card rows.
-  int _flatItemCount(Map<Expansion, List<KingdomCard>> grouped) {
-    return grouped.entries.fold(0, (s, e) => s + 1 + e.value.length);
-  }
-
-  Widget _buildItem(
-    BuildContext context,
-    int index,
-    Map<Expansion, List<KingdomCard>> grouped,
-    ConfigState config,
-    WidgetRef ref,
-  ) {
-    // Walk through headers + card rows sequentially
-    int cursor = 0;
-    for (final entry in grouped.entries) {
-      if (index == cursor) {
-        return _ExpansionHeader(
-            expansion: entry.key, count: entry.value.length);
-      }
-      cursor++;
-      final cardIndex = index - cursor;
-      if (cardIndex < entry.value.length) {
-        final card = entry.value[cardIndex];
-        return _CardRow(
-          card: card,
-          isDisabled: config.isCardDisabled(card.id),
-          onToggle: () => ref.read(configProvider.notifier).toggleCard(card.id),
-        );
-      }
-      cursor += entry.value.length;
-    }
-    return const SizedBox.shrink();
-  }
-}
-
-// ── Search bar ──────────────────────────────────────────────────────────────
-
-class _SearchBar extends StatelessWidget {
-  final TextEditingController controller;
-  final int disabledCount;
-  final VoidCallback onClearAll;
-
-  const _SearchBar({
-    required this.controller,
-    required this.disabledCount,
-    required this.onClearAll,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                labelText: 'Search cards',
-                helperText: 'Filter by card name or type.',
-                prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                suffixIcon: controller.text.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: 'Clear card search',
-                        onPressed: controller.clear,
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                      ),
+          return AlertDialog(
+            title: const Text('Catalogue filters'),
+            scrollable: true,
+            content: SizedBox(
+              width: 300,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  filter('expansion', _expansion, expansions,
+                      (e) => e.displayName, (e) => _expansion = e),
+                  filter('type', _type, types, (t) => t.displayName,
+                      (t) => _type = t),
+                  filter('coin cost', _cost, costs, (c) => '$c coins',
+                      (c) => _cost = c),
+                  filter('role', _role, CardRole.values, (r) => r.label,
+                      (r) => _role = r),
+                ],
               ),
             ),
-          ),
-          if (disabledCount > 0) ...[
-            const SizedBox(width: 8),
-            TextButton.icon(
-              onPressed: onClearAll,
-              icon: const Icon(Icons.restore, size: 16),
-              label: const Text('Unban all'),
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error,
+            actions: [
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _expansion = null;
+                    _type = null;
+                    _cost = null;
+                    _role = null;
+                  });
+                  Navigator.pop(context);
+                },
+                child: const Text('Clear filters'),
               ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ── Expansion group header ──────────────────────────────────────────────────
-
-class _ExpansionHeader extends StatelessWidget {
-  final Expansion expansion;
-  final int count;
-
-  const _ExpansionHeader({required this.expansion, required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(expansion.displayName,
-                style: Theme.of(context).textTheme.titleSmall),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            '$count cards',
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Card row ────────────────────────────────────────────────────────────────
-
-class _CardRow extends StatelessWidget {
-  final KingdomCard card;
-  final bool isDisabled;
-  final VoidCallback onToggle;
-
-  const _CardRow({
-    required this.card,
-    required this.isDisabled,
-    required this.onToggle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color:
-            isDisabled ? cs.error.withValues(alpha: 0.08) : cs.surfaceContainer,
-        border: Border.all(
-          color: isDisabled ? cs.error : cs.outlineVariant,
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: SwitchListTile.adaptive(
-        value: isDisabled,
-        onChanged: (_) => onToggle(),
-        title: Text(card.name, style: Theme.of(context).textTheme.titleSmall),
-        subtitle:
-            Text(isDisabled ? '${card.typeString} · Banned' : card.typeString),
-        secondary: Semantics(
-            label: 'Cost: ${card.costString}',
-            child: ExcludeSemantics(child: _CostBadge(cost: card.cost))),
-      ),
-    );
-  }
-}
-
-// ── Cost badge ──────────────────────────────────────────────────────────────
-
-class _CostBadge extends StatelessWidget {
-  final int cost;
-  const _CostBadge({required this.cost});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      width: 28,
-      height: 28,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: cs.primary,
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        '$cost',
-        style: TextStyle(
-          color: cs.onPrimary,
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-// ── Empty states ─────────────────────────────────────────────────────────────
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.library_books_outlined,
-              size: 48, color: cs.onSurfaceVariant),
-          const SizedBox(height: 16),
-          Text('No expansions selected.',
-              style: TextStyle(color: cs.onSurfaceVariant)),
-          const SizedBox(height: 4),
-          Text('Go to the Expansions tab to choose cards you can ban.',
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
-        ],
-      ),
-    );
-  }
-}
-
-class _NoResults extends StatelessWidget {
-  final String query;
-  const _NoResults({required this.query});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ignore: prefer_const_constructors
-          Icon(Icons.search_off_rounded, size: 40, color: cs.onSurfaceVariant),
-          const SizedBox(height: 12),
-          Text('No cards match "$query"',
-              style: Theme.of(context).textTheme.bodyMedium),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Error state ──────────────────────────────────────────────────────────────
-
-class _ErrorState extends ConsumerWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _ErrorState({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    return AppStateCard(
-      icon: Icons.error_outline_rounded,
-      title: 'Ban list unavailable',
-      message: message,
-      accentColor: cs.error,
-      action: TextButton.icon(
-        onPressed: onRetry,
-        icon: const Icon(Icons.refresh_rounded, size: 16),
-        label: const Text('Retry'),
-        style: TextButton.styleFrom(foregroundColor: cs.primary),
+              FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Done'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

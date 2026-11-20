@@ -10,6 +10,8 @@ enum CardType {
   command,
   gathering,
   knight,
+  ruins,
+  shelter,
   looter,
   reaction,
   duration,
@@ -32,6 +34,7 @@ enum CardType {
   prophecy,
   trait,
   reward,
+  prize,
   artifact,
   state,
   spirit,
@@ -66,6 +69,10 @@ extension CardTypeExtension on CardType {
         return 'Gathering';
       case CardType.knight:
         return 'Knight';
+      case CardType.ruins:
+        return 'Ruins';
+      case CardType.shelter:
+        return 'Shelter';
       case CardType.looter:
         return 'Looter';
       case CardType.reaction:
@@ -110,6 +117,8 @@ extension CardTypeExtension on CardType {
         return 'Trait';
       case CardType.reward:
         return 'Reward';
+      case CardType.prize:
+        return 'Prize';
       case CardType.artifact:
         return 'Artifact';
       case CardType.state:
@@ -149,10 +158,12 @@ extension CardTypeExtension on CardType {
         this != CardType.prophecy &&
         this != CardType.trait &&
         this != CardType.reward &&
+        this != CardType.prize &&
         this != CardType.traveller &&
         this != CardType.boon &&
         this != CardType.hex &&
         this != CardType.heirloom &&
+        this != CardType.shelter &&
         this != CardType.artifact &&
         this != CardType.state &&
         this != CardType.spirit &&

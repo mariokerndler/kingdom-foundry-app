@@ -78,13 +78,20 @@ class CostCurveRule {
   String toJsonString() => jsonEncode(toJson());
 
   factory CostCurveRule.fromJson(Map<String, dynamic> json) {
+    int readCount(String key, int fallback) {
+      final value = json[key];
+      return value is int && value >= 0 && value <= targetSlotCount
+          ? value
+          : fallback;
+    }
+
     return CostCurveRule(
-      enabled: json['enabled'] as bool? ?? false,
-      cheapCount: json['cheapCount'] as int? ?? 1,
-      threeCount: json['threeCount'] as int? ?? 2,
-      fourCount: json['fourCount'] as int? ?? 3,
-      fiveCount: json['fiveCount'] as int? ?? 3,
-      sixPlusCount: json['sixPlusCount'] as int? ?? 1,
+      enabled: json['enabled'] == true,
+      cheapCount: readCount('cheapCount', 1),
+      threeCount: readCount('threeCount', 2),
+      fourCount: readCount('fourCount', 3),
+      fiveCount: readCount('fiveCount', 3),
+      sixPlusCount: readCount('sixPlusCount', 1),
     );
   }
 

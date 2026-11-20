@@ -19,7 +19,7 @@ class SetupRules {
   /// e.g. Witch, Mountebank). Lighter than [noAttacks].
   final bool noCursers;
 
-  /// Remove Traveller/exchange-chain cards (Page, Peasant, Hermit, Urchin)
+  /// Remove Traveller/exchange-chain cards (Page, Peasant, Hermit, Urchin, Vampire)
   /// from the pool to avoid the extra setup of setting aside chained cards.
   final bool noTravellers;
 
@@ -94,33 +94,38 @@ class SetupRules {
   });
 
   factory SetupRules.fromJson(Map<String, dynamic> json) {
+    T? read<T>(String key) {
+      final value = json[key];
+      return value is T ? value : null;
+    }
+
+    final rawCurve = read<Map<String, dynamic>>('costCurve');
     return SetupRules(
-      noAttacks: json['noAttacks'] as bool? ?? false,
-      noDuration: json['noDuration'] as bool? ?? false,
-      noPotions: json['noPotions'] as bool? ?? false,
-      noDebt: json['noDebt'] as bool? ?? false,
-      noCursers: json['noCursers'] as bool? ?? false,
-      noTravellers: json['noTravellers'] as bool? ?? false,
-      requirePlusBuy: json['requirePlusBuy'] as bool? ?? false,
-      requireTrashing: json['requireTrashing'] as bool? ?? false,
-      requireVillage: json['requireVillage'] as bool? ?? false,
-      requireDraw: json['requireDraw'] as bool? ?? false,
-      requireReactionIfAttacks:
-          json['requireReactionIfAttacks'] as bool? ?? false,
-      maxCost: json['maxCost'] as int?,
-      maxAttacks: json['maxAttacks'] as int?,
-      minExpansionVariety: json['minExpansionVariety'] as int? ?? 1,
-      includeLandscape: json['includeLandscape'] as bool? ?? true,
-      showStrategyTips: json['showStrategyTips'] as bool? ?? true,
-      landscapeEvents: json['landscapeEvents'] as int? ?? 2,
-      landscapeProjects: json['landscapeProjects'] as int? ?? 2,
-      landscapeLandmarks: json['landscapeLandmarks'] as int? ?? 1,
-      landscapeWays: json['landscapeWays'] as int? ?? 1,
-      landscapeAllies: json['landscapeAllies'] as int? ?? 1,
-      landscapeTraits: json['landscapeTraits'] as int? ?? 1,
-      costCurve: json['costCurve'] is Map<String, dynamic>
-          ? CostCurveRule.fromJson(json['costCurve'] as Map<String, dynamic>)
-          : const CostCurveRule(),
+      noAttacks: read<bool>('noAttacks') ?? false,
+      noDuration: read<bool>('noDuration') ?? false,
+      noPotions: read<bool>('noPotions') ?? false,
+      noDebt: read<bool>('noDebt') ?? false,
+      noCursers: read<bool>('noCursers') ?? false,
+      noTravellers: read<bool>('noTravellers') ?? false,
+      requirePlusBuy: read<bool>('requirePlusBuy') ?? false,
+      requireTrashing: read<bool>('requireTrashing') ?? false,
+      requireVillage: read<bool>('requireVillage') ?? false,
+      requireDraw: read<bool>('requireDraw') ?? false,
+      requireReactionIfAttacks: read<bool>('requireReactionIfAttacks') ?? false,
+      maxCost: read<int>('maxCost')?.clamp(2, 8),
+      maxAttacks: read<int>('maxAttacks')?.clamp(0, 5),
+      minExpansionVariety: (read<int>('minExpansionVariety') ?? 1).clamp(1, 10),
+      includeLandscape: read<bool>('includeLandscape') ?? true,
+      showStrategyTips: read<bool>('showStrategyTips') ?? true,
+      landscapeEvents: (read<int>('landscapeEvents') ?? 2).clamp(0, 4),
+      landscapeProjects: (read<int>('landscapeProjects') ?? 2).clamp(0, 4),
+      landscapeLandmarks: (read<int>('landscapeLandmarks') ?? 1).clamp(0, 3),
+      landscapeWays: (read<int>('landscapeWays') ?? 1).clamp(0, 4),
+      landscapeAllies: (read<int>('landscapeAllies') ?? 1).clamp(0, 3),
+      landscapeTraits: (read<int>('landscapeTraits') ?? 1).clamp(0, 4),
+      costCurve: rawCurve == null
+          ? const CostCurveRule()
+          : CostCurveRule.fromJson(rawCurve),
     );
   }
 
@@ -187,7 +192,7 @@ class SetupRules {
     if (noDuration) rules.add('No Duration cards');
     if (noPotions) rules.add('No Potion-cost cards');
     if (noDebt) rules.add('No Debt cards');
-    if (noTravellers) rules.add('No Travellers');
+    if (noTravellers) rules.add('No exchange chains');
     if (requirePlusBuy) rules.add('Must include +Buy');
     if (requireTrashing) rules.add('Must include Trasher');
     if (requireVillage) rules.add('Must include Village');

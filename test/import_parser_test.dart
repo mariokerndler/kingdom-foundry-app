@@ -4,6 +4,7 @@ import 'package:kingdom_foundry/models/card_metadata.dart';
 import 'package:kingdom_foundry/models/card_type.dart';
 import 'package:kingdom_foundry/models/expansion.dart';
 import 'package:kingdom_foundry/models/kingdom_card.dart';
+import 'package:kingdom_foundry/models/translation_pack.dart';
 import 'package:kingdom_foundry/providers/generation_provider.dart';
 
 void main() {
@@ -69,8 +70,15 @@ void main() {
       expect(parseKingdomText(''), isEmpty);
     });
 
-    test('returns empty list for completely unrelated text', () {
-      expect(parseKingdomText('hello world\nno cards here'), isEmpty);
+    test('accepts one name per line and comma-separated names', () {
+      expect(parseKingdomText('Village\nSmithy'), ['Village', 'Smithy']);
+      expect(parseKingdomText('Village, Smithy'), ['Village', 'Smithy']);
+    });
+
+    test('preserves landscape names in a separate section', () {
+      final parsed = parseSetupText('$validInput\r\nLandscapes:\r\n1. Mission');
+      expect(parsed.kingdom, hasLength(10));
+      expect(parsed.landscapes, ['Mission']);
     });
 
     test('handles multi-word card names', () {
@@ -176,6 +184,7 @@ void main() {
       required String id,
       required String name,
       String? splitPileId,
+      List<String> alternateNames = const [],
     }) {
       return KingdomCard(
         id: id,
@@ -187,8 +196,55 @@ void main() {
         text: '',
         metadata: const CardMetadata(),
         splitPileId: splitPileId,
+        alternateNames: alternateNames,
       );
     }
+
+    test('printed translations take priority over legacy aliases in any order',
+        () {
+      final artisan =
+          card(id: 'artisan', name: 'Artisan', alternateNames: ['Handwerker']);
+      final craftsman = card(id: 'craftsman', name: 'Craftsman');
+      const german = TranslationPack(
+          languageCode: 'de',
+          label: 'Deutsch',
+          cards: {'craftsman': CardTranslation(name: 'Handwerker', text: '')});
+      for (final catalogue in [
+        [artisan, craftsman],
+        [craftsman, artisan]
+      ]) {
+        expect(
+            resolveImportedKingdomCards(catalogue, ['Handwerker'],
+                packs: [german]).cards.single.id,
+            'craftsman');
+        expect(
+            resolveImportedKingdomCards(catalogue, ['Handwerker'])
+                .cards
+                .single
+                .id,
+            'artisan');
+        expect(
+            resolveImportedKingdomCards(catalogue, ['Artisan', 'Craftsman'],
+                packs: [german]).cards.map((card) => card.id),
+            ['artisan', 'craftsman']);
+      }
+    });
+
+    test('conflicting translations or legacy aliases remain unresolved', () {
+      final catalogue = [
+        card(id: 'a', name: 'First', alternateNames: ['Shared']),
+        card(id: 'b', name: 'Second', alternateNames: ['Shared'])
+      ];
+      const conflicting =
+          TranslationPack(languageCode: 'de', label: 'Deutsch', cards: {
+        'a': CardTranslation(name: 'Same', text: ''),
+        'b': CardTranslation(name: 'Same', text: '')
+      });
+      final result = resolveImportedKingdomCards(catalogue, ['Shared', 'Same'],
+          packs: [conflicting]);
+      expect(result.cards, isEmpty);
+      expect(result.notFound, ['Shared', 'Same']);
+    });
 
     test('expands split pile labels back into both cards', () {
       final allCards = [

@@ -1,55 +1,41 @@
 'use strict';
 
-// ponytail: bump this cache name when changing the offline shell.
-const CACHE_NAME = 'kingdom-foundry-v5';
-const APP_SHELL = [
-  './',
-  './index.html',
-  './flutter.js',
-  './flutter_bootstrap.js',
-  './main.dart.js',
-  './manifest.json',
-  './favicon.png',
-  './crown-deal.svg',
-  './privacy.html',
-  './impressum.html',
-  './icons/Icon-192.png',
-  './icons/Icon-512.png',
-  './icons/Icon-maskable-192.png',
-  './icons/Icon-maskable-512.png',
-  './icons/apple-touch-icon.png',
-];
+const release = null;
+const scope = new URL(self.registration.scope);
+const cachePrefix = 'kingdom-foundry:' + scope.href + ':';
+const cacheName = cachePrefix + (release?.id ?? 'unprepared');
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
+  if (!release) {
+    event.waitUntil(Promise.reject(new Error('Prepare the web release before installing.')));
+    return;
+  }
+  event.waitUntil(caches.open(cacheName).then((cache) =>
+    cache.addAll(release.files.map((path) => new Request(new URL(path, scope), { cache: 'reload' }))),
+  ));
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((names) =>
-      Promise.all(names.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))),
-    ),
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    for (const name of await caches.keys()) {
+      if (name.startsWith(cachePrefix) && name !== cacheName) await caches.delete(name);
+    }
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+  const url = new URL(request.url);
+  if (request.method !== 'GET' || url.origin !== scope.origin ||
+      !url.pathname.startsWith(scope.pathname)) return;
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => caches.match('./index.html'));
-    }),
-  );
+  event.respondWith((async () => {
+    const cache = await caches.open(cacheName);
+    const index = new URL('index.html', scope);
+    const isAppEntry = request.mode === 'navigate' &&
+      (url.pathname === scope.pathname || url.pathname === index.pathname);
+    const cached = await cache.match(isAppEntry ? index.href : request);
+    return cached ?? fetch(request);
+  })());
 });

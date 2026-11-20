@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../models/collection_profile.dart';
 import '../../models/expansion.dart';
+import '../../models/kingdom_card.dart';
 import '../../providers/card_data_providers.dart';
 import '../../providers/config_provider.dart';
 import '../../utils/app_theme.dart';
@@ -47,11 +49,22 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
       error: (e, _) => AppStateCard(
         icon: Icons.error_outline_rounded,
         title: 'Could not load expansions',
-        message: 'The expansion catalog failed to load.\n$e',
+        message: 'The expansion catalogue failed to load.',
+        action: TextButton(
+          onPressed: () {
+            ref.read(cardDataServiceProvider).invalidate();
+            ref.invalidate(allCardsProvider);
+            ref.invalidate(availableExpansionsProvider);
+          },
+          child: const Text('Retry'),
+        ),
       ),
       data: (available) {
+        final selectable = config.collection == null
+            ? available
+            : available.intersection(config.collection!.available);
         // Sort alphabetically, then filter by search query.
-        final sorted = available.toList()
+        final sorted = selectable.toList()
           ..sort((a, b) => a.displayName.compareTo(b.displayName));
         final filtered = _query.isEmpty
             ? sorted
@@ -60,10 +73,41 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
                 .toList();
 
         final owned = config.ownedExpansions;
-        final allOwned = owned.length == available.length;
+        final allOwned = owned.containsAll(selectable);
 
         return Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+              child: Row(children: [
+                Expanded(
+                    child: DropdownButton<String>(
+                  isExpanded: true,
+                  value: config.activeCollection,
+                  items: [
+                    const DropdownMenuItem(
+                        value: '', child: Text('Quick setup')),
+                    for (final name in config.collections.keys)
+                      DropdownMenuItem(
+                          value: name,
+                          child: Text(name, overflow: TextOverflow.ellipsis)),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) notifier.selectCollection(value);
+                  },
+                )),
+                IconButton(
+                    tooltip: 'New collection',
+                    icon: const Icon(Icons.add_rounded),
+                    onPressed: () => _editCollection(available)),
+                if (config.collection != null)
+                  IconButton(
+                      tooltip: 'Edit collection',
+                      icon: const Icon(Icons.edit_outlined),
+                      onPressed: () =>
+                          _editCollection(available, editing: true)),
+              ]),
+            ),
             // ── Search bar ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -95,16 +139,18 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
                 children: [
                   Expanded(
                     child: Text(
-                        '${owned.length} of ${available.length} expansions selected',
+                        '${owned.intersection(selectable).length} of ${selectable.length} expansions in this setup',
                         style: Theme.of(context).textTheme.bodySmall),
                   ),
                   TextButton(
-                    onPressed: () {
-                      HapticFeedback.selectionClick();
-                      allOwned
-                          ? notifier.clearExpansions()
-                          : notifier.selectAllExpansions(available);
-                    },
+                    onPressed: selectable.isEmpty
+                        ? null
+                        : () {
+                            HapticFeedback.selectionClick();
+                            allOwned
+                                ? notifier.clearExpansions()
+                                : notifier.selectAllExpansions(selectable);
+                          },
                     child: Text(
                       allOwned ? 'Clear all' : 'Select all',
                       style: TextStyle(
@@ -121,35 +167,192 @@ class _ExpansionPickerTabState extends ConsumerState<ExpansionPickerTab>
 
             // ── Expansion list ──────────────────────────────────────────
             Expanded(
-              child: filtered.isEmpty
-                  ? _EmptySearch(query: _searchCtrl.text)
-                  : statsAsync.when(
-                      loading: () => const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: AppLoadingStrip(
-                          label: 'Updating expansion counts...',
+              child: selectable.isEmpty && config.collection != null
+                  ? const Center(
+                      child:
+                          Text('Edit the collection to add boxes or promos.'))
+                  : filtered.isEmpty
+                      ? _EmptySearch(query: _searchCtrl.text)
+                      : statsAsync.when(
+                          loading: () => const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: AppLoadingStrip(
+                              label: 'Updating expansion counts...',
+                            ),
+                          ),
+                          error: (_, __) => const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: AppStateCard(
+                              icon: Icons.error_outline_rounded,
+                              title: 'Counts unavailable',
+                              message: 'Expansion counts could not be loaded.',
+                            ),
+                          ),
+                          data: (stats) => _GroupedList(
+                            expansions: filtered,
+                            stats: stats,
+                            owned: owned,
+                            onToggle: notifier.toggleExpansion,
+                          ),
                         ),
-                      ),
-                      error: (_, __) => const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: AppStateCard(
-                          icon: Icons.error_outline_rounded,
-                          title: 'Counts unavailable',
-                          message: 'Expansion counts could not be loaded.',
-                        ),
-                      ),
-                      data: (stats) => _GroupedList(
-                        expansions: filtered,
-                        stats: stats,
-                        owned: owned,
-                        onToggle: notifier.toggleExpansion,
-                      ),
-                    ),
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _editCollection(Set<Expansion> available,
+      {bool editing = false}) async {
+    final config = ref.read(configProvider);
+    final List<KingdomCard> catalogue;
+    try {
+      catalogue = await ref.read(allCardsProvider.future);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not load the card catalogue.')),
+        );
+      }
+      return;
+    }
+    if (!mounted) return;
+    final current = config.collection;
+    final promos = <String, List<KingdomCard>>{};
+    for (final card in catalogue.where(
+        (card) => card.expansion == Expansion.promos && !card.isAuxiliary)) {
+      (promos[card.pileId] ??= []).add(card);
+    }
+    final boxes = available
+        .where((expansion) => expansion != Expansion.promos)
+        .toList()
+      ..sort((a, b) => a.displayName.compareTo(b.displayName));
+    final original = current ??
+        CollectionProfile(
+          boxes: {
+            for (final expansion in config.ownedExpansions
+                .where((expansion) => expansion != Expansion.promos))
+              expansion: CollectionEdition.full,
+          },
+          promoPiles: config.isExpansionOwned(Expansion.promos)
+              ? promos.keys.toSet()
+              : {},
+          selected: config.ownedExpansions,
+        );
+    final previousName = editing ? config.activeCollection : null;
+    var name = previousName ?? '';
+    final owned = {...original.boxes};
+    final promoPiles = {...original.promoPiles};
+    final selected =
+        await showDialog<({String name, CollectionProfile profile})>(
+      context: context,
+      builder: (context) => StatefulBuilder(builder: (context, refresh) {
+        final trimmed = name.trim();
+        final taken = trimmed.toLowerCase() == 'quick setup' ||
+            config.collections.keys.any((key) =>
+                key != previousName &&
+                key.toLowerCase() == trimmed.toLowerCase());
+        return AlertDialog(
+          scrollable: true,
+          title: Text(editing ? 'Edit collection' : 'New collection'),
+          content: SizedBox(
+            width: 430,
+            child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                      initialValue: name,
+                      maxLength: 40,
+                      decoration: InputDecoration(
+                          labelText: 'Collection name',
+                          errorText:
+                              taken ? 'This name is already in use.' : null),
+                      onChanged: (value) => refresh(() => name = value)),
+                  const Text(
+                      'Choose the boxes and promos you own. Only cards in the catalogue are available.'),
+                  for (final expansion in boxes)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(expansion.displayName),
+                      subtitle: DropdownButton<CollectionEdition>(
+                        isExpanded: true,
+                        value: owned[expansion],
+                        hint: const Text('Not owned'),
+                        items: [
+                          const DropdownMenuItem<CollectionEdition>(
+                              child: Text('Not owned')),
+                          for (final edition
+                              in updatePackCards.containsKey(expansion)
+                                  ? CollectionEdition.values
+                                  : [CollectionEdition.full])
+                            DropdownMenuItem(
+                                value: edition,
+                                child: Text(
+                                    edition == CollectionEdition.firstEdition &&
+                                            catalogue.any((card) =>
+                                                card.expansion == expansion &&
+                                                card.firstEditionOnly)
+                                        ? 'First edition'
+                                        : edition.label,
+                                    overflow: TextOverflow.ellipsis)),
+                        ],
+                        onChanged: (edition) => refresh(() {
+                          if (edition == null) {
+                            owned.remove(expansion);
+                          } else {
+                            owned[expansion] = edition;
+                          }
+                        }),
+                      ),
+                    ),
+                  if (promos.isNotEmpty) ...[
+                    Text('Individual promos',
+                        style: Theme.of(context).textTheme.titleMedium),
+                    for (final entry in promos.entries)
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: promoPiles.contains(entry.key),
+                        title: Text(
+                            entry.value.map((card) => card.name).join(' / ')),
+                        onChanged: (value) => refresh(() {
+                          if (value == true) {
+                            promoPiles.add(entry.key);
+                          } else {
+                            promoPiles.remove(entry.key);
+                          }
+                        }),
+                      ),
+                  ],
+                ]),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel')),
+            FilledButton(
+                onPressed: trimmed.isEmpty || taken
+                    ? null
+                    : () {
+                        final profile = CollectionProfile(
+                            boxes: owned, promoPiles: promoPiles, selected: {});
+                        Navigator.pop(context, (
+                          name: trimmed,
+                          profile: profile.withSelection({
+                            ...original.selected,
+                            ...profile.available.difference(original.available),
+                          })
+                        ));
+                      },
+                child: const Text('Save collection')),
+          ],
+        );
+      }),
+    );
+    if (!mounted || selected == null) return;
+    ref.read(configProvider.notifier).saveCollection(
+        selected.name, selected.profile,
+        previousName: previousName);
   }
 }
 
@@ -281,7 +484,7 @@ class _ExpansionTile extends StatelessWidget {
 
     return Semantics(
       label: '${expansion.displayName}, '
-          '${stats.kingdom} kingdom cards'
+          '${stats.kingdom} kingdom piles'
           '${stats.landscape > 0 ? ", ${stats.landscape} landscape cards" : ""}. '
           '${selected ? "Selected" : "Not selected"}. Tap to toggle.',
       button: true,
@@ -326,7 +529,7 @@ class _ExpansionTile extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '${stats.kingdom} kingdom${stats.landscape > 0 ? ' · ${stats.landscape} landscape' : ''}',
+                          '${stats.kingdom} piles${stats.landscape > 0 ? ' · ${stats.landscape} landscape' : ''}',
                           style:
                               Theme.of(context).textTheme.labelSmall?.copyWith(
                                     color: cs.onSurfaceVariant,

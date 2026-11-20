@@ -1,23 +1,32 @@
 import 'dart:math';
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../controllers/setup_exception.dart';
 import '../models/card_tag.dart';
+import '../models/expansion.dart';
 import '../models/kingdom_card.dart';
 import '../models/setup_result.dart';
+import '../models/share_payload.dart';
+import '../models/table_checklist.dart';
+import '../models/table_setup_choice.dart';
+import '../providers/card_data_providers.dart';
 import '../providers/config_provider.dart';
 import '../providers/generation_provider.dart';
 import '../providers/history_provider.dart';
 import '../providers/translation_provider.dart';
 import '../utils/app_theme.dart';
 import '../utils/archetype_utils.dart';
+import '../utils/print_setup.dart';
 import '../widgets/cards/archetype_card.dart';
 import '../widgets/cards/kingdom_card_widget.dart';
 import '../widgets/common/section_header.dart';
 import '../widgets/common/ui_primitives.dart';
+import '../widgets/screens/card_ban_list.dart';
 
 /// Groups a flat kingdom card list into display slots.
 /// Cards sharing a splitPileId collapse into a single pile slot.
@@ -103,26 +112,91 @@ class ResultsScreen extends ConsumerWidget {
       );
     }
 
+    final library = ref.watch(historyProvider);
     return Scaffold(
       appBar: _ResultsAppBar(
         result: result,
         isRegenerating: isRegenerating,
-        isFavorite: ref.watch(historyProvider).isFavorite(result),
+        isFavorite: library.isFavorite(result),
+        canToggleFavorite: !library.isLoading && !library.couldNotLoad,
         onCopy: () => _copy(context, _kingdomList(result), 'Kingdom list'),
         onCopyShare: () =>
             _copy(context, encodeSharePayload(result), 'Share code'),
+        onCopyLink: () => _copy(
+            context,
+            SharePayload.shareLink(Uri.base, encodeSharePayload(result))
+                .toString(),
+            'Share link'),
+        onCopyFullSetup: () =>
+            _copy(context, encodeFullSetup(result), 'Setup with settings'),
+        onPrintSetup: () => _print(context, ref, result),
+        onUseSetupSettings: () {
+          ref.read(configProvider.notifier).useSetupSettings(
+                rules: result.rulesSnapshot!,
+                playerCount: result.playerCount!,
+                presetId: result.presetId,
+              );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Applied the board’s rules and player count.')),
+          );
+        },
         onToggleFavorite: () => _toggleFavorite(context, ref, result),
       ),
       body: _ResultsBody(result: result, isRegenerating: isRegenerating),
     );
   }
 
+  void _print(BuildContext context, WidgetRef ref, SetupResult result) {
+    final players = result.playerCount ?? ref.read(configProvider).playerCount;
+    final slots = _splitPileSlots(result.kingdomCards);
+    final printed = printSetup({
+      'title': result.savedName.isEmpty ? 'Kingdom Foundry' : result.savedName,
+      'subtitle': '$players players · ${slots.length} kingdom piles',
+      'sections': [
+        [
+          'Kingdom piles',
+          [
+            for (final slot in slots)
+              '${slot.label} (${slot.primary.costString}) · ${slot.primary.expansion.displayName}'
+          ],
+          true
+        ],
+        [
+          'Landscapes',
+          [
+            for (final card in result.landscapeCards)
+              '${card.name} · ${card.typeString} · ${card.expansion.displayName}'
+          ],
+          false
+        ],
+        ['Table setup', tableChecklist(result, players), false],
+        if (result.savedNotes.isNotEmpty)
+          [
+            'Notes',
+            [result.savedNotes],
+            false
+          ],
+      ],
+    });
+    if (!printed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open the print preview.')));
+    }
+  }
+
   String _kingdomList(SetupResult result) {
     final slots = _splitPileSlots(result.kingdomCards);
-    return slots.asMap().entries.map((e) {
+    final kingdom = slots.asMap().entries.map((e) {
       final slot = e.value;
       return '${e.key + 1}. ${slot.label} (${slot.primary.costString})';
     }).join('\n');
+    if (!result.hasLandscape) return kingdom;
+    final landscapes = result.landscapeCards
+        .asMap()
+        .entries
+        .map((entry) => '${entry.key + 1}. ${entry.value.name}');
+    return '$kingdom\n\nLandscapes:\n${landscapes.join('\n')}';
   }
 
   Future<void> _copy(BuildContext context, String text, String label) async {
@@ -143,17 +217,17 @@ class ResultsScreen extends ConsumerWidget {
     WidgetRef ref,
     SetupResult result,
   ) async {
-    final wasFavorite = ref.read(historyProvider).isFavorite(result);
-    await ref.read(historyProvider.notifier).toggleFavorite(result);
-
-    if (!context.mounted) return;
+    final saved =
+        await ref.read(historyProvider.notifier).toggleFavorite(result);
+    if (!context.mounted || !saved) return;
+    final isFavorite = ref.read(historyProvider).isFavorite(result);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          wasFavorite
-              ? 'Removed kingdom preset from saved'
-              : 'Saved kingdom preset locally',
+          isFavorite
+              ? 'Saved kingdom preset locally'
+              : 'Removed kingdom preset from saved',
         ),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
@@ -175,7 +249,14 @@ class _EmptyResultsAppBar extends StatelessWidget
   }
 }
 
-enum _ResultsMenuAction { copyKingdom, copyShareCode }
+enum _ResultsMenuAction {
+  printSetup,
+  copyKingdom,
+  copyShareCode,
+  copyShareLink,
+  copyFullSetup,
+  useSetupSettings
+}
 
 // ── App bar ────────────────────────────────────────────────────────────────
 
@@ -183,16 +264,26 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final SetupResult result;
   final bool isRegenerating;
   final bool isFavorite;
+  final bool canToggleFavorite;
   final VoidCallback onCopy;
   final VoidCallback onCopyShare;
+  final VoidCallback onCopyLink;
+  final VoidCallback onCopyFullSetup;
+  final VoidCallback onPrintSetup;
+  final VoidCallback onUseSetupSettings;
   final VoidCallback onToggleFavorite;
 
   const _ResultsAppBar({
     required this.result,
     required this.isRegenerating,
     required this.isFavorite,
+    required this.canToggleFavorite,
     required this.onCopy,
     required this.onCopyShare,
+    required this.onCopyLink,
+    required this.onCopyFullSetup,
+    required this.onPrintSetup,
+    required this.onUseSetupSettings,
     required this.onToggleFavorite,
   });
 
@@ -210,10 +301,13 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Kingdom Board', style: tt.titleLarge),
+          Text(result.savedName.isEmpty ? 'Kingdom Board' : result.savedName,
+              style: tt.titleLarge,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis),
           const SizedBox(height: 2),
           Text(
-            '10 cards · $expansionCount expansion${expansionCount == 1 ? '' : 's'}',
+            '${result.kingdomSlotIds.length} piles · $expansionCount expansion${expansionCount == 1 ? '' : 's'}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: tt.labelSmall?.copyWith(
@@ -224,7 +318,8 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         IconButton(
           tooltip: isFavorite ? 'Remove saved preset' : 'Save kingdom preset',
-          onPressed: isRegenerating ? null : onToggleFavorite,
+          onPressed:
+              isRegenerating || !canToggleFavorite ? null : onToggleFavorite,
           icon: Icon(
             isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
             color: isFavorite
@@ -238,14 +333,30 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
           enabled: !isRegenerating,
           onSelected: (action) {
             switch (action) {
+              case _ResultsMenuAction.printSetup:
+                onPrintSetup();
               case _ResultsMenuAction.copyKingdom:
                 onCopy();
               case _ResultsMenuAction.copyShareCode:
                 onCopyShare();
+              case _ResultsMenuAction.copyShareLink:
+                onCopyLink();
+              case _ResultsMenuAction.copyFullSetup:
+                onCopyFullSetup();
+              case _ResultsMenuAction.useSetupSettings:
+                onUseSetupSettings();
             }
           },
-          itemBuilder: (context) => const [
-            PopupMenuItem(
+          itemBuilder: (context) => [
+            if (kIsWeb)
+              const PopupMenuItem(
+                value: _ResultsMenuAction.printSetup,
+                child: ListTile(
+                    leading: Icon(Icons.print_outlined),
+                    title: Text('Print table setup'),
+                    contentPadding: EdgeInsets.zero),
+              ),
+            const PopupMenuItem(
               value: _ResultsMenuAction.copyKingdom,
               child: ListTile(
                 leading: Icon(Icons.copy_rounded),
@@ -253,7 +364,7 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 contentPadding: EdgeInsets.zero,
               ),
             ),
-            PopupMenuItem(
+            const PopupMenuItem(
               value: _ResultsMenuAction.copyShareCode,
               child: ListTile(
                 leading: Icon(Icons.qr_code_rounded),
@@ -261,6 +372,34 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
                 contentPadding: EdgeInsets.zero,
               ),
             ),
+            if (kIsWeb)
+              const PopupMenuItem(
+                value: _ResultsMenuAction.copyShareLink,
+                child: ListTile(
+                  leading: Icon(Icons.link_rounded),
+                  title: Text('Copy share link'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            if ((result.rulesSnapshot != null && result.playerCount != null) ||
+                result.hasTableSetupChoices)
+              const PopupMenuItem(
+                value: _ResultsMenuAction.copyFullSetup,
+                child: ListTile(
+                  leading: Icon(Icons.copy_all_rounded),
+                  title: Text('Copy full setup'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            if (result.rulesSnapshot != null && result.playerCount != null)
+              const PopupMenuItem(
+                value: _ResultsMenuAction.useSetupSettings,
+                child: ListTile(
+                  leading: Icon(Icons.tune_rounded),
+                  title: Text('Use this setup’s settings'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
           ],
           icon: Icon(
             Icons.more_horiz_rounded,
@@ -277,29 +416,156 @@ class _ResultsAppBar extends StatelessWidget implements PreferredSizeWidget {
 
 // ── Main scrollable body ───────────────────────────────────────────────────
 
+final _compactBoardProvider = StateProvider<bool>((ref) => false);
+final _sortByExpansionProvider = StateProvider<bool>((ref) => false);
+
 class _ResultsBody extends ConsumerWidget {
   final SetupResult result;
   final bool isRegenerating;
 
   const _ResultsBody({required this.result, required this.isRegenerating});
 
+  Future<void> _showTableSetup(BuildContext context, WidgetRef ref) async {
+    var platinumColony = result.platinumColonyChoice;
+    var shelters = result.sheltersChoice;
+    final players = result.playerCount ?? ref.read(configProvider).playerCount;
+    final apply = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(builder: (context, setState) {
+        final preview = result.copyWith(
+            platinumColonyChoice: platinumColony, sheltersChoice: shelters);
+        return AlertDialog(
+          title: const Text('Table setup checklist'),
+          content: SizedBox(
+            width: 560,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<TableSetupChoice>(
+                    initialValue: platinumColony,
+                    decoration: const InputDecoration(
+                        labelText: 'Platinum and Colony (Prosperity)'),
+                    items: [
+                      for (final choice in TableSetupChoice.values)
+                        DropdownMenuItem(
+                            value: choice, child: Text(choice.label)),
+                    ],
+                    onChanged: (choice) =>
+                        setState(() => platinumColony = choice!),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<TableSetupChoice>(
+                    initialValue: shelters,
+                    decoration: const InputDecoration(
+                        labelText: 'Shelters (Dark Ages)'),
+                    items: [
+                      for (final choice in TableSetupChoice.values)
+                        DropdownMenuItem(
+                            value: choice, child: Text(choice.label)),
+                    ],
+                    onChanged: (choice) => setState(() => shelters = choice!),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                      'Choices apply to this board and its saved library entry. '
+                      'Use a full setup code to share these choices.'),
+                  const SizedBox(height: 16),
+                  for (final note in tableChecklist(preview, players))
+                    Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(note)),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Close')),
+            FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Apply')),
+          ],
+        );
+      }),
+    );
+    if (apply != true || !context.mounted) return;
+    final current = ref.read(setupResultProvider);
+    if (current == null || current.generatedAt != result.generatedAt) return;
+    final updated = current.copyWith(
+        platinumColonyChoice: platinumColony, sheltersChoice: shelters);
+    ref.read(setupResultProvider.notifier).state = updated;
+    await ref.read(historyProvider.notifier).updateTableChoices(updated);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final playerCount = ref.watch(playerCountProvider);
-    final showStrategyTips = ref.watch(configProvider).rules.showStrategyTips;
+    final config = ref.watch(configProvider);
+    final playerCount = result.playerCount ?? config.playerCount;
+    final checklist = tableChecklist(result, playerCount);
+    final extraIds = result.setupChoices.values.toSet();
+    final extraCards = extraIds.isEmpty
+        ? const <KingdomCard>[]
+        : (ref.watch(allCardsProvider).valueOrNull ?? const <KingdomCard>[])
+            .where((card) => extraIds.contains(card.id));
+    final showStrategyTips = config.rules.showStrategyTips;
+    final missingExpansions = {
+      for (final card in [
+        ...result.kingdomCards,
+        ...result.landscapeCards,
+        ...extraCards
+      ])
+        if (!config.usesCard(card))
+          if (card.firstEditionOnly)
+            '${card.name} (first edition)'
+          else
+            card.expansion.displayName,
+    }.toList()
+      ..sort();
     final slots = _splitPileSlots(result.kingdomCards);
+    final compact = ref.watch(_compactBoardProvider);
+    final sortByExpansion = ref.watch(_sortByExpansionProvider);
+    if (sortByExpansion) {
+      slots.sort((a, b) {
+        final expansion = a.primary.expansion.displayName
+            .compareTo(b.primary.expansion.displayName);
+        if (expansion != 0) return expansion;
+        final cost = a.primary.cost.compareTo(b.primary.cost);
+        return cost != 0 ? cost : a.primary.name.compareTo(b.primary.name);
+      });
+    }
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final textScale = MediaQuery.textScalerOf(context).scale(1);
     final useWideLayout = viewportWidth >= 1200 && textScale <= 1.15;
     final useSingleColumn = viewportWidth < 720 || textScale > 1.15;
     final boardPadding =
         useWideLayout ? max(24.0, (viewportWidth - 1360) / 2) : 12.0;
-    final crossAxisCount = useWideLayout ? 5 : (useSingleColumn ? 1 : 2);
-    final cardHeight = (useSingleColumn ? 222.0 : 232.0) * max(1.0, textScale);
+    final crossAxisCount =
+        compact ? 1 : (useWideLayout ? 5 : (useSingleColumn ? 1 : 2));
+    final cardHeight = (compact ? 96.0 : (useSingleColumn ? 222.0 : 232.0)) *
+        max(1.0, textScale);
     const spacing = 12.0;
 
     return CustomScrollView(
       slivers: [
+        if (result.savedNotes.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(boardPadding, 12, boardPadding, 0),
+              child: SelectableText(result.savedNotes),
+            ),
+          ),
+        if (missingExpansions.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(boardPadding, 12, boardPadding, 0),
+              child: Text(
+                  'Outside your selected collection: ${missingExpansions.join(', ')}.'),
+            ),
+          ),
         SliverToBoxAdapter(
           child: _ResultWidthBox(
             enabled: useWideLayout,
@@ -308,6 +574,33 @@ class _ResultsBody extends ConsumerWidget {
           ),
         ),
 
+        SliverToBoxAdapter(
+            child: Padding(
+          padding: EdgeInsets.fromLTRB(boardPadding, 0, boardPadding, 12),
+          child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                FilterChip(
+                    label: const Text('Compact board'),
+                    selected: compact,
+                    onSelected: (value) =>
+                        ref.read(_compactBoardProvider.notifier).state = value),
+                FilterChip(
+                    label: const Text('Sort by expansion'),
+                    selected: sortByExpansion,
+                    onSelected: (value) => ref
+                        .read(_sortByExpansionProvider.notifier)
+                        .state = value),
+                TextButton.icon(
+                    icon: const Icon(Icons.checklist_rounded),
+                    label: const Text('Table setup'),
+                    onPressed: isRegenerating
+                        ? null
+                        : () => _showTableSetup(context, ref)),
+              ]),
+        )),
         // ── 10-card grid (staggered entrance) ────────────────────────────
         SliverPadding(
           padding: EdgeInsets.symmetric(horizontal: boardPadding),
@@ -317,6 +610,7 @@ class _ResultsBody extends ConsumerWidget {
                 key: ValueKey((i, slots[i].primary.id)),
                 index: i,
                 child: KingdomCardWidget(
+                  compact: compact,
                   card: slots[i].primary,
                   splitPileCards: slots[i].splitPileCards,
                   index: i + 1,
@@ -360,13 +654,12 @@ class _ResultsBody extends ConsumerWidget {
           ),
 
         // ── Setup notes ───────────────────────────────────────────────────
-        if (result.setupNotes.isNotEmpty)
-          SliverToBoxAdapter(
-            child: _ResultWidthBox(
-              enabled: useWideLayout,
-              child: _SetupNotesSection(notes: result.setupNotes),
-            ),
+        SliverToBoxAdapter(
+          child: _ResultWidthBox(
+            enabled: useWideLayout,
+            child: _SetupNotesSection(notes: checklist),
           ),
+        ),
 
         // ── Random first player ───────────────────────────────────────────
         SliverToBoxAdapter(
@@ -561,115 +854,109 @@ class _LandscapeGroup extends ConsumerWidget {
           final localized = ref.watch(localizedCardProvider(c));
           final current = ref.watch(setupResultProvider);
           final isLocked = current?.isLandscapeLocked(c.id) ?? false;
-          return Semantics(
-            label: '${localized.name}: ${localized.text}',
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 6),
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainer,
-                border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 4,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.landscapeAccent,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+          return Container(
+            margin: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainer,
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 4,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.landscapeAccent,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(localized.name,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                  fontWeight: FontWeight.w600,
-                                )),
-                        const SizedBox(height: 3),
-                        Text(localized.text,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  height: 1.4,
-                                ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(localized.name,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontWeight: FontWeight.w600,
+                              )),
+                      const SizedBox(height: 3),
+                      Text(localized.text,
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    height: 1.4,
+                                  ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isLocked
+                                  ? AppColors.landscapeAccent
+                                      .withValues(alpha: 0.10)
+                                  : Theme.of(context).colorScheme.surface,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadii.pill),
+                              border: Border.all(
                                 color: isLocked
                                     ? AppColors.landscapeAccent
-                                        .withValues(alpha: 0.10)
-                                    : Theme.of(context).colorScheme.surface,
-                                borderRadius:
-                                    BorderRadius.circular(AppRadii.pill),
-                                border: Border.all(
-                                  color: isLocked
-                                      ? AppColors.landscapeAccent
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .outlineVariant,
-                                ),
-                              ),
-                              child: Text(
-                                isLocked
-                                    ? 'Locked for rerolls'
-                                    : 'Unlocked for rerolls',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelMedium
-                                    ?.copyWith(
-                                      color: isLocked
-                                          ? AppColors.landscapeAccent
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                    ),
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .outlineVariant,
                               ),
                             ),
-                            OutlinedButton.icon(
-                              onPressed: ref.watch(generationStatusProvider) ==
-                                      GenerationStatus.loading
-                                  ? null
-                                  : () => toggleLandscapeLock(ref, c.id),
-                              icon: Icon(
-                                isLocked
-                                    ? Icons.lock_open_rounded
-                                    : Icons.lock_rounded,
-                              ),
-                              label: Text(
-                                isLocked ? 'Unlock card' : 'Lock card',
-                              ),
+                            child: Text(
+                              isLocked
+                                  ? 'Locked for rerolls'
+                                  : 'Unlocked for rerolls',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
+                                    color: isLocked
+                                        ? AppColors.landscapeAccent
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                  ),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: ref.watch(generationStatusProvider) ==
+                                    GenerationStatus.loading
+                                ? null
+                                : () => toggleLandscapeLock(ref, c.id),
+                            icon: Icon(
+                              isLocked
+                                  ? Icons.lock_open_rounded
+                                  : Icons.lock_rounded,
+                            ),
+                            label: Text(
+                              '${isLocked ? 'Unlock' : 'Lock'} ${localized.name}',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         }),
@@ -679,7 +966,7 @@ class _LandscapeGroup extends ConsumerWidget {
   }
 }
 
-enum _RerollAction { kingdom, landscapes, clearLocks }
+enum _RerollAction { kingdom, landscapes, clearLocks, replace }
 
 class _RerollControls extends ConsumerStatefulWidget {
   final SetupResult result;
@@ -694,12 +981,17 @@ class _RerollControls extends ConsumerStatefulWidget {
 class _RerollControlsState extends ConsumerState<_RerollControls> {
   bool _rerolled = false;
 
-  Future<void> _reroll({_RerollAction? action}) async {
+  Future<void> _reroll(
+      {_RerollAction? action,
+      String? replaceSlotId,
+      String? incomingSlotId}) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final success = await rerollCurrentResult(
       container,
       rerollKingdom: action != _RerollAction.landscapes,
       rerollLandscapes: action != _RerollAction.kingdom,
+      replaceSlotId: replaceSlotId,
+      incomingSlotId: incomingSlotId,
     );
     if (!mounted) return;
     if (success) {
@@ -712,6 +1004,123 @@ class _RerollControlsState extends ConsumerState<_RerollControls> {
     clearGenerationFeedback(ref);
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _replacePile() async {
+    final result = widget.result;
+    final slots = _splitPileSlots(result.kingdomCards);
+    final id = await showDialog<String>(
+        context: context,
+        builder: (context) => SimpleDialog(
+              title: const Text('Replace a pile'),
+              children: [
+                const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                        'Choose an unlocked pile. The other nine piles stay.')),
+                for (final slot in slots)
+                  SimpleDialogOption(
+                    onPressed: widget.result.isSlotLocked(
+                            slot.primary.splitPileId ?? slot.primary.id)
+                        ? null
+                        : () => Navigator.pop(context,
+                            slot.primary.splitPileId ?? slot.primary.id),
+                    child: Text(
+                        '${slot.label}${widget.result.isSlotLocked(slot.primary.splitPileId ?? slot.primary.id) ? ' (locked)' : ''}'),
+                  ),
+              ],
+            ));
+    if (id == null || !mounted) return;
+    final outgoing = slots.firstWhere(
+        (slot) => (slot.primary.splitPileId ?? slot.primary.id) == id);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final options = previewPileReplacements(container, id);
+    final incoming = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Replace ${outgoing.label}'),
+        contentPadding: const EdgeInsets.only(top: 12),
+        content: SizedBox(
+          width: 580,
+          height: min(460, MediaQuery.sizeOf(context).height * 0.56),
+          child: FutureBuilder(
+            future: options,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                final error = snapshot.error;
+                return Center(
+                    child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(error is SetupException
+                      ? error.message
+                      : 'Could not load replacement piles.'),
+                ));
+              }
+              final candidates = snapshot.data;
+              if (candidates == null) {
+                return const Center(
+                    child: CircularProgressIndicator(
+                        semanticsLabel: 'Checking replacements'));
+              }
+              if (candidates.isEmpty) {
+                return const Center(
+                    child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                      'No legal replacement keeps the other nine piles under your rules and landscape locks.'),
+                ));
+              }
+              final currentIds =
+                  result.landscapeCards.map((card) => card.id).toSet();
+              final changes = <String, String>{};
+              for (final entry in candidates.entries) {
+                final nextIds =
+                    entry.value.landscapes.map((card) => card.id).toSet();
+                final added = entry.value.landscapes
+                    .where((card) => !currentIds.contains(card.id));
+                final removed = result.landscapeCards
+                    .where((card) => !nextIds.contains(card.id));
+                final setupAffected =
+                    !mapEquals(result.setupChoices, entry.value.setupChoices);
+                final messages = [
+                  for (final card in added)
+                    'Adds ${card.isAlly ? 'an Ally' : 'a Prophecy'}',
+                  for (final card in removed) 'Removes ${card.name}',
+                  if (setupAffected) 'Updates table setup choices',
+                ];
+                if (messages.isNotEmpty) {
+                  changes[entry.key] = messages.join(' · ');
+                }
+              }
+              return Column(children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                      'Choose a legal alternative. Setup notes update for the new board.'),
+                ),
+                Expanded(
+                    child: CardBanListTab.replacements(
+                  replacementCards:
+                      candidates.values.expand((value) => value.cards).toList(),
+                  replacementNotes: changes,
+                  onSelectPile: (slotId) => Navigator.pop(context, slotId),
+                )),
+              ]);
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'))
+        ],
+      ),
+    );
+    if (incoming != null &&
+        mounted &&
+        identical(ref.read(setupResultProvider), result)) {
+      await _reroll(replaceSlotId: id, incomingSlotId: incoming);
+    }
   }
 
   @override
@@ -755,6 +1164,18 @@ class _RerollControlsState extends ConsumerState<_RerollControls> {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
+              if (ref.watch(canUndoRerollProvider))
+                IconButton(
+                  tooltip: 'Undo reroll',
+                  onPressed: isRegenerating
+                      ? null
+                      : () {
+                          undoLastReroll(ProviderScope.containerOf(context,
+                              listen: false));
+                          setState(() => _rerolled = false);
+                        },
+                  icon: const Icon(Icons.undo_rounded),
+                ),
               PopupMenuButton<_RerollAction>(
                 enabled: !isRegenerating,
                 tooltip: 'More reroll options',
@@ -764,11 +1185,16 @@ class _RerollControlsState extends ConsumerState<_RerollControls> {
                 onSelected: (action) {
                   if (action == _RerollAction.clearLocks) {
                     clearAllLocks(ref);
+                  } else if (action == _RerollAction.replace) {
+                    _replacePile();
                   } else {
                     _reroll(action: action);
                   }
                 },
                 itemBuilder: (_) => [
+                  const PopupMenuItem(
+                      value: _RerollAction.replace,
+                      child: Text('Replace a pile…')),
                   const PopupMenuItem(
                       value: _RerollAction.kingdom,
                       child: Text('Reroll only kingdom cards')),
@@ -1174,7 +1600,7 @@ class _SetupNotesSection extends StatelessWidget {
           Semantics(
             header: true,
             child: Text(
-              'SETUP NOTES',
+              'TABLE SETUP',
               style: Theme.of(context).textTheme.labelMedium,
             ),
           ),

@@ -4,7 +4,9 @@ import 'package:kingdom_foundry/models/card_type.dart';
 import 'package:kingdom_foundry/models/expansion.dart';
 import 'package:kingdom_foundry/models/kingdom_card.dart';
 import 'package:kingdom_foundry/models/share_payload.dart';
+import 'package:kingdom_foundry/models/setup_result.dart';
 import 'package:kingdom_foundry/models/setup_rules.dart';
+import 'package:kingdom_foundry/providers/generation_provider.dart';
 
 void main() {
   test('KF1 encode/decode round-trips legacy payload fields', () {
@@ -62,7 +64,8 @@ void main() {
       ['advance', 'alms', 'ball', 'banish', 'bonfire'],
     ]) {
       final payload = SharePayload(
-        kingdomCardIds: _sampleBaseKingdomCards().map((card) => card.id).toList(),
+        kingdomCardIds:
+            _sampleBaseKingdomCards().map((card) => card.id).toList(),
         landscapeCardIds: landscapeIds,
       );
 
@@ -72,6 +75,62 @@ void main() {
       expect(decoded, isNotNull);
       expect(decoded!.landscapeCardIds, landscapeIds);
     }
+  });
+
+  test('KF2 preserves the published ranks for a board with landscapes', () {
+    const code = 'KF2-617pobn8WN9FC9ur7e3W';
+    const landscapeIds = ['advance', 'alms', 'ball', 'banish', 'bonfire'];
+    final kingdom = _sampleBaseKingdomCards();
+    final allCards = [...kingdom, ...landscapeIds.map(_event)];
+    final decoded = SharePayload.tryDecodeCompact(code, allCards)!;
+    expect(decoded.kingdomCardIds, kingdom.map((card) => card.id));
+    expect(decoded.landscapeCardIds, landscapeIds);
+    expect(decoded.encodeCompact(allCards), code);
+  });
+
+  test(
+      'selection shares fall back to IDs for piles or landscapes added after KF2',
+      () {
+    final kingdom = _sampleBaseKingdomCards();
+    final board = SetupResult(
+      kingdomCards: kingdom,
+      landscapeCards: [_event('advance')],
+      archetypes: [],
+      setupNotes: [],
+      generatedAt: DateTime(2026),
+    );
+    for (final selection in [
+      board.copyWith(kingdomCards: [
+        ...kingdom.skip(1),
+        _kingdom('future_pile', cost: 4),
+      ]),
+      board.copyWith(landscapeCards: [
+        ...board.landscapeCards,
+        _event('future_event'),
+      ]),
+    ]) {
+      final code = encodeSharePayload(selection);
+      final decoded = SharePayload.tryDecode(code);
+      expect(decoded?.kingdomCardIds, selection.kingdomCards.map((c) => c.id));
+      expect(
+          decoded?.landscapeCardIds, selection.landscapeCards.map((c) => c.id));
+    }
+  });
+
+  test('share link retains the hosting path and imports as a code', () {
+    final allCards = _sampleBaseKingdomCards();
+    final payload = SharePayload(
+      kingdomCardIds: allCards.map((card) => card.id).toList(),
+    );
+    final url = SharePayload.shareLink(
+      Uri.parse('https://example.test/kingdom/#!/board'),
+      payload.encode(),
+    );
+    expect(url.path, '/kingdom/');
+    expect(url.hasFragment, isFalse);
+    expect(SharePayload.looksLikeShareCode(url.toString()), isTrue);
+    expect(SharePayload.tryDecodeAny(url.toString(), allCards)?.kingdomCardIds,
+        payload.kingdomCardIds);
   });
 
   test('KF2 encodes split piles as one slot and reconstructs all members', () {

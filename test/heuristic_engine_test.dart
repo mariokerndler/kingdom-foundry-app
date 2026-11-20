@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kingdom_foundry/controllers/heuristic_engine.dart';
 import 'package:kingdom_foundry/models/card_tag.dart';
+import 'package:kingdom_foundry/models/card_metadata.dart';
 import 'package:kingdom_foundry/models/card_type.dart';
 import 'package:kingdom_foundry/models/kingdom_card.dart';
 import 'package:kingdom_foundry/models/expansion.dart';
@@ -15,6 +16,7 @@ KingdomCard _card({
   List<CardType> types = const [CardType.action],
   List<CardTag> tags = const [],
   int cost = 3,
+  CardCapabilities? capabilities,
 }) =>
     KingdomCard(
       id: id,
@@ -22,6 +24,7 @@ KingdomCard _card({
       expansion: Expansion.baseSecondEdition,
       types: types,
       tags: tags,
+      capabilities: capabilities,
       cost: cost,
       text: '',
     );
@@ -266,10 +269,13 @@ void main() {
   });
 
   group('HeuristicEngine — Trash-to-Victory', () {
-    test('detects trash-to-victory with trashForBenefit card', () {
-      // Two trashForBenefit cards: 3.5 + 3.5 = 7.0 — above the 4.5 threshold.
+    test('detects trash-to-victory with a high-throughput trasher', () {
       final kingdom = _kingdom([
-        _card(id: 'chapel', tags: [CardTag.trashForBenefit]),
+        _card(
+            id: 'chapel',
+            tags: [CardTag.trashForBenefit],
+            capabilities:
+                const CardCapabilities(trashing: TrashingThroughput.multiple)),
         _card(id: 'remodel', tags: [CardTag.trashForBenefit, CardTag.remodel]),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.trashToVictory);
@@ -288,6 +294,10 @@ void main() {
     test('headline is Upgrade/Remodel Chain when remodel card present', () {
       final kingdom = _kingdom([
         _card(id: 'remodel', tags: [CardTag.trashForBenefit, CardTag.remodel]),
+        _card(
+            id: 'chapel',
+            capabilities:
+                const CardCapabilities(trashing: TrashingThroughput.multiple)),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.trashToVictory);
       expect(archetype?.headline, equals('Upgrade / Remodel Chain'));
@@ -404,7 +414,7 @@ void main() {
         _card(
             id: 'moat',
             types: [CardType.action, CardType.reaction],
-            tags: [CardTag.reaction]),
+            tags: [CardTag.reaction, CardTag.blockAttack]),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.mirrorMatch);
       expect(archetype, isNotNull);
@@ -434,7 +444,7 @@ void main() {
         _card(
             id: 'moat',
             types: [CardType.action, CardType.reaction],
-            tags: [CardTag.reaction]),
+            tags: [CardTag.reaction, CardTag.blockAttack]),
       ]);
       final archetype = _find(_analyze(kingdom), ArchetypeKind.mirrorMatch);
       expect(archetype, isNull);
@@ -483,7 +493,7 @@ void main() {
         _card(
             id: 'moat',
             types: [CardType.action, CardType.reaction],
-            tags: [CardTag.reaction]),
+            tags: [CardTag.reaction, CardTag.blockAttack]),
         _card(id: 'chapel', tags: [CardTag.trashForBenefit]),
         _card(
             id: 'gardens',

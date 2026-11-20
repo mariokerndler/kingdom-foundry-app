@@ -1,0 +1,22 @@
+name: Verify Kingdom Foundry
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Flutter 3.41.6
+        run: |
+          git clone --depth 1 --branch 3.41.6 https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter analyze
+      - run: flutter test
+      - run: dart run tool/catalogue_summary.dart --check
+      - run: flutter build web --release
+      - run: dart run tool/prepare_web_release.dart

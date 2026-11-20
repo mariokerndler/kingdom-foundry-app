@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,10 +7,11 @@ import '../../controllers/setup_exception.dart';
 import '../../models/cost_curve_rule.dart';
 import '../../models/game_vibe_preset.dart';
 import '../../models/setup_rules.dart';
-import '../../models/translation_pack.dart';
+import '../../providers/card_data_providers.dart';
 import '../../providers/config_provider.dart';
 import '../../providers/generation_provider.dart';
 import '../../providers/translation_provider.dart';
+import '../../services/translation_service.dart';
 import '../../utils/app_theme.dart';
 import '../common/ui_primitives.dart';
 
@@ -70,10 +73,38 @@ class _RulesTabState extends ConsumerState<RulesTab>
       }
     });
 
-    final rules = ref.watch(configProvider).rules;
     final config = ref.watch(configProvider);
+    final rules = config.rules;
     final notifier = ref.read(configProvider.notifier);
     final hasRules = rules.hasActiveRules;
+    final preset = GameVibePresets.byId(config.selectedPresetId);
+    final hasPreset = preset.id != GameVibePresets.noneId;
+    final rulesJson = jsonEncode(rules.toJson());
+    final isCustomized = hasPreset &&
+        rulesJson != jsonEncode(preset.rulesAppliedTo(rules).toJson());
+    final canReset =
+        hasPreset || rulesJson != jsonEncode(const SetupRules().toJson());
+
+    void changeSettings(VoidCallback change, String message) {
+      final before = ref.read(configProvider);
+      change();
+      final after = ref.read(configProvider);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(message),
+          action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () {
+                if (!mounted) return;
+                final current = ref.read(configProvider);
+                if (identical(current.rules, after.rules) &&
+                    current.selectedPresetId == after.selectedPresetId) {
+                  notifier.restoreRules(before.rules, before.selectedPresetId);
+                }
+              }),
+        ));
+    }
 
     return ListView(
       controller: _scrollController,
@@ -94,10 +125,25 @@ class _RulesTabState extends ConsumerState<RulesTab>
               'Apply a curated preset before fine-tuning the rules below.',
           expanded: _expandedSections[_RuleSection.gameVibe]!,
           onChanged: (value) => _setExpanded(_RuleSection.gameVibe, value),
-          child: _PresetSelector(
-            selectedPresetId: config.selectedPresetId,
-            onChanged: notifier.setSelectedPresetId,
-          ),
+          child: Column(children: [
+            _PresetSelector(
+              selectedPresetId: config.selectedPresetId,
+              customized: isCustomized,
+              onChanged: (id) => changeSettings(
+                  () => notifier.setSelectedPresetId(id),
+                  id == GameVibePresets.noneId
+                      ? 'Vibe removed. Your rules were kept.'
+                      : 'Preset rules applied.'),
+            ),
+            _RuleTile(
+              icon: Icons.history_rounded,
+              label: 'Prefer fresh piles',
+              detail:
+                  'Favors piles outside the last three boards while respecting your bans and rules.',
+              value: config.preferFreshPiles,
+              onChange: notifier.setPreferFreshPiles,
+            ),
+          ]),
         ),
         _SectionAccordion(
           key: _sectionKeys[_RuleSection.exclusions],
@@ -105,9 +151,10 @@ class _RulesTabState extends ConsumerState<RulesTab>
           subtitle: 'Remove card types from the pool entirely.',
           expanded: _expandedSections[_RuleSection.exclusions]!,
           onChanged: (value) => _setExpanded(_RuleSection.exclusions, value),
-          trailing: hasRules
+          trailing: canReset
               ? TextButton(
-                  onPressed: notifier.resetRules,
+                  onPressed: () => changeSettings(
+                      notifier.resetRules, 'Rules and vibe reset.'),
                   style: TextButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.error,
                   ),
@@ -153,9 +200,9 @@ class _RulesTabState extends ConsumerState<RulesTab>
               ),
               _RuleTile(
                 icon: Icons.swap_horiz_rounded,
-                label: 'No Travellers',
+                label: 'No exchange chains',
                 detail:
-                    'Removes Page, Peasant, Hermit, and Urchin to skip set-aside chains.',
+                    'Removes Traveller and exchange-chain piles, including Page, Peasant, Hermit, Urchin, and Vampire.',
                 value: rules.noTravellers,
                 onChange: notifier.setNoTravellers,
               ),
@@ -549,10 +596,12 @@ class _RulesConflictHint extends StatelessWidget {
 
 class _PresetSelector extends StatelessWidget {
   final String selectedPresetId;
+  final bool customized;
   final ValueChanged<String> onChanged;
 
   const _PresetSelector({
     required this.selectedPresetId,
+    required this.customized,
     required this.onChanged,
   });
 
@@ -597,6 +646,24 @@ class _PresetSelector extends StatelessWidget {
                   ),
                 ),
               ],
+              if (selectedPresetId != GameVibePresets.noneId)
+                Wrap(
+                  spacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (customized) ...[
+                      const Text('Customized'),
+                      TextButton(
+                        onPressed: () => onChanged(selectedPresetId),
+                        child: const Text('Restore preset defaults'),
+                      ),
+                    ],
+                    TextButton(
+                      onPressed: () => onChanged(GameVibePresets.noneId),
+                      child: const Text('Remove vibe'),
+                    ),
+                  ],
+                ),
             ],
           ),
         );
@@ -695,6 +762,11 @@ class _LanguageSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final packsAsync = ref.watch(translationPacksProvider);
+    final pack = ref.watch(activeTranslationPackProvider).valueOrNull;
+    final eligibleCards = ref.watch(selectedKingdomPoolProvider).valueOrNull;
+    final translatedCount = eligibleCards
+        ?.where((card) => pack?.lookup(card.id)?.isComplete == true)
+        .length;
     return packsAsync.when(
       loading: () => const Padding(
         padding: EdgeInsets.fromLTRB(16, 6, 16, 0),
@@ -751,6 +823,14 @@ class _LanguageSelector extends ConsumerWidget {
                   labelText: 'Preferred card language',
                 ),
               ),
+              if (pack != null &&
+                  pack.languageCode != 'en' &&
+                  translatedCount != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                      '$translatedCount of ${eligibleCards!.length} eligible cards have translated names and rules. Missing translations use English.'),
+                ),
               const SizedBox(height: 10),
               Align(
                 alignment: Alignment.centerRight,
@@ -771,26 +851,36 @@ class _LanguageSelector extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final controller = TextEditingController();
+    final catalogue = ref.read(allCardsProvider).valueOrNull;
+    if (catalogue == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The card catalogue is unavailable.')),
+      );
+      return;
+    }
+    final cardIds = catalogue.map((card) => card.id).toSet();
     String? validationMessage(String value) {
       if (value.trim().isEmpty) {
         return 'Paste a translation pack JSON payload to continue.';
       }
       try {
-        // Parse eagerly by calling the same importer logic on a copy path.
-        TranslationPack.fromJsonString(value.trim());
+        TranslationService.validatePack(value.trim(), cardIds);
         return null;
-      } catch (error) {
-        return error.toString();
+      } on FormatException catch (error) {
+        return error.message;
+      } catch (_) {
+        return 'Expected translation names and rules text to be strings.';
       }
     }
 
     final rawJson = await showDialog<String>(
       context: context,
       builder: (context) {
-        String? errorText = validationMessage(controller.text);
+        var input = '';
+        String? errorText = validationMessage(input);
         return StatefulBuilder(
           builder: (context, setState) => AlertDialog(
+            scrollable: true,
             title: const Text('Import Translation Pack'),
             content: SizedBox(
               width: double.maxFinite,
@@ -804,12 +894,13 @@ class _LanguageSelector extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   TextField(
-                    controller: controller,
                     maxLines: 14,
                     minLines: 6,
                     textInputAction: TextInputAction.done,
-                    onChanged: (_) => setState(
-                        () => errorText = validationMessage(controller.text)),
+                    onChanged: (value) => setState(() {
+                      input = value;
+                      errorText = validationMessage(input);
+                    }),
                     decoration: InputDecoration(
                       labelText: 'Translation pack JSON',
                       helperText: 'Paste a full translation pack payload.',
@@ -828,7 +919,7 @@ class _LanguageSelector extends ConsumerWidget {
               ),
               FilledButton(
                 onPressed: errorText == null
-                    ? () => Navigator.of(context).pop(controller.text.trim())
+                    ? () => Navigator.of(context).pop(input.trim())
                     : null,
                 child: const Text('Import'),
               ),
@@ -838,10 +929,11 @@ class _LanguageSelector extends ConsumerWidget {
       },
     );
 
-    if (rawJson == null || rawJson.isEmpty) return;
+    if (!context.mounted || rawJson == null || rawJson.isEmpty) return;
 
     try {
-      await ref.read(translationServiceProvider).importPack(rawJson);
+      await ref.read(translationServiceProvider).importPack(rawJson, cardIds);
+      if (!context.mounted) return;
       ref.invalidate(translationPacksProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1212,7 +1304,9 @@ class _MaxCostRow extends StatelessWidget {
             _AdaptiveToggleHeader(
               icon: Icons.paid_outlined,
               title: active ? 'Max cost: \$$currentMax' : 'Enable max cost',
-              subtitle: 'Exclude cards that cost more than this.',
+              subtitle:
+                  'Exclude cards above this cost. A split pile is excluded '
+                  'if any of its members exceeds the cap.',
               value: active,
               onChanged: (v) => onChange(v ? 6 : null),
             ),
@@ -1449,9 +1543,9 @@ class _MaxAttacksRow extends StatelessWidget {
                   valueIndicatorTextStyle: TextStyle(color: cs.onSurface),
                 ),
                 child: Slider(
-                  min: 1,
+                  min: 0,
                   max: 5,
-                  divisions: 4,
+                  divisions: 5,
                   value: currentMax!.toDouble(),
                   label: '$currentMax',
                   onChanged: (v) => onChange(v.round()),
@@ -1461,7 +1555,7 @@ class _MaxAttacksRow extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [1, 2, 3, 4, 5]
+                  children: [0, 1, 2, 3, 4, 5]
                       .map((n) => Text('$n',
                           style: TextStyle(
                             fontSize: 11,

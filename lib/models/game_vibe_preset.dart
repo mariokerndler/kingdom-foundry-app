@@ -28,6 +28,11 @@ class GameVibePreset {
     this.weirdnessWeight = 0,
   });
 
+  SetupRules rulesAppliedTo(SetupRules current) => defaultRules.copyWith(
+        showStrategyTips: current.showStrategyTips,
+        includeLandscape: current.includeLandscape,
+      );
+
   double scoreCard(CardMetadata metadata) {
     double score = 0;
     score += switch (metadata.engineSupport) {

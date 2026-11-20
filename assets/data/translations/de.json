@@ -3,13 +3,1125 @@
   "label": "Deutsch",
   "version": 1,
   "cards": {
+    "bard": {
+      "name": "Minnesängerin",
+      "text": "+2 Geld. Empfange eine Gabe."
+    },
+    "blessed_village": {
+      "name": "Seliges Dorf",
+      "text": "+1 Karte. +2 Aktionen. Wenn du dieses Dorf nimmst, erhalte eine Gabe. Entscheide dann, ob du sie sofort oder zu Beginn deines nächsten Zuges empfängst."
+    },
+    "cemetery": {
+      "name": "Friedhof",
+      "text": "2 Siegpunkte. Wenn du diesen Friedhof nimmst, darfst du bis zu 4 Handkarten entsorgen. Erbstück: Zauberspiegel."
+    },
+    "changeling": {
+      "name": "Wechselbalg",
+      "text": "Entsorge diesen Wechselbalg und nimm eine Karte mit demselben Namen wie eine deiner Karten im Spiel. Wird Wechselbalg verwendet, darfst du jede Karte, die du nimmst und die mindestens 3 Geld kostet, gegen einen Wechselbalg eintauschen."
+    },
+    "cobbler": {
+      "name": "Schuster",
+      "text": "Zu Beginn deines nächsten Zuges nimm eine Karte für höchstens 4 Geld direkt auf deine Hand."
+    },
+    "conclave": {
+      "name": "Konklave",
+      "text": "+2 Geld. Du darfst eine Aktionskarte von deiner Hand ausspielen, von der du noch keine gleichnamige Karte im Spiel hast. Tust du das, erhältst du +1 Aktion."
+    },
+    "crypt": {
+      "name": "Krypta",
+      "text": "Lege beliebig viele Geldkarten ohne den Typ Dauer, die du im Spiel hast, verdeckt unter diese Krypta. Nimm zu Beginn jedes deiner nächsten Züge eine davon auf die Hand, bis dort keine mehr liegen."
+    },
+    "cursed_village": {
+      "name": "Verfluchtes Dorf",
+      "text": "+2 Aktionen. Ziehe Karten, bis deine Hand 6 Karten enthält. Wenn du dieses Dorf nimmst, empfange eine Plage."
+    },
+    "den_of_sin": {
+      "name": "Sündenpfuhl",
+      "text": "Zu Beginn deines nächsten Zuges ziehst du 2 Karten. Wenn du diesen Sündenpfuhl nimmst, kommt er auf deine Hand."
+    },
+    "devils_workshop": {
+      "name": "Teufelswerkstatt",
+      "text": "Zähle die Karten, die du in diesem Zug genommen hast: Bei 0 nimm ein Gold; bei genau 1 nimm eine Karte für höchstens 4 Geld; bei 2 oder mehr nimm ein Teufelchen."
+    },
+    "druid": {
+      "name": "Druidin",
+      "text": "+1 Kauf. Empfange eine der für die Druidin zurückgelegten Gaben und lasse sie dabei liegen. Vorbereitung: Lege die obersten 3 Gaben offen zur Seite."
+    },
+    "exorcist": {
+      "name": "Exorzistin",
+      "text": "Entsorge eine Handkarte. Nimm von einem der Erscheinungsstapel eine Erscheinung, die weniger kostet als die entsorgte Karte."
+    },
+    "faithful_hound": {
+      "name": "Getreuer Hund",
+      "text": "+2 Karten. Wenn du diesen Hund außerhalb einer Aufräumphase ablegst, darfst du ihn zur Seite legen. Nimm ihn dann am Ende dieses Zuges auf deine Hand."
+    },
+    "fool": {
+      "name": "Narr",
+      "text": "Hast du den Zustand Im Wald verirrt nicht, nimm ihn; erhalte danach 3 Gaben und empfange sie in einer Reihenfolge deiner Wahl. Erbstück: Glückstaler."
+    },
+    "ghost_town": {
+      "name": "Geisterstadt",
+      "text": "Zu Beginn deines nächsten Zuges erhältst du +1 Karte und +1 Aktion. Wenn du diese Geisterstadt nimmst, kommt sie auf deine Hand."
+    },
+    "guardian": {
+      "name": "Wächterin",
+      "text": "Bis zu deinem nächsten Zug haben Angriffe deiner Mitspieler keine Wirkung auf dich. Zu Beginn deines nächsten Zuges erhältst du +1 Geld. Wenn du diese Wächterin nimmst, kommt sie auf deine Hand."
+    },
+    "idol": {
+      "name": "Götze",
+      "text": "+2 Geld. Hast du beim Ausspielen eine ungerade Anzahl Götzen im Spiel, einschließlich dieses Götzen, empfange eine Gabe. Bei einer geraden Anzahl nimmt stattdessen jeder Mitspieler einen Fluch."
+    },
+    "leprechaun": {
+      "name": "Kobold",
+      "text": "Nimm ein Gold. Hast du genau 7 Karten im Spiel, nimm einen Wunsch. Andernfalls empfange eine Plage."
+    },
+    "monastery": {
+      "name": "Kloster",
+      "text": "Für jede Karte, die du in diesem Zug genommen hast, darfst du entweder eine Handkarte oder ein Kupfer, das du im Spiel hast, entsorgen."
+    },
+    "necromancer": {
+      "name": "Totenbeschwörer",
+      "text": "Wähle im Müll eine offen liegende Aktionskarte ohne den Typ Dauer. Drehe sie für diesen Zug verdeckt und spiele sie aus, ohne sie aus dem Müll zu bewegen. Vorbereitung: Lege die 3 Zombies in den Müll."
+    },
+    "night_watchman": {
+      "name": "Nachtwache",
+      "text": "Sieh dir deine obersten 5 Karten an. Lege davon beliebig viele ab und lege die übrigen in beliebiger Reihenfolge auf deinen Nachziehstapel zurück. Wenn du diese Nachtwache nimmst, kommt sie auf deine Hand."
+    },
+    "pixie": {
+      "name": "Fee",
+      "text": "+1 Karte. +1 Aktion. Lege die oberste Gabe ab. Du darfst diese Fee entsorgen, um jene Gabe zweimal zu empfangen. Erbstück: Ziege."
+    },
+    "pooka": {
+      "name": "Puka",
+      "text": "Du darfst eine Geldkarte von deiner Hand entsorgen, die kein Verfluchtes Gold ist. Tust du das, ziehe 4 Karten. Erbstück: Verfluchtes Gold."
+    },
+    "raider": {
+      "name": "Plünderer",
+      "text": "Jeder Mitspieler mit mindestens 5 Handkarten legt davon eine ab, die denselben Namen wie eine deiner Karten im Spiel hat. Kann er das nicht, zeigt er seine Hand vor. Zu Beginn deines nächsten Zuges erhältst du +3 Geld."
+    },
+    "sacred_grove": {
+      "name": "Heiliger Hain",
+      "text": "+1 Kauf. +3 Geld. Empfange eine Gabe. Gibt diese kein Geld, darf jeder Mitspieler dieselbe Gabe ebenfalls empfangen."
+    },
+    "secret_cave": {
+      "name": "Geheime Höhle",
+      "text": "+1 Karte. +1 Aktion. Du darfst 3 Handkarten ablegen. Tust du das, erhältst du zu Beginn deines nächsten Zuges +3 Geld. Erbstück: Wunderlampe."
+    },
+    "shepherd": {
+      "name": "Schäferin",
+      "text": "+1 Aktion. Lege beliebig viele Punktekarten von deiner Hand ab und decke sie dabei auf. Ziehe für jede davon 2 Karten. Erbstück: Weideland."
+    },
+    "skulk": {
+      "name": "Attentäter",
+      "text": "+1 Kauf. Jeder Mitspieler empfängt die nächste Plage. Wenn du diesen Attentäter nimmst, nimm ein Gold."
+    },
+    "tormentor": {
+      "name": "Folterknecht",
+      "text": "+2 Geld. Hast du keine andere Karte im Spiel, nimm ein Teufelchen von seinem Stapel. Andernfalls empfängt jeder Mitspieler die nächste Plage."
+    },
+    "tracker": {
+      "name": "Fährtensucher",
+      "text": "+1 Geld. Empfange eine Gabe. Für den Rest dieses Zuges darfst du jede Karte, die du nimmst, auf deinen Nachziehstapel legen. Erbstück: Beutel."
+    },
+    "tragic_hero": {
+      "name": "Tragischer Held",
+      "text": "+3 Karten. +1 Kauf. Hast du nach dem Ziehen mindestens 8 Handkarten, entsorge diesen Helden und nimm eine Geldkarte."
+    },
+    "vampire": {
+      "name": "Vampirin",
+      "text": "Jeder Mitspieler empfängt die nächste Plage. Nimm eine Karte für höchstens 5 Geld, die keine Vampirin ist. Tausche danach diese Vampirin gegen eine Fledermaus ein."
+    },
+    "werewolf": {
+      "name": "Werwolf",
+      "text": "In deiner Nachtphase empfängt jeder Mitspieler die nächste Plage. Andernfalls ziehst du 3 Karten."
+    },
+    "cursed_gold": {
+      "name": "Verfluchtes Gold",
+      "text": "+3 Geld. Beim Ausspielen nimmst du einen Fluch. Ersetzt zu Spielbeginn ein Kupfer, wenn Puka verwendet wird."
+    },
+    "goat": {
+      "name": "Ziege",
+      "text": "+1 Geld. Beim Ausspielen darfst du eine Handkarte entsorgen. Ersetzt zu Spielbeginn ein Kupfer, wenn Fee verwendet wird."
+    },
+    "haunted_mirror": {
+      "name": "Zauberspiegel",
+      "text": "+1 Geld. Wenn du diesen Spiegel entsorgst, darfst du eine Aktionskarte von deiner Hand ablegen, um einen Geist zu nehmen. Ersetzt zu Spielbeginn ein Kupfer, wenn Friedhof verwendet wird."
+    },
+    "lucky_coin": {
+      "name": "Glückstaler",
+      "text": "+1 Geld. Beim Ausspielen nimmst du ein Silber. Ersetzt zu Spielbeginn ein Kupfer, wenn Narr verwendet wird."
+    },
+    "magic_lamp": {
+      "name": "Wunderlampe",
+      "text": "+1 Geld. Sind unter deinen Karten im Spiel mindestens 6 Kartennamen mit jeweils genau einem Exemplar vertreten, entsorge diese Lampe. Gelingt das, nimm 3 Wünsche. Ersetzt zu Spielbeginn ein Kupfer, wenn Geheime Höhle verwendet wird."
+    },
+    "pasture": {
+      "name": "Weideland",
+      "text": "+1 Geld. Bei Spielende 1 Siegpunkt für jedes eigene Anwesen. Ersetzt zu Spielbeginn ein Kupfer, wenn Schäferin verwendet wird."
+    },
+    "pouch": {
+      "name": "Beutel",
+      "text": "+1 Geld. +1 Kauf. Ersetzt zu Spielbeginn ein Kupfer, wenn Fährtensucher verwendet wird."
+    },
+    "the_earths_gift": {
+      "name": "Geschenk der Erde",
+      "text": "Du darfst eine Geldkarte von deiner Hand ablegen, um eine Karte für höchstens 4 Geld zu nehmen."
+    },
+    "the_fields_gift": {
+      "name": "Geschenk des Feldes",
+      "text": "+1 Aktion. +1 Geld. Behalte diese Gabe bis zur Aufräumphase."
+    },
+    "the_flames_gift": {
+      "name": "Geschenk des Feuers",
+      "text": "Du darfst eine deiner Handkarten entsorgen."
+    },
+    "the_forests_gift": {
+      "name": "Geschenk des Waldes",
+      "text": "+1 Kauf. +1 Geld. Behalte diese Gabe bis zur Aufräumphase."
+    },
+    "the_moons_gift": {
+      "name": "Geschenk des Mondes",
+      "text": "Durchsuche deinen Ablagestapel. Du darfst daraus eine Karte auf deinen Nachziehstapel legen."
+    },
+    "the_mountains_gift": {
+      "name": "Geschenk des Berges",
+      "text": "Nimm ein Silber."
+    },
+    "the_rivers_gift": {
+      "name": "Geschenk des Flusses",
+      "text": "Ziehe am Ende dieses Zuges, nachdem du deine nächste Hand gezogen hast, 1 zusätzliche Karte. Behalte diese Gabe bis zur Aufräumphase."
+    },
+    "the_seas_gift": {
+      "name": "Geschenk des Meeres",
+      "text": "+1 Karte."
+    },
+    "the_skys_gift": {
+      "name": "Geschenk des Himmels",
+      "text": "Du darfst 3 deiner Handkarten ablegen, um ein Gold zu nehmen."
+    },
+    "the_suns_gift": {
+      "name": "Geschenk der Sonne",
+      "text": "Sieh dir deine obersten 4 Karten an. Lege davon beliebig viele ab und lege die übrigen in beliebiger Reihenfolge auf deinen Nachziehstapel zurück."
+    },
+    "the_swamps_gift": {
+      "name": "Geschenk des Sumpfes",
+      "text": "Nimm ein Irrlicht von seinem Stapel."
+    },
+    "the_winds_gift": {
+      "name": "Geschenk des Windes",
+      "text": "Ziehe 2 Karten und lege danach 2 Handkarten ab."
+    },
+    "bad_omens": {
+      "name": "Schlechtes Omen",
+      "text": "Lege deinen gesamten Nachziehstapel ab. Durchsuche dann deinen Ablagestapel und lege 2 Kupfer daraus auf deinen Nachziehstapel, oder zeige vor, dass du das nicht kannst."
+    },
+    "delusion": {
+      "name": "Täuschung",
+      "text": "Hast du weder Getäuscht noch Neidisch, nimm den Zustand Getäuscht."
+    },
+    "envy": {
+      "name": "Neid",
+      "text": "Hast du weder Getäuscht noch Neidisch, nimm den Zustand Neidisch."
+    },
+    "famine": {
+      "name": "Hungersnot",
+      "text": "Decke deine obersten 3 Karten auf. Lege die aufgedeckten Aktionskarten ab und mische die übrigen aufgedeckten Karten in deinen Nachziehstapel."
+    },
+    "fear": {
+      "name": "Furcht",
+      "text": "Hast du mindestens 5 Handkarten, lege davon eine Aktions- oder Geldkarte ab. Hast du keine solche Karte, zeige deine Hand vor."
+    },
+    "greed": {
+      "name": "Gier",
+      "text": "Nimm ein Kupfer und lege es auf deinen Nachziehstapel."
+    },
+    "locusts": {
+      "name": "Heuschrecken",
+      "text": "Entsorge deine oberste Karte. Ist sie Kupfer oder Anwesen, nimm einen Fluch. Andernfalls nimm eine günstigere Karte, die mindestens einen Typ mit der entsorgten Karte gemeinsam hat."
+    },
+    "misery": {
+      "name": "Elend",
+      "text": "Hast du bereits Doppelt Elendig, passiert nichts. Ansonsten: Hast du Elendig, drehe es auf Doppelt Elendig; andernfalls nimm Elendig."
+    },
+    "plague": {
+      "name": "Seuche",
+      "text": "Nimm einen Fluch direkt auf deine Hand."
+    },
+    "poverty": {
+      "name": "Armut",
+      "text": "Lege Handkarten ab, bis du nur noch 3 hast."
+    },
+    "war": {
+      "name": "Krieg",
+      "text": "Decke Karten von deinem Nachziehstapel auf, bis du eine für 3 oder 4 Geld findest. Entsorge diese Karte und lege die übrigen aufgedeckten Karten ab."
+    },
+    "haunting": {
+      "name": "Spuk",
+      "text": "Hast du mindestens 4 Handkarten, lege eine davon auf deinen Nachziehstapel."
+    },
+    "will_o_wisp": {
+      "name": "Irrlicht",
+      "text": "+1 Karte. +1 Aktion. Decke deine oberste Karte auf. Kostet sie höchstens 2 Geld, nimm sie auf die Hand. Gehört nicht zum Vorrat."
+    },
+    "imp": {
+      "name": "Teufelchen",
+      "text": "+2 Karten. Du darfst eine Aktionskarte von deiner Hand ausspielen, von der du keine gleichnamige Karte im Spiel hast. Gehört nicht zum Vorrat."
+    },
+    "ghost": {
+      "name": "Geist",
+      "text": "Decke Karten von deinem Nachziehstapel auf, bis du eine Aktionskarte findest. Lege die anderen aufgedeckten Karten ab und lege die Aktionskarte zur Seite. Spiele sie zu Beginn deines nächsten Zuges zweimal aus. Gehört nicht zum Vorrat."
+    },
+    "bat": {
+      "name": "Fledermaus",
+      "text": "Entsorge bis zu 2 Handkarten. Hast du mindestens eine Karte entsorgt, tausche diese Fledermaus gegen eine Vampirin ein. Gehört nicht zum Vorrat."
+    },
+    "wish": {
+      "name": "Wunsch",
+      "text": "+1 Aktion. Lege diesen Wunsch auf seinen Stapel zurück. Gelingt das, nimm eine Karte für höchstens 6 Geld direkt auf die Hand. Gehört nicht zum Vorrat."
+    },
+    "zombie_apprentice": {
+      "name": "Zombie-Lehrling",
+      "text": "Du darfst eine Handkarte vom Typ Aktion entsorgen. Tust du das, erhältst du +3 Karten und +1 Aktion. Beginnt das Spiel im Müll."
+    },
+    "zombie_mason": {
+      "name": "Zombie-Maurer",
+      "text": "Entsorge deine oberste Karte. Du darfst eine Karte nehmen, die höchstens 1 Geld mehr kostet. Beginnt das Spiel im Müll."
+    },
+    "zombie_spy": {
+      "name": "Zombie-Spion",
+      "text": "+1 Karte. +1 Aktion. Sieh dir deine oberste Karte an und lege sie ab oder zurück auf deinen Nachziehstapel. Beginnt das Spiel im Müll."
+    },
+    "deluded": {
+      "name": "Getäuscht",
+      "text": "Gib diesen Zustand zu Beginn deiner Kaufphase zurück. Für den Rest dieses Zuges darfst du keine Aktionskarten kaufen."
+    },
+    "envious": {
+      "name": "Neidisch",
+      "text": "Gib diesen Zustand zu Beginn deiner Kaufphase zurück. Silber und Gold erzeugen in diesem Zug jeweils nur 1 Geld."
+    },
+    "lost_in_the_woods": {
+      "name": "Im Wald verirrt",
+      "text": "Zu Beginn deines Zuges darfst du eine Handkarte ablegen, um eine Gabe zu empfangen."
+    },
+    "miserable": {
+      "name": "Elendig",
+      "text": "Bei Spielende -2 Siegpunkte."
+    },
+    "twice_miserable": {
+      "name": "Doppelt Elendig",
+      "text": "Bei Spielende -4 Siegpunkte."
+    },
+    "archive": {
+      "name": "Archiv",
+      "text": "+1 Aktion. Lege deine obersten 3 Karten verdeckt zur Seite; du darfst sie ansehen. Nimm jetzt und zu Beginn deiner nächsten beiden Züge jeweils eine dieser Karten auf die Hand."
+    },
+    "capital": {
+      "name": "Vermögen",
+      "text": "+6 Geld. +1 Kauf. Wenn du diese Karte aus dem Spiel ablegst, nimm 6 Schulden."
+    },
+    "castles": {
+      "name": "Schlösser",
+      "text": "Ordne den Schlossstapel nach aufsteigenden Kosten, mit dem teuersten Schloss unten. Bei 2 Spielern wird nur eine Karte jeder Schlossart verwendet. Nur die oberste Karte kann genommen oder gekauft werden."
+    },
+    "catapult": {
+      "name": "Katapult",
+      "text": "+1 Geld. Entsorge eine Handkarte. Kostet sie mindestens 3 Geld, nimmt jeder Mitspieler einen Fluch. Ist sie eine Geldkarte, legt jeder Mitspieler bis auf 3 Handkarten ab. Beide Folgen können eintreten."
+    },
+    "rocks": {
+      "name": "Felsen",
+      "text": "+1 Geld. Wenn du diese Karte nimmst oder entsorgst, nimm ein Silber. In deiner Kaufphase kommt das Silber auf deinen Nachziehstapel, sonst auf deine Hand."
+    },
+    "chariot_race": {
+      "name": "Wagenrennen",
+      "text": "+1 Aktion. Ziehe 1 Karte und decke sie auf. Dein linker Mitspieler deckt seine oberste Karte auf. Kostet deine Karte mehr, erhältst du +1 Geld und +1 Siegpunkt."
+    },
+    "charm": {
+      "name": "Zauber",
+      "text": "Wähle eine Möglichkeit: +1 Kauf und +2 Geld; oder wenn du in diesem Zug das nächste Mal eine Karte nimmst, darfst du zusätzlich eine anders benannte Karte mit genau denselben Kosten nehmen."
+    },
+    "city_quarter": {
+      "name": "Stadtviertel",
+      "text": "+2 Aktionen. Decke deine gesamte Hand auf und ziehe für jede aufgedeckte Aktionskarte 1 Karte."
+    },
+    "crown": {
+      "name": "Krone",
+      "text": "In deiner Aktionsphase darfst du eine Aktionskarte von deiner Hand zweimal ausspielen. In deiner Kaufphase darfst du stattdessen eine Geldkarte von deiner Hand zweimal ausspielen."
+    },
+    "encampment": {
+      "name": "Feldlager",
+      "text": "+2 Karten. +2 Aktionen. Du darfst ein Gold oder ein Diebesgut von deiner Hand aufdecken. Tust du das nicht, lege dieses Feldlager zur Seite und bringe es zu Beginn deiner Aufräumphase auf seinen Stapel zurück."
+    },
+    "plunder": {
+      "name": "Diebesgut",
+      "text": "+2 Geld. +1 Siegpunkt."
+    },
+    "enchantress": {
+      "name": "Zauberin",
+      "text": "Bis zu deinem nächsten Zug erhält jeder Mitspieler beim ersten Ausspielen einer Aktionskarte in seinem Zug +1 Karte und +1 Aktion anstelle ihrer Anweisungen. Zu Beginn deines nächsten Zuges ziehst du 2 Karten."
+    },
+    "engineer": {
+      "name": "Ingenieurin",
+      "text": "Nimm eine Karte für höchstens 4 Geld. Du darfst diese Ingenieurin entsorgen. Tust du das, nimm eine weitere Karte für höchstens 4 Geld."
+    },
+    "farmers_market": {
+      "name": "Bauernmarkt",
+      "text": "+1 Kauf. Liegen mindestens 4 Siegpunkte auf dem Bauernmarkt-Vorratsstapel, nimm sie und entsorge diesen Bauernmarkt. Andernfalls lege 1 Siegpunkt auf den Stapel und erhalte danach +1 Geld für jeden Siegpunkt darauf."
+    },
+    "patrician": {
+      "name": "Patrizier",
+      "text": "+1 Karte. +1 Aktion. Decke deine oberste Karte auf. Kostet sie mindestens 5 Geld, nimm sie auf die Hand."
+    },
+    "emporium": {
+      "name": "Handelsplatz",
+      "text": "+1 Karte. +1 Aktion. +1 Geld. Nimmst du diesen Handelsplatz und hast mindestens 5 Aktionskarten im Spiel, erhältst du +2 Siegpunkte."
+    },
+    "forum": {
+      "name": "Forum",
+      "text": "+3 Karten. +1 Aktion. Lege 2 Handkarten ab. Wenn du dieses Forum nimmst, erhältst du +1 Kauf."
+    },
+    "gladiator": {
+      "name": "Gladiator",
+      "text": "+2 Geld. Decke eine Handkarte auf. Dein linker Mitspieler darf eine Karte mit demselben Namen von seiner Hand aufdecken. Tut er das nicht, erhältst du +1 Geld und entsorgst einen Gladiator aus dem Vorrat."
+    },
+    "fortune": {
+      "name": "Reichtum",
+      "text": "+1 Kauf. Verdopple dein verfügbares Geld, sofern du es in diesem Zug noch nicht verdoppelt hast. Nimmst du diesen Reichtum, nimm für jeden Gladiator, den du im Spiel hast, ein Gold."
+    },
+    "groundskeeper": {
+      "name": "Gärtnerin",
+      "text": "+1 Karte. +1 Aktion. Jedes Mal, wenn du in diesem Zug eine Punktekarte nimmst, erhältst du +1 Siegpunkt."
+    },
+    "legionary": {
+      "name": "Legionär",
+      "text": "+3 Geld. Du darfst ein Gold von deiner Hand aufdecken. Tust du das, legt jeder Mitspieler bis auf 2 Handkarten ab und zieht anschließend 1 Karte."
+    },
+    "overlord": {
+      "name": "Lehnsherr",
+      "text": "Spiele eine Aktionskarte ohne den Typ Befehl aus dem Vorrat aus, die höchstens 5 Geld kostet. Die gespielte Karte bleibt im Vorrat liegen."
+    },
+    "royal_blacksmith": {
+      "name": "Königlicher Schmied",
+      "text": "+5 Karten. Decke danach deine gesamte Hand auf und lege alle Kupfer daraus ab."
+    },
+    "sacrifice": {
+      "name": "Opfer",
+      "text": "Entsorge eine Handkarte. Ist sie eine Aktionskarte, erhältst du +2 Karten und +2 Aktionen. Ist sie eine Geldkarte, erhältst du +2 Geld. Ist sie eine Punktekarte, erhältst du +2 Siegpunkte. Bei mehreren passenden Typen erhältst du alle entsprechenden Boni."
+    },
+    "settlers": {
+      "name": "Siedler",
+      "text": "+1 Karte. +1 Aktion. Du darfst deinen Ablagestapel durchsuchen, ein Kupfer daraus aufdecken und auf deine Hand nehmen."
+    },
+    "bustling_village": {
+      "name": "Emsiges Dorf",
+      "text": "+1 Karte. +3 Aktionen. Du darfst deinen Ablagestapel durchsuchen, einen Siedler daraus aufdecken und auf deine Hand nehmen."
+    },
+    "temple": {
+      "name": "Tempel",
+      "text": "+1 Siegpunkt. Entsorge 1 bis 3 unterschiedlich benannte Handkarten. Lege 1 Siegpunkt auf den Tempel-Vorratsstapel. Wenn du einen Tempel nimmst, nimm alle Siegpunkte von diesem Stapel."
+    },
+    "villa": {
+      "name": "Villa",
+      "text": "+2 Aktionen. +1 Kauf. +1 Geld. Wenn du diese Villa nimmst, kommt sie auf deine Hand und du erhältst +1 Aktion. Ist es deine Kaufphase, kehre außerdem in deine Aktionsphase zurück."
+    },
+    "wild_hunt": {
+      "name": "Wilde Jagd",
+      "text": "Entscheide dich: Ziehe 3 Karten und lege 1 Siegpunkt auf den Wilde-Jagd-Vorratsstapel; oder nimm ein Anwesen und, falls das gelingt, alle Siegpunkte von diesem Stapel."
+    },
+    "advance": {
+      "name": "Aufstieg",
+      "text": "Du darfst eine Handkarte vom Typ Aktion entsorgen. Tust du das, nimm eine Aktionskarte für höchstens 6 Geld."
+    },
+    "annex": {
+      "name": "Schlacht",
+      "text": "Durchsuche deinen Ablagestapel. Lass dort bis zu 5 Karten liegen und mische alle anderen Karten daraus in deinen Nachziehstapel. Nimm ein Herzogtum."
+    },
+    "banquet": {
+      "name": "Bankett",
+      "text": "Nimm 2 Kupfer und eine Karte für höchstens 5 Geld, die keine Punktekarte ist."
+    },
+    "conquest": {
+      "name": "Eroberung",
+      "text": "Nimm 2 Silber. Erhalte +1 Siegpunkt für jedes Silber, das du in diesem Zug genommen hast, einschließlich der gerade genommenen Silber."
+    },
+    "delve": {
+      "name": "Erforschen",
+      "text": "+1 Kauf. Nimm ein Silber."
+    },
+    "dominate": {
+      "name": "Beherrschen",
+      "text": "Nimm eine Provinz. Gelingt das, erhältst du +9 Siegpunkte."
+    },
+    "donate": {
+      "name": "Spende",
+      "text": "Zu Beginn deines nächsten Zuges, vor allen anderen Effekten: Nimm deinen Nachzieh- und Ablagestapel auf die Hand. Entsorge beliebig viele Handkarten, mische den Rest in deinen Nachziehstapel und ziehe 5 Karten."
+    },
+    "ritual": {
+      "name": "Ritual",
+      "text": "Nimm einen Fluch. Gelingt das, entsorge eine Handkarte und erhalte +1 Siegpunkt für jedes Geld ihrer Kosten."
+    },
+    "salt_the_earth": {
+      "name": "Versalztes Land",
+      "text": "+1 Siegpunkt. Entsorge eine Punktekarte aus dem Vorrat."
+    },
+    "tax": {
+      "name": "Steuer",
+      "text": "Lege 2 Schulden auf einen Vorratsstapel. Vorbereitung: Lege 1 Schuld auf jeden Vorratsstapel. Nimmt ein Spieler in seiner Kaufphase eine Karte, nimmt er die Schulden von deren Stapel."
+    },
+    "triumph": {
+      "name": "Siegeszug",
+      "text": "Nimm ein Anwesen. Gelingt das, erhältst du +1 Siegpunkt für jede Karte, die du in diesem Zug genommen hast, einschließlich dieses Anwesens."
+    },
+    "wedding": {
+      "name": "Hochzeit",
+      "text": "+1 Siegpunkt. Nimm ein Gold."
+    },
+    "windfall": {
+      "name": "Glücksfall",
+      "text": "Sind sowohl dein Nachziehstapel als auch dein Ablagestapel leer, nimm 3 Gold."
+    },
+    "aqueduct": {
+      "name": "Aquädukt",
+      "text": "Nimmst du eine Geldkarte, versetze 1 Siegpunkt von ihrem Stapel hierher. Nimmst du eine Punktekarte, nimm alle Siegpunkte von hier. Vorbereitung: Lege je 8 Siegpunkte auf Silber und Gold."
+    },
+    "arena": {
+      "name": "Arena",
+      "text": "Zu Beginn deiner Kaufphase darfst du eine Handkarte vom Typ Aktion ablegen. Tust du das, nimm 2 Siegpunkte von hier. Vorbereitung: Lege hier 6 Siegpunkte je Spieler bereit."
+    },
+    "bandit_fort": {
+      "name": "Räuberfestung",
+      "text": "Bei Spielende verlierst du für jedes deiner Silber und jedes deiner Gold 2 Siegpunkte."
+    },
+    "basilica": {
+      "name": "Basilika",
+      "text": "Nimmst du in deiner Kaufphase eine Karte und hast mindestens 2 Geld übrig, nimm 2 Siegpunkte von hier. Vorbereitung: Lege hier 6 Siegpunkte je Spieler bereit."
+    },
+    "baths": {
+      "name": "Badehaus",
+      "text": "Beendest du deinen Zug, ohne darin eine Karte genommen zu haben, nimm 2 Siegpunkte von hier. Vorbereitung: Lege hier 6 Siegpunkte je Spieler bereit."
+    },
+    "battlefield": {
+      "name": "Schlachtfeld",
+      "text": "Jedes Mal, wenn du eine Punktekarte nimmst, nimm 2 Siegpunkte von hier. Vorbereitung: Lege hier 6 Siegpunkte je Spieler bereit."
+    },
+    "colonnade": {
+      "name": "Kolonnaden",
+      "text": "Nimmst du in deiner Kaufphase eine Aktionskarte und hast eine gleichnamige Karte im Spiel, nimm 2 Siegpunkte von hier. Vorbereitung: Lege hier 6 Siegpunkte je Spieler bereit."
+    },
+    "defiled_shrine": {
+      "name": "Entweihter Schrein",
+      "text": "Nimmst du eine Aktionskarte, versetze 1 Siegpunkt von ihrem Stapel hierher. Nimmst du in deiner Kaufphase einen Fluch, nimm alle Siegpunkte von hier. Vorbereitung: Lege 2 Siegpunkte auf jeden Aktions-Vorratsstapel ohne den Typ Sammlung."
+    },
+    "fountain": {
+      "name": "Brunnen",
+      "text": "Bei Spielende erhältst du 15 Siegpunkte, falls du mindestens 10 Kupfer besitzt."
+    },
+    "keep": {
+      "name": "Bollwerk",
+      "text": "Bei Spielende erhältst du für jede Geldkartenart, die du besitzt, 5 Siegpunkte, sofern du davon mindestens so viele Exemplare hast wie jeder einzelne Mitspieler. Gleichstände zählen mit."
+    },
+    "labyrinth": {
+      "name": "Labyrinth",
+      "text": "Nimmst du die zweite Karte in einem deiner Züge, nimm 2 Siegpunkte von hier. Vorbereitung: Lege hier 6 Siegpunkte je Spieler bereit."
+    },
+    "mountain_pass": {
+      "name": "Gebirgspass",
+      "text": "Sobald du als erster Spieler eine Provinz nimmst, bietet jeder Spieler einmal bis zu 40 Schulden; du bietest zuletzt. Der Höchstbietende erhält +8 Siegpunkte und nimmt die gebotenen Schulden."
+    },
+    "museum": {
+      "name": "Museum",
+      "text": "Bei Spielende erhältst du 2 Siegpunkte für jeden unterschiedlichen Kartennamen unter deinen Karten."
+    },
+    "obelisk": {
+      "name": "Obelisk",
+      "text": "Bei Spielende erhältst du 2 Siegpunkte für jede eigene Karte aus dem ausgewählten Stapel. Vorbereitung: Bestimme zufällig einen Aktionsstapel im Vorrat."
+    },
+    "orchard": {
+      "name": "Obstgarten",
+      "text": "Bei Spielende erhältst du für jede unterschiedlich benannte Aktionskarte, von der du mindestens 3 Exemplare besitzt, 4 Siegpunkte."
+    },
+    "palace": {
+      "name": "Palast",
+      "text": "Bei Spielende erhältst du für jeden vollständigen Satz aus einem Kupfer, einem Silber und einem Gold 3 Siegpunkte."
+    },
+    "tomb": {
+      "name": "Grabmal",
+      "text": "Jedes Mal, wenn du eine Karte entsorgst, erhältst du +1 Siegpunkt."
+    },
+    "tower": {
+      "name": "Turm",
+      "text": "Bei Spielende erhältst du für jede eigene Karte, die keine Punktekarte ist und aus einem leeren Vorratsstapel stammt, 1 Siegpunkt."
+    },
+    "triumphal_arch": {
+      "name": "Triumphbogen",
+      "text": "Bei Spielende erhältst du 3 Siegpunkte je Exemplar deiner zweithäufigsten Aktionskartenart. Bei Gleichstand zählt eine der gleich häufigen Arten."
+    },
+    "wall": {
+      "name": "Mauer",
+      "text": "Bei Spielende verlierst du für jede deiner Karten über die ersten 15 hinaus 1 Siegpunkt."
+    },
+    "wolf_den": {
+      "name": "Wolfsbau",
+      "text": "Bei Spielende verlierst du für jede Kartenart, von der du genau ein Exemplar besitzt, 3 Siegpunkte."
+    },
+    "humble_castle": {
+      "name": "Bescheidenes Schloss",
+      "text": "+1 Geld. Bei Spielende 1 Siegpunkt für jedes eigene Schloss, einschließlich dieses Schlosses. Gehört zum Schlossstapel."
+    },
+    "crumbling_castle": {
+      "name": "Verfallendes Schloss",
+      "text": "1 Siegpunkt bei Spielende. Nimmst oder entsorgst du dieses Schloss, erhältst du +1 Siegpunkt und nimmst ein Silber. Gehört zum Schlossstapel."
+    },
+    "small_castle": {
+      "name": "Kleines Schloss",
+      "text": "2 Siegpunkte bei Spielende. Entsorge dieses Schloss oder ein Schloss von deiner Hand. Gelingt das, nimm ein Schloss. Gehört zum Schlossstapel."
+    },
+    "haunted_castle": {
+      "name": "Spukschloss",
+      "text": "2 Siegpunkte bei Spielende. Nimmst du dieses Schloss während deines Zuges, nimm ein Gold; außerdem legt jeder Mitspieler mit mindestens 5 Handkarten davon 2 auf seinen Nachziehstapel. Gehört zum Schlossstapel."
+    },
+    "opulent_castle": {
+      "name": "Reiches Schloss",
+      "text": "3 Siegpunkte bei Spielende. Lege beliebig viele Punktekarten von deiner Hand ab und erhalte +2 Geld für jede davon. Gehört zum Schlossstapel."
+    },
+    "sprawling_castle": {
+      "name": "Ausgedehntes Schloss",
+      "text": "4 Siegpunkte bei Spielende. Nimmst du dieses Schloss, nimm entweder ein Herzogtum oder 3 Anwesen. Gehört zum Schlossstapel."
+    },
+    "grand_castle": {
+      "name": "Prunkschloss",
+      "text": "5 Siegpunkte bei Spielende. Nimmst du dieses Schloss, decke deine Hand auf und erhalte +1 Siegpunkt für jede Punktekarte auf deiner Hand und in deinem Spielbereich. Gehört zum Schlossstapel."
+    },
+    "kings_castle": {
+      "name": "Königsschloss",
+      "text": "Bei Spielende 2 Siegpunkte für jedes eigene Schloss, einschließlich dieses Schlosses. Gehört zum Schlossstapel."
+    },
+    "page": {
+      "name": "Page",
+      "text": "+1 Karte. +1 Aktion. Wenn du diesen Pagen aus dem Spiel ablegst, darfst du ihn gegen einen Schatzsucher eintauschen."
+    },
+    "peasant": {
+      "name": "Kleinbauer",
+      "text": "+1 Kauf. +1 Geld. Beim Ablegen dieses Kleinbauern aus dem Spiel darfst du ihn gegen einen Soldaten eintauschen."
+    },
+    "ratcatcher": {
+      "name": "Rattenfänger",
+      "text": "+1 Karte. +1 Aktion. Lege diesen Rattenfänger auf dein Wirtshaustableau. Zu Beginn deines Zuges darfst du ihn aufrufen; entsorge dann eine Handkarte."
+    },
+    "raze": {
+      "name": "Zerstörung",
+      "text": "+1 Aktion. Entsorge diese Karte oder eine Handkarte. Sieh dir für jedes Geld ihrer Kosten eine Karte oben von deinem Nachziehstapel an. Nimm davon eine auf die Hand und lege die übrigen ab."
+    },
+    "coin_of_the_realm": {
+      "name": "Königliche Münzen",
+      "text": "+1 Geld. Lege diese Karte auf dein Wirtshaustableau. Nachdem du eine Aktionskarte ausgespielt und ausgeführt hast, darfst du diese Münzen für +2 Aktionen aufrufen."
+    },
+    "amulet": {
+      "name": "Amulett",
+      "text": "Wähle jetzt und zu Beginn deines nächsten Zuges jeweils eine Möglichkeit: +1 Geld; eine Handkarte entsorgen; oder ein Silber nehmen."
+    },
+    "caravan_guard": {
+      "name": "Karawanenwächter",
+      "text": "+1 Karte. +1 Aktion. Zu Beginn deines nächsten Zuges erhältst du +1 Geld. Spielt ein Mitspieler eine Angriffskarte, darfst du vorher diesen Wächter von deiner Hand ausspielen."
+    },
+    "dungeon": {
+      "name": "Verlies",
+      "text": "+1 Aktion. Ziehe jetzt und zu Beginn deines nächsten Zuges jeweils 2 Karten und lege danach 2 Handkarten ab."
+    },
+    "gear": {
+      "name": "Ausrüstung",
+      "text": "+2 Karten. Du darfst bis zu 2 Handkarten verdeckt unter diese Karte legen. Nimm die zurückgelegten Karten zu Beginn deines nächsten Zuges wieder auf die Hand."
+    },
+    "guide": {
+      "name": "Kundschafter",
+      "text": "+1 Karte. +1 Aktion. Lege diesen Kundschafter auf dein Wirtshaustableau. Zu Beginn deines Zuges darfst du ihn aufrufen; lege dann deine gesamte Hand ab und ziehe 5 Karten."
+    },
+    "duplicate": {
+      "name": "Duplikat",
+      "text": "Lege dieses Duplikat auf dein Wirtshaustableau. Nimmst du eine Karte für höchstens 6 Geld, darfst du das Duplikat aufrufen und eine weitere Karte mit demselben Namen nehmen."
+    },
+    "magpie": {
+      "name": "Elster",
+      "text": "+1 Karte. +1 Aktion. Decke deine oberste Karte auf. Ist sie eine Geldkarte, nimm sie auf die Hand. Ist sie eine Aktions- oder Punktekarte, nimm eine Elster."
+    },
+    "messenger": {
+      "name": "Kurier",
+      "text": "+1 Kauf. +2 Geld. Du darfst deinen Nachziehstapel komplett ablegen. Ist dieser Kurier die erste Karte, die du in deiner Kaufphase nimmst, nimm eine Karte für höchstens 4 Geld; jeder Mitspieler nimmt eine Karte mit demselben Namen."
+    },
+    "miser": {
+      "name": "Geizhals",
+      "text": "Entscheide dich: Lege ein Kupfer von deiner Hand auf dein Wirtshaustableau; oder erhalte +1 Geld für jedes Kupfer auf deinem Wirtshaustableau."
+    },
+    "port": {
+      "name": "Hafenstadt",
+      "text": "+1 Karte. +2 Aktionen. Nimmst du diese Hafenstadt, nimm eine weitere Hafenstadt. Diese zusätzliche Hafenstadt bringt keine weitere mit."
+    },
+    "ranger": {
+      "name": "Wildhüter",
+      "text": "+1 Kauf. Wende deinen Reise-Marker; er beginnt mit der Vorderseite oben. Liegt danach die Vorderseite oben, ziehe 5 Karten."
+    },
+    "transmogrify": {
+      "name": "Transformation",
+      "text": "+1 Aktion. Lege diese Transformation auf dein Wirtshaustableau. Zu Beginn deines Zuges darfst du sie aufrufen: Entsorge eine Handkarte und nimm eine Karte direkt auf die Hand, die höchstens 1 Geld mehr kostet."
+    },
+    "artificer": {
+      "name": "Kunsthandwerker",
+      "text": "+1 Karte. +1 Aktion. +1 Geld. Lege beliebig viele Handkarten ab. Du darfst eine Karte nehmen und auf deinen Nachziehstapel legen, die genau so viel Geld kostet, wie du Karten abgelegt hast."
+    },
+    "bridge_troll": {
+      "name": "Brückentroll",
+      "text": "Jeder Mitspieler nimmt seinen -1-Geld-Marker. In diesem und deinem nächsten Zug kosten Karten 1 Geld weniger. Du erhältst jetzt und zu Beginn deines nächsten Zuges jeweils +1 Kauf."
+    },
+    "distant_lands": {
+      "name": "Ferne Lande",
+      "text": "Lege diese Karte auf dein Wirtshaustableau. Bei Spielende ist sie dort 4 Siegpunkte wert, an jedem anderen Ort 0 Siegpunkte."
+    },
+    "giant": {
+      "name": "Riese",
+      "text": "Wende deinen Reise-Marker; er beginnt mit der Vorderseite oben. Liegt danach die Rückseite oben, erhältst du +1 Geld. Bei der Vorderseite erhältst du +5 Geld und jeder Mitspieler deckt seine oberste Karte auf: Kostet sie 3 bis 6 Geld, entsorgt er sie. Andernfalls legt er sie ab und nimmt einen Fluch."
+    },
+    "haunted_woods": {
+      "name": "Geisterwald",
+      "text": "Bis zu deinem nächsten Zug gilt: Nimmt ein Mitspieler eine von ihm gekaufte Karte, legt er seine gesamte Hand in beliebiger Reihenfolge auf seinen Nachziehstapel. Zu Beginn deines nächsten Zuges ziehst du 3 Karten."
+    },
+    "lost_city": {
+      "name": "Verlorene Stadt",
+      "text": "+2 Karten. +2 Aktionen. Nimmst du diese Stadt, zieht jeder Mitspieler 1 Karte."
+    },
+    "relic": {
+      "name": "Relikt",
+      "text": "+2 Geld. Beim Ausspielen legt jeder Mitspieler seinen -1-Karte-Marker auf seinen Nachziehstapel."
+    },
+    "royal_carriage": {
+      "name": "Königliche Kutsche",
+      "text": "+1 Aktion. Lege diese Kutsche auf dein Wirtshaustableau. Unmittelbar nachdem du eine Aktionskarte vollständig ausgeführt hast, darfst du die Kutsche aufrufen, sofern jene Aktionskarte noch im Spiel ist, und diese Aktionskarte erneut ausspielen."
+    },
+    "storyteller": {
+      "name": "Geschichtenerzähler",
+      "text": "+1 Aktion. Spiele bis zu 3 Geldkarten von deiner Hand aus. Ziehe danach 1 Karte und zahle dann dein gesamtes verfügbares Geld: Ziehe für jedes bezahlte Geld 1 weitere Karte."
+    },
+    "swamp_hag": {
+      "name": "Sumpfhexe",
+      "text": "Bis zu deinem nächsten Zug gilt: Nimmt ein Mitspieler eine von ihm gekaufte Karte, nimmt er auch einen Fluch. Zu Beginn deines nächsten Zuges erhältst du +3 Geld."
+    },
+    "treasure_trove": {
+      "name": "Schatz",
+      "text": "+2 Geld. Beim Ausspielen nimmst du ein Gold und ein Kupfer."
+    },
+    "wine_merchant": {
+      "name": "Weinhändler",
+      "text": "+1 Kauf. +4 Geld. Lege diesen Weinhändler auf dein Wirtshaustableau. Hast du am Ende deiner Kaufphase mindestens 2 Geld übrig, darfst du ihn von deinem Tableau ablegen."
+    },
+    "hireling": {
+      "name": "Gefolgsmann",
+      "text": "Ziehe für den Rest des Spiels zu Beginn jedes deiner Züge 1 Karte. Dieser Gefolgsmann bleibt im Spiel."
+    },
+    "alms": {
+      "name": "Almosen",
+      "text": "Einmal je Zug: Hast du keine Geldkarten im Spiel, nimm eine Karte für höchstens 4 Geld."
+    },
+    "borrow": {
+      "name": "Leihgabe",
+      "text": "Einmal je Zug: +1 Kauf. Liegt dein -1-Karte-Marker nicht auf deinem Nachziehstapel, lege ihn darauf und erhalte +1 Geld."
+    },
+    "quest": {
+      "name": "Quest",
+      "text": "Du darfst von deiner Hand entweder eine Angriffskarte, zwei Flüche oder sechs beliebige Karten ablegen. Tust du das, nimm ein Gold."
+    },
+    "save": {
+      "name": "Zuflucht",
+      "text": "Einmal je Zug: +1 Kauf. Lege eine Handkarte zur Seite. Nimm sie am Ende dieses Zuges wieder auf die Hand, nachdem du deine neue Hand gezogen hast."
+    },
+    "scouting_party": {
+      "name": "Spähtrupp",
+      "text": "+1 Kauf. Sieh dir deine obersten 5 Karten an, lege 3 davon ab und lege die übrigen in beliebiger Reihenfolge auf deinen Nachziehstapel zurück."
+    },
+    "travelling_fair": {
+      "name": "Wanderzirkus",
+      "text": "+2 Käufe. Jede Karte, die du in diesem Zug nimmst, darfst du auf deinen Nachziehstapel legen."
+    },
+    "bonfire": {
+      "name": "Freudenfeuer",
+      "text": "Du darfst bis zu 2 deiner Kupfer entsorgen, die sich im Spiel befinden."
+    },
+    "expedition": {
+      "name": "Expedition",
+      "text": "Ziehe für deine nächste Hand 2 zusätzliche Karten."
+    },
+    "ferry": {
+      "name": "Überfahrt",
+      "text": "Versetze deinen -2-Kosten-Marker auf einen Aktionsstapel im Vorrat. Karten dieses Stapels kosten während deiner Züge 2 Geld weniger, mindestens aber 0 Geld."
+    },
+    "plan": {
+      "name": "Planung",
+      "text": "Versetze deinen Entsorgungs-Marker auf einen Aktionsstapel im Vorrat. Nimmst du eine Karte dieses Stapels, darfst du eine Handkarte entsorgen."
+    },
+    "mission": {
+      "name": "Mission",
+      "text": "Führe nach diesem Zug einen zusätzlichen Zug aus, aber keinen dritten eigenen Zug in Folge. In diesem Extrazug darfst du keine Karten kaufen; Ereignisse darfst du weiterhin erwerben."
+    },
+    "pilgrimage": {
+      "name": "Pilgerfahrt",
+      "text": "Einmal je Zug: Wende deinen Reise-Marker; er beginnt mit der Vorderseite oben. Liegt danach die Vorderseite oben, wähle bis zu 3 unterschiedlich benannte Karten, die du im Spiel hast, und nimm von jeder eine weitere Karte."
+    },
+    "ball": {
+      "name": "Ball",
+      "text": "Nimm deinen -1-Geld-Marker. Nimm 2 Karten, die jeweils höchstens 4 Geld kosten."
+    },
+    "raid": {
+      "name": "Überfall",
+      "text": "Nimm für jedes Silber, das du im Spiel hast, ein Silber. Jeder Mitspieler legt seinen -1-Karte-Marker auf seinen Nachziehstapel."
+    },
+    "seaway": {
+      "name": "Seeweg",
+      "text": "Nimm eine Aktionskarte für höchstens 4 Geld. Versetze deinen +1-Kauf-Marker auf ihren Vorratsstapel. Spielst du eine Karte dieses Stapels aus, erhältst du zuerst +1 Kauf."
+    },
+    "trade": {
+      "name": "Handel",
+      "text": "Entsorge bis zu 2 Handkarten und nimm für jede entsorgte Karte ein Silber."
+    },
+    "lost_arts": {
+      "name": "Verlorene Kunst",
+      "text": "Versetze deinen +1-Aktion-Marker auf einen Aktionsstapel im Vorrat. Spielst du eine Karte dieses Stapels aus, erhältst du zuerst +1 Aktion."
+    },
+    "training": {
+      "name": "Training",
+      "text": "Versetze deinen +1-Geld-Marker auf einen Aktionsstapel im Vorrat. Spielst du eine Karte dieses Stapels aus, erhältst du zuerst +1 Geld."
+    },
+    "inheritance": {
+      "name": "Erbschaft",
+      "text": "Einmal im Spiel: Lege eine Aktionskarte ohne den Typ Befehl aus dem Vorrat zur Seite, die höchstens 4 Geld kostet, und lege deinen Anwesen-Marker darauf. Während deiner Züge sind deine Anwesen zusätzlich Befehl-Aktionskarten mit der Anweisung: Spiele die Karte mit deinem Anwesen-Marker aus, ohne sie zu bewegen."
+    },
+    "pathfinding": {
+      "name": "Wegsuche",
+      "text": "Versetze deinen +1-Karte-Marker auf einen Aktionsstapel im Vorrat. Spielst du eine Karte dieses Stapels aus, ziehst du zuerst 1 Karte."
+    },
+    "treasure_hunter": {
+      "name": "Schatzsucher",
+      "text": "+1 Aktion. +1 Geld. Nimm für jede Karte, die dein rechter Mitspieler in seinem letzten Zug genommen hat, ein Silber. Beim Ablegen dieses Schatzsuchers aus dem Spiel darfst du ihn gegen einen Krieger eintauschen."
+    },
+    "warrior": {
+      "name": "Krieger",
+      "text": "+2 Karten. Für jeden Reisenden in deinem Spielbereich, einschließlich dieses Kriegers, legt jeder Mitspieler seine oberste Karte ab und entsorgt sie, falls sie 3 oder 4 Geld kostet. Beim Ablegen dieses Kriegers aus dem Spiel darfst du ihn gegen einen Helden eintauschen."
+    },
+    "hero": {
+      "name": "Held",
+      "text": "+2 Geld. Nimm eine Geldkarte. Beim Ablegen dieses Helden aus dem Spiel darfst du ihn gegen einen Champion eintauschen."
+    },
+    "champion": {
+      "name": "Champion",
+      "text": "+1 Aktion. Für den Rest des Spiels haben Angriffe deiner Mitspieler keine Wirkung auf dich; außerdem erhältst du bei jedem Ausspielen einer Aktionskarte +1 Aktion. Dieser Champion bleibt im Spiel."
+    },
+    "soldier": {
+      "name": "Soldat",
+      "text": "+2 Geld und +1 Geld für jede andere Angriffskarte, die du im Spiel hast. Jeder Mitspieler mit mindestens 4 Handkarten legt eine ab. Beim Ablegen dieses Soldaten aus dem Spiel darfst du ihn gegen einen Flüchtling eintauschen."
+    },
+    "fugitive": {
+      "name": "Flüchtling",
+      "text": "+2 Karten. +1 Aktion. Lege eine Handkarte ab. Beim Ablegen dieses Flüchtlings aus dem Spiel darfst du ihn gegen einen Schüler eintauschen."
+    },
+    "disciple": {
+      "name": "Schüler",
+      "text": "Du darfst eine Aktionskarte von deiner Hand zweimal ausspielen. Nimm eine Karte mit demselben Namen. Beim Ablegen dieses Schülers aus dem Spiel darfst du ihn gegen einen Lehrer eintauschen."
+    },
+    "teacher": {
+      "name": "Lehrer",
+      "text": "Lege diesen Lehrer auf dein Wirtshaustableau. Zu Beginn deines Zuges darfst du ihn aufrufen und deinen +1-Karte-, +1-Aktion-, +1-Kauf- oder +1-Geld-Marker auf einen Aktionsstapel im Vorrat versetzen, auf dem noch keiner deiner Marker liegt. Beim Ausspielen einer Karte dieses Stapels erhältst du zuerst den Bonus."
+    },
+    "hovel": {
+      "name": "Hütte",
+      "text": "Wenn du eine Punktekarte nimmst, darfst du diese Hütte von deiner Hand entsorgen."
+    },
+    "necropolis": {
+      "name": "Totenstadt",
+      "text": "+2 Aktionen."
+    },
+    "overgrown_estate": {
+      "name": "Verfallenes Anwesen",
+      "text": "0 Siegpunkte. Wenn du diese Karte entsorgst, ziehe 1 Karte."
+    },
+    "ruins": {
+      "name": "Ruinen",
+      "text": "Wird eine Karte mit dem Typ Plündern verwendet, mische alle 50 Ruinen und verwende davon 10 pro Spieler nach dem ersten als zusätzlichen Vorratsstapel. Alle Karten außer der obersten liegen verdeckt. Nur die oberste Ruine kann gekauft oder genommen werden."
+    },
+    "abandoned_mine": {
+      "name": "Verlassene Mine",
+      "text": "+1 Geld."
+    },
+    "ruined_library": {
+      "name": "Zerstörte Bibliothek",
+      "text": "+1 Karte."
+    },
+    "ruined_market": {
+      "name": "Zerstörter Markt",
+      "text": "+1 Kauf."
+    },
+    "ruined_village": {
+      "name": "Zerstörtes Dorf",
+      "text": "+1 Aktion."
+    },
+    "survivors": {
+      "name": "Überlebende",
+      "text": "Sieh die obersten 2 Karten deines Nachziehstapels an. Lege entweder beide ab oder lege beide in beliebiger Reihenfolge zurück."
+    },
+    "berserker": {
+      "name": "Berserker",
+      "text": "Nimm eine Karte, die weniger als dieser Berserker kostet. Jeder Mitspieler legt Handkarten ab, bis er nur noch 3 hat. Wenn du diesen Berserker nimmst und eine Aktionskarte im Spiel hast, spiele ihn sofort."
+    },
+    "border_village": {
+      "name": "Grenzdorf",
+      "text": "+1 Karte und +2 Aktionen. Wenn du dieses Grenzdorf nimmst, nimm zusätzlich eine günstigere Karte."
+    },
+    "cartographer": {
+      "name": "Kartograph",
+      "text": "+1 Karte und +1 Aktion. Sieh die obersten 4 Karten deines Nachziehstapels an. Lege beliebig viele davon ab und lege die übrigen in beliebiger Reihenfolge zurück."
+    },
+    "cauldron": {
+      "name": "Hexenkessel",
+      "text": "+2 Geld und +1 Kauf. Wenn du danach in diesem Zug deine dritte Aktionskarte nimmst, nimmt jeder Mitspieler einen Fluch."
+    },
+    "crossroads": {
+      "name": "Wegkreuzung",
+      "text": "Zeige deine Handkarten vor und ziehe je 1 Karte pro Punktekarte darunter. Ist dies die erste Wegkreuzung, die du in diesem Zug gespielt hast, erhältst du +3 Aktionen."
+    },
+    "develop": {
+      "name": "Aufbau",
+      "text": "Entsorge eine Handkarte. Nimm eine Karte, die genau 1 Geld mehr kostet, und eine, die genau 1 Geld weniger kostet. Lege sie in der von dir gewählten Reihenfolge auf deinen Nachziehstapel."
+    },
+    "fools_gold": {
+      "name": "Katzengold",
+      "text": "Das erste Katzengold, das du in diesem Zug spielst, erzeugt 1 Geld. Jedes weitere erzeugt 4 Geld. Wenn ein Mitspieler eine Provinz nimmt, darfst du dieses Katzengold von der Hand entsorgen und dafür ein Gold auf deinen Nachziehstapel nehmen."
+    },
+    "farmland": {
+      "name": "Fruchtbares Land",
+      "text": "2 Siegpunkte. Wenn du diese Karte nimmst, entsorge eine Handkarte und nimm dafür eine Karte, die genau 2 Geld mehr kostet. Du darfst dabei kein weiteres Fruchtbares Land nehmen."
+    },
+    "guard_dog": {
+      "name": "Wachhund",
+      "text": "+2 Karten. Hast du danach höchstens 5 Handkarten, ziehe nochmals 2 Karten. Wenn ein Mitspieler einen Angriff spielt, darfst du zuerst diesen Wachhund von der Hand ausspielen."
+    },
+    "haggler": {
+      "name": "Feilscher",
+      "text": "+2 Geld. Wenn du später in diesem Zug eine gekaufte Karte nimmst, nimm zusätzlich eine günstigere Karte, die keine Punktekarte ist."
+    },
+    "highway": {
+      "name": "Fernstraße",
+      "text": "+1 Karte und +1 Aktion. Bis zum Ende dieses Zugs kosten alle Karten 1 Geld weniger, mindestens jedoch 0 Geld."
+    },
+    "inn": {
+      "name": "Gasthaus",
+      "text": "+2 Karten und +2 Aktionen. Lege dann 2 Handkarten ab. Wenn du dieses Gasthaus nimmst, darfst du beliebig viele Aktionskarten aus deinem Ablagestapel vorzeigen und in deinen Nachziehstapel mischen, einschließlich des gerade genommenen Gasthauses."
+    },
+    "jack_of_all_trades": {
+      "name": "Lebenskünstler",
+      "text": "Nimm ein Silber. Sieh deine oberste Karte an und lege sie ab oder zurück. Ziehe anschließend bis auf 5 Handkarten. Danach darfst du eine Handkarte entsorgen, die keine Geldkarte ist."
+    },
+    "margrave": {
+      "name": "Markgraf",
+      "text": "+3 Karten und +1 Kauf. Jeder Mitspieler zieht 1 Karte und legt danach Handkarten ab, bis er nur noch 3 hat."
+    },
+    "nomads": {
+      "name": "Nomaden",
+      "text": "+1 Kauf und +2 Geld. Wenn du diese Karte nimmst oder entsorgst, erhältst du +2 Geld."
+    },
+    "oasis": {
+      "name": "Oase",
+      "text": "+1 Karte, +1 Aktion und +1 Geld. Lege danach eine Handkarte ab."
+    },
+    "scheme": {
+      "name": "Komplott",
+      "text": "+1 Karte und +1 Aktion. In diesem Zug darfst du einmal eine Aktionskarte auf deinen Nachziehstapel legen, wenn du sie aus dem Spiel ablegst."
+    },
+    "souk": {
+      "name": "Souk",
+      "text": "+1 Kauf und +7 Geld. Verliere dann je 1 Geld pro Handkarte, wobei dein Geld nicht unter 0 sinkt. Wenn du diesen Souk nimmst, entsorge bis zu 2 Handkarten."
+    },
+    "spice_merchant": {
+      "name": "Gewürzhändler",
+      "text": "Du darfst eine Geldkarte von der Hand entsorgen. Wenn du das tust, wähle zwischen +2 Karten und +1 Aktion oder +2 Geld und +1 Kauf."
+    },
+    "stables": {
+      "name": "Stallungen",
+      "text": "Du darfst eine Geldkarte von der Hand ablegen. Nur wenn du eine ablegst, erhältst du +3 Karten und +1 Aktion."
+    },
+    "trader": {
+      "name": "Fahrende Händlerin",
+      "text": "Entsorge eine Handkarte und nimm je 1 Silber pro Geld in ihren Kosten. Wenn du eine Karte nimmst, darfst du diese Händlerin von der Hand aufdecken und jene Karte gegen ein Silber austauschen. Lege dafür jene Karte auf ihren Stapel zurück und ein Silber vom Silberstapel auf deinen Ablagestapel."
+    },
+    "trail": {
+      "name": "Pfad",
+      "text": "+1 Karte und +1 Aktion. Wenn du diesen Pfad außerhalb der Aufräumphase nimmst, entsorgst oder ablegst, darfst du ihn ausspielen."
+    },
+    "tunnel": {
+      "name": "Tunnel",
+      "text": "2 Siegpunkte. Wenn du diesen Tunnel außerhalb der Aufräumphase ablegst, darfst du ihn vorzeigen und ein Gold nehmen."
+    },
+    "weaver": {
+      "name": "Weberin",
+      "text": "Nimm entweder 2 Silber oder eine Karte für höchstens 4 Geld. Wenn du diese Weberin außerhalb der Aufräumphase ablegst, darfst du sie ausspielen."
+    },
+    "wheelwright": {
+      "name": "Radmacherin",
+      "text": "+1 Karte und +1 Aktion. Du darfst eine Handkarte ablegen und dafür eine Aktionskarte nehmen, die gleich viel oder weniger kostet."
+    },
+    "witchs_hut": {
+      "name": "Hexenhütte",
+      "text": "+4 Karten. Lege 2 Handkarten offen ab. Sind beide Aktionskarten, nimmt jeder Mitspieler einen Fluch."
+    },
+    "anvil": {
+      "name": "Amboss",
+      "text": "+1 Geld. Du darfst eine Geldkarte von der Hand ablegen, um eine Karte für höchstens 4 Geld zu nehmen."
+    },
+    "watchtower": {
+      "name": "Wachturm",
+      "text": "Ziehe Karten, bis du 6 auf der Hand hast. Wenn du eine Karte nimmst, darfst du diesen Wachturm von der Hand aufdecken. Entsorge dann die genommene Karte oder lege sie auf deinen Nachziehstapel."
+    },
+    "bishop": {
+      "name": "Bischof",
+      "text": "+1 Geld und +1 Siegpunktmarker. Entsorge eine Handkarte und erhalte zusätzlich halb so viele Siegpunktmarker wie ihre Geldkosten, abgerundet. Jeder Mitspieler darf ebenfalls eine Handkarte entsorgen."
+    },
+    "clerk": {
+      "name": "Buchhalterin",
+      "text": "+2 Geld. Jeder Mitspieler mit mindestens 5 Handkarten legt eine davon auf seinen Nachziehstapel. Zu Beginn deines Zugs darfst du diese Karte von der Hand ausspielen."
+    },
+    "investment": {
+      "name": "Geldanlage",
+      "text": "Entsorge eine Handkarte. Wähle danach +1 Geld oder entsorge diese Geldanlage und decke deine Hand auf. Für die zweite Wahl erhältst du je 1 Siegpunktmarker pro verschieden benannter Geldkarte auf deiner Hand."
+    },
+    "monument": {
+      "name": "Denkmal",
+      "text": "+2 Geld und +1 Siegpunktmarker."
+    },
+    "quarry": {
+      "name": "Steinbruch",
+      "text": "+1 Geld. Für den Rest dieses Zugs kosten Aktionskarten 2 Geld weniger, mindestens jedoch 0 Geld."
+    },
+    "tiara": {
+      "name": "Brautkrone",
+      "text": "+1 Kauf. Ab jetzt darfst du Karten, die du in diesem Zug nimmst, auf deinen Nachziehstapel legen. Du darfst eine Geldkarte von deiner Hand zweimal spielen."
+    },
+    "workers_village": {
+      "name": "Arbeiterdorf",
+      "text": "+1 Karte, +2 Aktionen und +1 Kauf."
+    },
+    "city": {
+      "name": "Stadt",
+      "text": "+1 Karte und +2 Aktionen. Bei mindestens einem leeren Vorratsstapel ziehst du noch 1 Karte. Bei mindestens zwei leeren Stapeln erhältst du außerdem +1 Kauf und +1 Geld."
+    },
+    "collection": {
+      "name": "Sammelsurium",
+      "text": "+2 Geld und +1 Kauf. Für jede Aktionskarte, die du danach in diesem Zug nimmst, erhältst du +1 Siegpunktmarker."
+    },
+    "crystal_ball": {
+      "name": "Kristallkugel",
+      "text": "+1 Geld. Sieh deine oberste Karte an. Du darfst sie entsorgen, ablegen oder, falls sie eine Aktions- oder Geldkarte ist, ausspielen. Du darfst sie auch oben liegen lassen."
+    },
+    "magnate": {
+      "name": "Magnatin",
+      "text": "Zeige deine Handkarten vor und ziehe für jede Geldkarte darunter 1 Karte."
+    },
+    "mint": {
+      "name": "Münzer",
+      "text": "Du darfst eine Geldkarte von der Hand vorzeigen und ein weiteres Exemplar nehmen. Wenn du diesen Münzer nimmst, entsorge sämtliche Geldkarten in deinem Spielbereich, die keine Dauerkarten sind."
+    },
+    "rabble": {
+      "name": "Gesindel",
+      "text": "+3 Karten. Jeder Mitspieler deckt seine obersten 3 Karten auf und legt alle aufgedeckten Aktions- und Geldkarten ab. Die übrigen legt er in beliebiger Reihenfolge auf seinen Nachziehstapel zurück."
+    },
+    "vault": {
+      "name": "Gewölbe",
+      "text": "+2 Karten. Lege anschließend beliebig viele Handkarten ab und erhalte für jede +1 Geld. Jeder Mitspieler darf 2 Handkarten ablegen und dafür 1 Karte ziehen."
+    },
+    "war_chest": {
+      "name": "Waffenkiste",
+      "text": "Dein linker Nachbar nennt eine Karte. Nimm eine Karte für höchstens 5 Geld, deren Name in diesem Zug noch für keine Waffenkiste genannt wurde."
+    },
+    "charlatan": {
+      "name": "Wunderheilerin",
+      "text": "+3 Geld. Jeder Mitspieler nimmt einen Fluch. In einer Partie mit dieser Karte sind Flüche zusätzlich Geldkarten, die beim Ausspielen 1 Geld erzeugen."
+    },
+    "grand_market": {
+      "name": "Großer Markt",
+      "text": "+1 Karte, +1 Aktion, +1 Kauf und +2 Geld. Du darfst diese Karte nur kaufen, wenn du kein Kupfer im Spiel hast."
+    },
+    "hoard": {
+      "name": "Hort",
+      "text": "+2 Geld. Wenn du später in diesem Zug eine Punktekarte durch einen Kauf nimmst, nimm zusätzlich ein Gold."
+    },
+    "bank": {
+      "name": "Bank",
+      "text": "Erhalte 1 Geld für jede Geldkarte, die du im Spiel hast. Diese Bank zählt mit."
+    },
+    "expand": {
+      "name": "Ausbau",
+      "text": "Entsorge eine Handkarte und nimm eine Karte, die bis zu 3 Geld mehr kostet."
+    },
+    "forge": {
+      "name": "Kunstschmiede",
+      "text": "Entsorge beliebig viele Handkarten. Nimm eine Karte, deren Kosten exakt der Summe ihrer Geldkosten entsprechen. Trank- und Schuldenkosten zählen nicht mit."
+    },
+    "kings_court": {
+      "name": "Königshof",
+      "text": "Du darfst eine Aktionskarte von deiner Hand dreimal ausspielen. Führe sie jedes Mal vollständig aus, bevor du sie erneut spielst."
+    },
+    "peddler": {
+      "name": "Hausiererin",
+      "text": "+1 Karte, +1 Aktion und +1 Geld. Während der Kaufphase eines Spielers kostet diese Karte 2 Geld weniger pro Aktionskarte, die dieser Spieler im Spiel hat, mindestens jedoch 0 Geld."
+    },
+    "alchemist": {
+      "name": "Alchemist",
+      "text": "+2 Karten, +1 Aktion. Zu Beginn der Aufräumphase dieses Zugs darfst du diese Karte auf deinen Nachziehstapel legen, falls du einen Trank im Spiel hast."
+    },
+    "apothecary": {
+      "name": "Apotheker",
+      "text": "+1 Karte, +1 Aktion. Decke die obersten 4 Karten auf. Nimm jedes aufgedeckte Kupfer und jeden Trank auf die Hand. Lege die übrigen in beliebiger Reihenfolge zurück."
+    },
+    "apprentice": {
+      "name": "Lehrling",
+      "text": "+1 Aktion. Entsorge eine Handkarte. Ziehe je 1 Karte pro Geld in ihren Kosten, zusätzlich 2 Karten bei Trankkosten."
+    },
+    "familiar": {
+      "name": "Vertrauter",
+      "text": "+1 Karte, +1 Aktion. Jeder Mitspieler nimmt einen Fluch."
+    },
+    "golem": {
+      "name": "Golem",
+      "text": "Decke Karten auf, bis du 2 Aktionskarten außer Golems findest. Lege die übrigen ab. Spiele die gefundenen Aktionskarten in beliebiger Reihenfolge."
+    },
+    "herbalist": {
+      "name": "Kräuterkundiger",
+      "text": "+1 Kauf, +1 Geld. Zu Beginn der Aufräumphase dieses Zugs darfst du eine Geldkarte aus dem Spiel auf deinen Nachziehstapel legen."
+    },
+    "philosophers_stone": {
+      "name": "Stein der Weisen",
+      "text": "Zähle beim Ausspielen alle Karten in deinem Nachzieh- und Ablagestapel zusammen. Erhalte je 1 Geld pro volle 5 Karten."
+    },
+    "possession": {
+      "name": "Besessenheit",
+      "text": "Dein linker Nachbar erhält nach diesem Zug einen Extrazug, jedoch keinen zweiten Extrazug direkt hintereinander. Du siehst dabei seine sichtbaren Karten und entscheidest für ihn. Karten und Schulden, die er nehmen würde, erhältst du. Seine entsorgten Karten werden beiseitegelegt und am Zugende auf seinen Ablagestapel gelegt."
+    },
+    "scrying_pool": {
+      "name": "Vision",
+      "text": "+1 Aktion. Jeder Spieler deckt seine oberste Karte auf. Du entscheidest jeweils, ob sie abgelegt oder zurückgelegt wird. Decke dann eigene Karten auf, bis eine Nicht-Aktionskarte erscheint, und nimm alle dabei aufgedeckten Karten auf die Hand."
+    },
+    "transmute": {
+      "name": "Verwandlung",
+      "text": "Entsorge eine Handkarte. Für ihren Typ erhältst du bei Aktion ein Herzogtum, bei Geld eine Verwandlung und bei Punkte ein Gold. Wende jeden zutreffenden Bonus an."
+    },
+    "university": {
+      "name": "Universität",
+      "text": "+2 Aktionen. Du darfst eine Aktionskarte für höchstens 5 Geld ohne zusätzliche Trank- oder Schuldenkosten nehmen."
+    },
+    "vineyard": {
+      "name": "Weinberg",
+      "text": "Bei Spielende je 1 Siegpunkt pro volle 3 Aktionskarten in deinem Kartensatz."
+    },
     "artisan": {
-      "name": "Handwerker",
-      "text": "+1 Karte. Nimm eine Karte bis zu 5 Kosten auf die Hand. Lege eine Handkarte auf deinen Nachziehstapel."
+      "name": "Töpferei",
+      "text": "Nimm eine Karte für höchstens 5 Geld direkt auf die Hand. Lege anschließend eine beliebige Handkarte oben auf deinen Nachziehstapel."
     },
     "bandit": {
-      "name": "Bandit",
-      "text": "Nimm ein Gold. Jeder andere Spieler deckt die obersten 2 Karten seines Nachziehstapels auf, entsorgt einen aufgedeckten Schatz außer Kupfer und legt den Rest ab."
+      "name": "Banditin",
+      "text": "Nimm ein Gold. Jeder Mitspieler deckt seine obersten 2 Karten auf. Hat er dabei eine Geldkarte außer Kupfer aufgedeckt, muss er eine solche Karte seiner Wahl entsorgen. Die anderen aufgedeckten Karten legt er ab."
     },
     "cellar": {
       "name": "Keller",
@@ -42,6 +1154,2170 @@
     "witch": {
       "name": "Hexe",
       "text": "+2 Karten. Jeder andere Spieler nimmt einen Fluch."
+    },
+    "bureaucrat": {
+      "name": "Bürokrat",
+      "text": "Nimm ein Silber und lege es oben auf deinen Nachziehstapel. Jeder Mitspieler deckt eine Punktekarte aus seiner Hand auf und legt sie oben auf seinen Stapel. Wer keine hat, zeigt seine Hand."
+    },
+    "councilRoom": {
+      "name": "Ratsversammlung",
+      "text": "Ziehe 4 Karten und erhalte +1 Kauf. Jeder Mitspieler zieht 1 Karte."
+    },
+    "gardens": {
+      "name": "Gärten",
+      "text": "Bei Spielende ist diese Karte 1 Siegpunkt pro 10 Karten in deinem Besitz wert. Runde ab und zähle die Gärten selbst mit."
+    },
+    "harbinger": {
+      "name": "Vorbotin",
+      "text": "+1 Karte und +1 Aktion. Sieh dir deinen Ablagestapel an. Du darfst eine beliebige Karte daraus oben auf deinen Nachziehstapel legen."
+    },
+    "laboratory": {
+      "name": "Laboratorium",
+      "text": "Ziehe 2 Karten und erhalte +1 Aktion."
+    },
+    "library": {
+      "name": "Bibliothek",
+      "text": "Ziehe Karten, bis du 7 auf der Hand hast. Du darfst dabei gezogene Aktionskarten beiseitelegen. Lege diese Karten anschließend auf den Ablagestapel."
+    },
+    "merchant": {
+      "name": "Händlerin",
+      "text": "+1 Karte und +1 Aktion. Wenn du in diesem Zug zum ersten Mal ein Silber ausspielst, erhältst du +1 Geld."
+    },
+    "mine": {
+      "name": "Mine",
+      "text": "Du darfst eine Geldkarte aus der Hand entsorgen. Falls du das tust, nimm eine Geldkarte, die bis zu 3 Geld mehr kostet, direkt auf die Hand."
+    },
+    "moat": {
+      "name": "Burggraben",
+      "text": "Ziehe 2 Karten. Spielt ein Mitspieler eine Angriffskarte aus, darfst du den Burggraben aus deiner Hand vorzeigen, bevor der Angriff ausgeführt wird. Der Angriff hat dann keine Wirkung auf dich."
+    },
+    "moneylender": {
+      "name": "Geldverleiher",
+      "text": "Du kannst ein Kupfer aus der Hand entsorgen. Dafür erhältst du +3 Geld."
+    },
+    "poacher": {
+      "name": "Wilddiebin",
+      "text": "+1 Karte, +1 Aktion und +1 Geld. Lege danach für jeden leeren Vorratsstapel eine Handkarte ab."
+    },
+    "remodel": {
+      "name": "Umbau",
+      "text": "Entsorge eine Handkarte. Nimm eine Karte, deren Preis höchstens 2 Geld über dem Preis der entsorgten Karte liegt."
+    },
+    "sentry": {
+      "name": "Torwächterin",
+      "text": "+1 Karte und +1 Aktion. Sieh dir die obersten 2 Karten des Nachziehstapels an. Entscheide für jede, ob du sie entsorgst, ablegst oder behältst. Lege die behaltenen in beliebiger Reihenfolge zurück auf den Stapel."
+    },
+    "throneRoom": {
+      "name": "Thronsaal",
+      "text": "Du darfst eine Aktionskarte aus deiner Hand zweimal hintereinander ausspielen."
+    },
+    "vassal": {
+      "name": "Vasall",
+      "text": "+2 Geld. Lege die oberste Karte deines Nachziehstapels ab. Ist es eine Aktionskarte, darfst du sie ausspielen."
+    },
+    "workshop": {
+      "name": "Werkstatt",
+      "text": "Nimm eine Karte, die höchstens 4 Geld kostet."
+    },
+    "adventurer": {
+      "name": "Abenteurer",
+      "text": "Decke Karten von deinem Nachziehstapel auf, bis du zwei Geldkarten findest. Nimm diese auf die Hand und lege alle übrigen aufgedeckten Karten ab."
+    },
+    "chancellor": {
+      "name": "Kanzler",
+      "text": "+2 Geld. Du darfst deinen gesamten Nachziehstapel auf deinen Ablagestapel legen."
+    },
+    "feast": {
+      "name": "Festmahl",
+      "text": "Entsorge das Festmahl. Nimm eine Karte, die höchstens 5 Geld kostet."
+    },
+    "spy": {
+      "name": "Spion",
+      "text": "+1 Karte und +1 Aktion. Alle Spieler einschließlich dir decken die oberste Karte ihres Nachziehstapels auf. Entscheide für jede aufgedeckte Karte, ob sie abgelegt wird oder oben liegen bleibt."
+    },
+    "thief": {
+      "name": "Dieb",
+      "text": "Jeder Mitspieler deckt seine obersten zwei Karten auf. Hat jemand Geldkarten aufgedeckt, wähle eine davon aus, die er entsorgt. Du darfst beliebig viele der so entsorgten Karten nehmen. Jeder legt seine übrigen aufgedeckten Karten ab."
+    },
+    "woodcutter": {
+      "name": "Holzfäller",
+      "text": "Du erhältst +1 Kauf und +2 Geld."
+    },
+    "baron": {
+      "name": "Baron",
+      "text": "+1 Kauf. Du kannst ein Anwesen aus deiner Hand ablegen und erhältst dafür +4 Geld. Legst du keines ab, nimm ein Anwesen."
+    },
+    "bridge": {
+      "name": "Brücke",
+      "text": "+1 Kauf und +1 Geld. Für den Rest dieses Zugs sinken die Geldkosten aller Karten unabhängig von ihrem Ort um 1, mindestens auf 0."
+    },
+    "conspirator": {
+      "name": "Verschwörer",
+      "text": "+2 Geld. Ist dies mindestens deine dritte ausgespielte Aktion in diesem Zug, erhältst du außerdem +1 Karte und +1 Aktion. Dieser Ausspielvorgang zählt mit."
+    },
+    "courtier": {
+      "name": "Höflinge",
+      "text": "Zeige eine Karte aus deiner Hand. Wähle pro Kartentyp auf ihr einen anderen Bonus: +1 Aktion, +1 Kauf, +3 Geld oder ein Gold nehmen."
+    },
+    "courtyard": {
+      "name": "Burghof",
+      "text": "Ziehe 3 Karten. Lege anschließend eine beliebige Handkarte oben auf deinen Nachziehstapel."
+    },
+    "diplomat": {
+      "name": "Diplomatin",
+      "text": "Ziehe 2 Karten. Hast du danach höchstens 5 Handkarten, erhältst du +2 Aktionen. Bevor der Angriff eines Mitspielers ausgeführt wird, darfst du diese Karte aus einer Hand mit mindestens 5 Karten vorzeigen. Ziehe dann 2 Karten und lege 3 ab."
+    },
+    "duke": {
+      "name": "Herzog",
+      "text": "Bei Spielende zählt diese Karte 1 Siegpunkt für jedes Herzogtum in deinem Besitz."
+    },
+    "farm": {
+      "name": "Harem",
+      "text": "Beim Ausspielen bringt diese Karte 2 Geld. Bei Spielende ist sie 2 Siegpunkte wert."
+    },
+    "ironworks": {
+      "name": "Eisenhütte",
+      "text": "Nimm eine Karte für höchstens 4 Geld. Du erhältst jeden passenden Bonus für ihre Typen: +1 Aktion für Aktion, +1 Geld für Geld und +1 Karte für Punkte."
+    },
+    "lurker": {
+      "name": "Herumtreiberin",
+      "text": "+1 Aktion. Du hast die Wahl: Entsorge eine Aktionskarte aus dem Vorrat oder nimm eine Aktionskarte aus dem Müll."
+    },
+    "masquerade": {
+      "name": "Maskerade",
+      "text": "Ziehe 2 Karten. Alle mit mindestens einer Handkarte geben gleichzeitig je eine Handkarte nach links an den nächsten Spieler weiter, der ebenfalls eine abgibt. Danach kannst du eine deiner Handkarten entsorgen."
+    },
+    "mill": {
+      "name": "Mühle",
+      "text": "+1 Karte und +1 Aktion. Wenn du 2 Handkarten ablegst, erhältst du +2 Geld. Bei Spielende zählt die Mühle 1 Siegpunkt."
+    },
+    "miningVillage": {
+      "name": "Bergwerk",
+      "text": "+1 Karte und +2 Aktionen. Du kannst dieses Bergwerk jetzt entsorgen, um +2 Geld zu erhalten."
+    },
+    "minion": {
+      "name": "Lakai",
+      "text": "+1 Aktion. Wähle entweder +2 Geld oder Folgendes: Lege deine ganze Hand ab und ziehe 4 Karten. Jeder Mitspieler mit mindestens 5 Handkarten legt dann ebenfalls seine ganze Hand ab und zieht 4 Karten."
+    },
+    "nobles": {
+      "name": "Adlige",
+      "text": "Du bekommst nach Wahl +3 Karten oder +2 Aktionen. Bei Spielende ist diese Karte 2 Siegpunkte wert."
+    },
+    "patrol": {
+      "name": "Patrouille",
+      "text": "Ziehe zunächst 3 Karten. Decke dann die obersten 4 Karten deines Nachziehstapels auf. Nimm alle aufgedeckten Punktekarten und Flüche auf die Hand. Lege die übrigen Karten in beliebiger Reihenfolge auf den Nachziehstapel zurück."
+    },
+    "pawn": {
+      "name": "Handlanger",
+      "text": "Entscheide dich für zwei unterschiedliche Boni: +1 Karte, +1 Aktion, +1 Kauf oder +1 Geld."
+    },
+    "replace": {
+      "name": "Austausch",
+      "text": "Entsorge eine Handkarte. Nimm eine Karte, die bis zu 2 Geld mehr kostet. Ist sie eine Aktions- oder Geldkarte, lege sie oben auf deinen Nachziehstapel. Ist sie eine Punktekarte, nimmt jeder Mitspieler einen Fluch. Beides kann zutreffen."
+    },
+    "secretPassage": {
+      "name": "Geheimgang",
+      "text": "+2 Karten und +1 Aktion. Schiebe anschließend eine Handkarte an einer Stelle deiner Wahl in deinen Nachziehstapel, auch ganz oben oder unten."
+    },
+    "shantyTown": {
+      "name": "Armenviertel",
+      "text": "+2 Aktionen. Zeige deine ganze Hand. Ziehe 2 Karten, wenn keine deiner Handkarten den Typ Aktion hat."
+    },
+    "steward": {
+      "name": "Verwalter",
+      "text": "Entscheide dich für +2 Karten, +2 Geld oder das Entsorgen von 2 Handkarten."
+    },
+    "swindler": {
+      "name": "Trickser",
+      "text": "+2 Geld. Jeder Mitspieler entsorgt die oberste Karte seines Nachziehstapels. Falls es im Vorrat eine Karte mit denselben Kosten gibt, wählst du eine davon für ihn aus. Er nimmt sie."
+    },
+    "torturer": {
+      "name": "Kerkermeister",
+      "text": "Ziehe 3 Karten. Jeder Mitspieler wählt, ob er 2 Handkarten ablegt oder einen Fluch direkt auf die Hand nimmt. Er darf auch eine Option wählen, die er nicht vollständig ausführen kann."
+    },
+    "tradingPost": {
+      "name": "Handelsposten",
+      "text": "Entsorge 2 Handkarten. Nur wenn du beide entsorgt hast, nimm ein Silber direkt auf die Hand."
+    },
+    "upgrade": {
+      "name": "Anbau",
+      "text": "+1 Karte und +1 Aktion. Entsorge eine Handkarte und nimm dafür eine Karte, die genau 1 Geld mehr kostet."
+    },
+    "wishingWell": {
+      "name": "Wunschbrunnen",
+      "text": "+1 Karte und +1 Aktion. Nenne eine Karte und decke die oberste Karte deines Nachziehstapels auf. Trifft deine Ansage zu, nimm sie auf die Hand. Sonst bleibt sie oben auf dem Stapel."
+    },
+    "astrolabe": {
+      "name": "Astrolabium",
+      "text": "Du erhältst jetzt +1 Geld und +1 Kauf. Zu Beginn deines nächsten Zugs bekommst du beides noch einmal."
+    },
+    "bazaar": {
+      "name": "Bazar",
+      "text": "Ziehe 1 Karte und erhalte +2 Aktionen und +1 Geld."
+    },
+    "blockade": {
+      "name": "Blockade",
+      "text": "Nimm eine Karte für höchstens 4 Geld und lege sie sofort zur Seite. Nimm sie zu Beginn deines nächsten Zugs auf die Hand. Solange sie beiseiteliegt, nimmt jeder Mitspieler einen Fluch, wenn er in seinem eigenen Zug eine gleiche Karte nimmt."
+    },
+    "caravan": {
+      "name": "Karawane",
+      "text": "Ziehe 1 Karte und erhalte +1 Aktion. Ziehe zu Beginn deines nächsten Zugs 1 weitere Karte."
+    },
+    "corsair": {
+      "name": "Korsarenschiff",
+      "text": "+2 Geld jetzt und +1 Karte zu Beginn deines nächsten Zugs. Bis dahin entsorgt jeder Mitspieler das erste Silber oder Gold, das er im jeweiligen Zug ausspielt. Das Geld daraus erhält er trotzdem."
+    },
+    "cutpurse": {
+      "name": "Beutelschneider",
+      "text": "+2 Geld. Jeder Mitspieler legt ein Kupfer aus seiner Hand ab. Wer keines hat, zeigt seine Hand."
+    },
+    "fishingVillage": {
+      "name": "Fischerdorf",
+      "text": "Du erhältst jetzt +2 Aktionen und +1 Geld. Zu Beginn deines nächsten Zugs bekommst du +1 Aktion und +1 Geld."
+    },
+    "haven": {
+      "name": "Hafen",
+      "text": "+1 Karte und +1 Aktion. Lege dann eine Handkarte verdeckt unter den Hafen. Nimm sie zu Beginn deines nächsten Zugs zurück auf die Hand."
+    },
+    "island": {
+      "name": "Insel",
+      "text": "Lege die Insel und eine Handkarte offen auf dein Insel-Tableau. Beide zählen bei Spielende mit. Die Insel ist 2 Siegpunkte wert."
+    },
+    "lighthouse": {
+      "name": "Leuchtturm",
+      "text": "Jetzt +1 Aktion und +1 Geld, zu Beginn deines nächsten Zugs nochmals +1 Geld. Bis dieser Zug beginnt, haben Angriffe deiner Mitspieler keine Wirkung auf dich."
+    },
+    "lookout": {
+      "name": "Ausguck",
+      "text": "+1 Aktion. Sieh dir die obersten 3 Karten deines Nachziehstapels an. Entsorge zuerst eine, lege danach eine ab und lege die verbleibende Karte oben auf den Stapel zurück."
+    },
+    "merchantShip": {
+      "name": "Handelsschiff",
+      "text": "Du erhältst jetzt +2 Geld und zu Beginn deines nächsten Zugs nochmals +2 Geld."
+    },
+    "monkey": {
+      "name": "Affe",
+      "text": "Ziehe bis zu deinem nächsten Zug jedes Mal 1 Karte, wenn dein rechter Nachbar eine Karte nimmt. Ziehe zu Beginn deines nächsten Zugs noch 1 Karte."
+    },
+    "native_village": {
+      "name": "Eingeborenendorf",
+      "text": "+2 Aktionen. Wähle, ob du die oberste Karte deines Nachziehstapels verdeckt auf dein Eingeborenendorf-Tableau legst oder alle Karten von dort auf die Hand nimmst. Du darfst die Karten auf deinem Tableau jederzeit ansehen."
+    },
+    "outpost": {
+      "name": "Außenposten",
+      "text": "Spiele nach diesem Zug einen Extrazug, falls dies dein erster ausgespielter Außenposten in diesem Zug ist und du den vorherigen Zug nicht hattest. Ziehe für den Extrazug nur 3 Karten als Starthand."
+    },
+    "pirate": {
+      "name": "Piratin",
+      "text": "Nimm zu Beginn deines nächsten Zugs eine Geldkarte für höchstens 6 Geld direkt auf die Hand. Wenn jemand eine Geldkarte nimmt, darfst du die Piratin aus deiner Hand ausspielen."
+    },
+    "sailor": {
+      "name": "Seefahrerin",
+      "text": "+1 Aktion. Wenn du in diesem Zug eine Dauerkarte nimmst, darfst du sie sofort ausspielen. Das geht mit dieser Seefahrerin einmal. Zu Beginn deines nächsten Zugs bekommst du +2 Geld und darfst eine Handkarte entsorgen."
+    },
+    "salvager": {
+      "name": "Müllverwerter",
+      "text": "+1 Kauf. Entsorge eine Handkarte und erhalte dafür so viel Geld, wie ihr Geldpreis beträgt."
+    },
+    "sea_chart": {
+      "name": "Seekarte",
+      "text": "+1 Karte und +1 Aktion. Decke die oberste Karte deines Nachziehstapels auf. Hast du eine gleiche Karte im Spiel, nimm die aufgedeckte Karte auf die Hand. Andernfalls bleibt sie oben auf dem Stapel."
+    },
+    "sea_witch": {
+      "name": "Meerhexe",
+      "text": "Ziehe 2 Karten. Jeder Mitspieler nimmt einen Fluch. Zu Beginn deines nächsten Zugs ziehst du 2 Karten und legst anschließend 2 Handkarten ab."
+    },
+    "smugglers": {
+      "name": "Schmuggler",
+      "text": "Nimm aus dem Vorrat eine Kopie einer Karte, die dein rechter Nachbar in seinem letzten Zug genommen hat. Die Karte darf jetzt höchstens 6 Geld kosten."
+    },
+    "tactician": {
+      "name": "Taktiker",
+      "text": "Wenn du mindestens eine Handkarte hast, lege deine ganze Hand ab. Dafür erhältst du zu Beginn deines nächsten Zugs +5 Karten, +1 Aktion und +1 Kauf."
+    },
+    "tide_pools": {
+      "name": "Gezeitenbecken",
+      "text": "Ziehe 3 Karten und erhalte +1 Aktion. Lege zu Beginn deines nächsten Zugs 2 Handkarten ab."
+    },
+    "treasure_map": {
+      "name": "Schatzkarte",
+      "text": "Entsorge diese Schatzkarte und, falls du eine weitere auf der Hand hast, auch diese. Wenn du beide entsorgt hast, nimm 4 Gold und lege sie oben auf deinen Nachziehstapel."
+    },
+    "treasury": {
+      "name": "Schatzkammer",
+      "text": "+1 Karte, +1 Aktion und +1 Geld. Am Ende deiner Kaufphase darfst du die Schatzkammer auf den Nachziehstapel legen, falls du während dieser Kaufphase keine Punktekarte genommen hast."
+    },
+    "warehouse": {
+      "name": "Lagerhaus",
+      "text": "Ziehe 3 Karten und erhalte +1 Aktion. Lege anschließend 3 Handkarten ab."
+    },
+    "wharf": {
+      "name": "Werft",
+      "text": "Ziehe jetzt 2 Karten und erhalte +1 Kauf. Zu Beginn deines nächsten Zugs bekommst du noch einmal +2 Karten und +1 Kauf."
+    },
+    "altar": {
+      "name": "Altar",
+      "text": "Entsorge eine Handkarte, wenn du eine hast. Nimm anschließend eine Karte für höchstens 5 Geld."
+    },
+    "armory": {
+      "name": "Waffenkammer",
+      "text": "Nimm eine Karte für höchstens 4 Geld direkt auf deinen Nachziehstapel."
+    },
+    "band_of_misfits": {
+      "name": "Vogelfreie",
+      "text": "Spiele eine Aktionskarte aus dem Vorrat, die weniger als diese Karte kostet und keine Kommandokarte ist. Die gespielte Karte bleibt dabei im Vorrat."
+    },
+    "bandit_camp": {
+      "name": "Banditenlager",
+      "text": "+1 Karte und +2 Aktionen. Nimm eine Beute."
+    },
+    "beggar": {
+      "name": "Bettler",
+      "text": "Nimm 3 Kupfer auf die Hand. Wenn ein Mitspieler einen Angriff spielt, darfst du zuerst diesen Bettler von der Hand ablegen und 2 Silber nehmen. Lege eines davon auf deinen Nachziehstapel."
+    },
+    "catacombs": {
+      "name": "Katakomben",
+      "text": "Sieh die obersten 3 Karten deines Nachziehstapels an. Nimm entweder alle auf die Hand oder lege alle ab und ziehe 3 Karten. Wenn du diese Katakomben entsorgst, nimm eine günstigere Karte."
+    },
+    "count": {
+      "name": "Graf",
+      "text": "Wähle zuerst eine Möglichkeit: Lege 2 Handkarten ab, lege eine Handkarte auf deinen Nachziehstapel oder nimm ein Kupfer. Wähle danach zwischen +3 Geld, dem Entsorgen aller Handkarten oder dem Nehmen eines Herzogtums."
+    },
+    "counterfeit": {
+      "name": "Falschgeld",
+      "text": "+1 Geld und +1 Kauf. Du darfst eine Geldkarte von der Hand, die keine Dauerkarte ist, zweimal spielen. Entsorge anschließend jene Karte."
+    },
+    "cultist": {
+      "name": "Kultist",
+      "text": "+2 Karten. Jeder Mitspieler nimmt eine Ruine. Du darfst einen weiteren Kultisten von der Hand spielen. Wenn du diesen Kultisten entsorgst, ziehe 3 Karten."
+    },
+    "death_cart": {
+      "name": "Leichenkarren",
+      "text": "Du darfst diese Karte oder eine Aktionskarte aus deiner Hand entsorgen, um +5 Geld zu erhalten. Wenn du diesen Leichenkarren nimmst, nimm 2 Ruinen."
+    },
+    "feodum": {
+      "name": "Lehen",
+      "text": "Bei Spielende je 1 Siegpunkt pro volle 3 Silber in deinem Kartensatz. Wenn du dieses Lehen entsorgst, nimm 3 Silber."
+    },
+    "forager": {
+      "name": "Mundraub",
+      "text": "+1 Aktion und +1 Kauf. Entsorge eine Handkarte. Erhalte je 1 Geld pro unterschiedlich benannter Geldkarte im Müll."
+    },
+    "fortress": {
+      "name": "Festung",
+      "text": "+1 Karte und +2 Aktionen. Wenn du diese Festung entsorgst, lege sie aus dem Müll auf deine Hand."
+    },
+    "graverobber": {
+      "name": "Grabräuber",
+      "text": "Wähle eine Möglichkeit: Nimm eine Karte aus dem Müll für 3 bis 6 Geld auf deinen Nachziehstapel. Oder entsorge eine Aktionskarte von der Hand und nimm eine Karte, die bis zu 3 Geld mehr kostet."
+    },
+    "hermit": {
+      "name": "Eremit",
+      "text": "Sieh deinen Ablagestapel durch. Du darfst eine Nicht-Geldkarte daraus oder von deiner Hand entsorgen. Nimm eine Karte für höchstens 3 Geld. Am Ende deiner Kaufphase in diesem Zug tausche diesen Eremiten gegen einen Verrückten aus, falls du in dieser Kaufphase keine Karten genommen hast."
+    },
+    "hunting_grounds": {
+      "name": "Jagdgründe",
+      "text": "+4 Karten. Wenn du diese Karte entsorgst, nimm entweder ein Herzogtum oder 3 Anwesen."
+    },
+    "ironmonger": {
+      "name": "Eisenhändler",
+      "text": "+1 Karte und +1 Aktion. Decke deine oberste Karte auf und lege sie ab oder zurück. Für ihren Typ erhältst du bei Aktion +1 Aktion, bei Geld +1 Geld und bei Punkte +1 Karte. Wende jeden zutreffenden Bonus an."
+    },
+    "junk_dealer": {
+      "name": "Schrotthändler",
+      "text": "+1 Karte, +1 Aktion und +1 Geld. Entsorge anschließend eine Handkarte."
+    },
+    "knights": {
+      "name": "Ritter",
+      "text": "Mische die 10 verschiedenen Ritter zu einem Vorratsstapel. Nur der oberste liegt offen und kann gekauft oder genommen werden. Jeder Ritter greift an und hat zusätzlich seinen eigenen Karteneffekt."
+    },
+    "marauder": {
+      "name": "Marodeur",
+      "text": "Nimm eine Beute. Jeder Mitspieler nimmt eine Ruine."
+    },
+    "market_square": {
+      "name": "Marktplatz",
+      "text": "+1 Karte, +1 Aktion und +1 Kauf. Wenn eine deiner Karten entsorgt wird, darfst du diesen Marktplatz von der Hand ablegen und ein Gold nehmen."
+    },
+    "mystic": {
+      "name": "Medium",
+      "text": "+1 Aktion und +2 Geld. Nenne eine Karte und decke deine oberste Karte auf. Hat sie den genannten Namen, nimm sie auf die Hand."
+    },
+    "pillage": {
+      "name": "Raubzug",
+      "text": "Entsorge diesen Raubzug. Wenn das gelingt, lässt du jeden Mitspieler mit mindestens 5 Handkarten seine Hand vorzeigen und eine Karte deiner Wahl ablegen und nimmst danach 2 Beuten."
+    },
+    "poor_house": {
+      "name": "Armenhaus",
+      "text": "+4 Geld. Zeige deine Hand vor und verliere je 1 Geld pro Geldkarte darunter, wobei dein Geld nicht unter 0 sinkt."
+    },
+    "procession": {
+      "name": "Prozession",
+      "text": "Du darfst eine Aktionskarte von der Hand, die keine Dauerkarte ist, zweimal spielen. Entsorge sie danach und nimm eine Aktionskarte, die genau 1 Geld mehr kostet."
+    },
+    "rats": {
+      "name": "Ratten",
+      "text": "+1 Karte und +1 Aktion. Nimm eine weitere Karte Ratten. Entsorge eine Handkarte, die keine Ratten ist. Hast du nur Ratten, zeige deine Hand vor. Wenn du diese Karte entsorgst, ziehe 1 Karte."
+    },
+    "rebuild": {
+      "name": "Neubau",
+      "text": "+1 Aktion. Nenne eine Karte. Decke Karten auf, bis eine Punktekarte mit einem anderen Namen erscheint. Lege die übrigen ab, entsorge jene Punktekarte und nimm eine Punktekarte, die bis zu 3 Geld mehr kostet."
+    },
+    "rogue": {
+      "name": "Schurke",
+      "text": "+2 Geld. Liegt im Müll eine Karte für 3 bis 6 Geld, nimm eine solche Karte. Andernfalls deckt jeder Mitspieler seine obersten 2 Karten auf, entsorgt davon eine für 3 bis 6 Geld, falls vorhanden, und legt die übrigen ab."
+    },
+    "sage": {
+      "name": "Weiser",
+      "text": "+1 Aktion. Decke Karten auf, bis du eine Karte für mindestens 3 Geld findest. Nimm diese auf die Hand und lege die übrigen aufgedeckten Karten ab."
+    },
+    "scavenger": {
+      "name": "Lumpensammler",
+      "text": "+2 Geld. Du darfst deinen Nachziehstapel auf deinen Ablagestapel legen. Sieh anschließend deinen Ablagestapel durch und lege eine Karte daraus auf deinen Nachziehstapel."
+    },
+    "squire": {
+      "name": "Knappe",
+      "text": "+1 Geld. Wähle zwischen +2 Aktionen, +2 Käufen oder dem Nehmen eines Silbers. Wenn du diesen Knappen entsorgst, nimm eine Angriffskarte."
+    },
+    "storeroom": {
+      "name": "Lagerraum",
+      "text": "+1 Kauf. Lege beliebig viele Handkarten ab und ziehe genauso viele Karten. Lege danach beliebig viele Handkarten ab und erhalte für jede davon +1 Geld."
+    },
+    "urchin": {
+      "name": "Gassenjunge",
+      "text": "+1 Karte und +1 Aktion. Jeder Mitspieler legt bis auf 4 Handkarten ab. Wenn du mit diesem Gassenjungen im Spiel einen weiteren Angriff spielst, darfst du ihn zuerst entsorgen und einen Söldner nehmen."
+    },
+    "vagrant": {
+      "name": "Landstreicher",
+      "text": "+1 Karte und +1 Aktion. Decke deine oberste Karte auf. Ist sie ein Fluch, eine Ruine, ein Unterschlupf oder eine Punktekarte, nimm sie auf die Hand."
+    },
+    "wandering_minstrel": {
+      "name": "Barde",
+      "text": "+1 Karte und +2 Aktionen. Decke deine obersten 3 Karten auf. Lege die Aktionskarten in beliebiger Reihenfolge zurück und die übrigen Karten ab."
+    },
+    "spoils": {
+      "name": "Beute",
+      "text": "+3 Geld. Lege diese Beute anschließend auf ihren Stapel außerhalb des Vorrats zurück."
+    },
+    "madman": {
+      "name": "Verrückter",
+      "text": "+2 Aktionen. Lege diesen Verrückten auf seinen Stapel zurück. Nur wenn das gelingt, ziehe je 1 Karte pro Karte, die du auf der Hand hast."
+    },
+    "mercenary": {
+      "name": "Söldner",
+      "text": "Du darfst 2 Handkarten entsorgen. Nur wenn du beide entsorgst, erhältst du +2 Karten und +2 Geld, und jeder Mitspieler legt Handkarten ab, bis er nur noch 3 hat."
+    },
+    "dame_anna": {
+      "name": "Dame Anna",
+      "text": "Du darfst bis zu 2 Handkarten entsorgen. Jeder Mitspieler deckt seine obersten 2 Karten auf, entsorgt davon eine für 3 bis 6 Geld, falls vorhanden, und legt den Rest ab. Wenn dieser Angriff einen Ritter entsorgt, entsorge auch diesen Ritter."
+    },
+    "dame_josephine": {
+      "name": "Dame Josephine",
+      "text": "2 Siegpunkte. Jeder Mitspieler deckt seine obersten 2 Karten auf, entsorgt davon eine für 3 bis 6 Geld, falls vorhanden, und legt den Rest ab. Wenn dieser Angriff einen Ritter entsorgt, entsorge auch diesen Ritter."
+    },
+    "dame_molly": {
+      "name": "Dame Molly",
+      "text": "+2 Aktionen. Jeder Mitspieler deckt seine obersten 2 Karten auf, entsorgt davon eine für 3 bis 6 Geld, falls vorhanden, und legt den Rest ab. Wenn dieser Angriff einen Ritter entsorgt, entsorge auch diesen Ritter."
+    },
+    "dame_natalie": {
+      "name": "Dame Natalie",
+      "text": "Du darfst eine Karte für höchstens 3 Geld nehmen. Jeder Mitspieler deckt seine obersten 2 Karten auf, entsorgt davon eine für 3 bis 6 Geld, falls vorhanden, und legt den Rest ab. Wenn dieser Angriff einen Ritter entsorgt, entsorge auch diesen Ritter."
+    },
+    "dame_sylvia": {
+      "name": "Dame Sylvia",
+      "text": "+2 Geld. Jeder Mitspieler deckt seine obersten 2 Karten auf, entsorgt davon eine für 3 bis 6 Geld, falls vorhanden, und legt den Rest ab. Wenn dieser Angriff einen Ritter entsorgt, entsorge auch diesen Ritter."
+    },
+    "sir_bailey": {
+      "name": "Sir Bailey",
+      "text": "+1 Karte und +1 Aktion. Jeder Mitspieler deckt seine obersten 2 Karten auf, entsorgt davon eine für 3 bis 6 Geld, falls vorhanden, und legt den Rest ab. Wenn dieser Angriff einen Ritter entsorgt, entsorge auch diesen Ritter."
+    },
+    "sir_destry": {
+      "name": "Sir Destry",
+      "text": "+2 Karten. Jeder Mitspieler deckt seine obersten 2 Karten auf, entsorgt davon eine für 3 bis 6 Geld, falls vorhanden, und legt den Rest ab. Wenn dieser Angriff einen Ritter entsorgt, entsorge auch diesen Ritter."
+    },
+    "sir_martin": {
+      "name": "Sir Martin",
+      "text": "+2 Käufe. Jeder Mitspieler deckt seine obersten 2 Karten auf, entsorgt davon eine für 3 bis 6 Geld, falls vorhanden, und legt den Rest ab. Wenn dieser Angriff einen Ritter entsorgt, entsorge auch diesen Ritter."
+    },
+    "sir_michael": {
+      "name": "Sir Michael",
+      "text": "Jeder Mitspieler legt bis auf 3 Handkarten ab. Jeder Mitspieler deckt seine obersten 2 Karten auf, entsorgt davon eine für 3 bis 6 Geld, falls vorhanden, und legt den Rest ab. Wenn dieser Angriff einen Ritter entsorgt, entsorge auch diesen Ritter."
+    },
+    "sir_vander": {
+      "name": "Sir Vander",
+      "text": "Jeder Mitspieler deckt seine obersten 2 Karten auf, entsorgt davon eine für 3 bis 6 Geld, falls vorhanden, und legt den Rest ab. Wenn dieser Angriff einen Ritter entsorgt, entsorge auch diesen Ritter. Wenn du diesen Ritter entsorgst, nimm ein Gold."
+    },
+    "acting_troupe": {
+      "name": "Schauspieltruppe",
+      "text": "+4 Dorfbewohner. Entsorge diese Karte."
+    },
+    "border_guard": {
+      "name": "Grenzposten",
+      "text": "+1 Aktion. Decke die obersten 2 Karten deines Nachziehstapels auf. Nimm eine davon auf die Hand und lege die andere ab. Sind beide Aktionskarten, erhalte die Laterne oder das Horn."
+    },
+    "cargo_ship": {
+      "name": "Frachtschiff",
+      "text": "+2 Geld. Einmal in diesem Zug darfst du eine Karte, die du nimmst, offen auf diesem Schiff zur Seite legen. Zu Beginn deines nächsten Zuges nimm jene Karte auf die Hand."
+    },
+    "ducat": {
+      "name": "Goldmünze",
+      "text": "+1 Taler und +1 Kauf. Wenn du diese Karte nimmst, darfst du ein Kupfer aus deiner Hand entsorgen."
+    },
+    "experiment": {
+      "name": "Experiment",
+      "text": "+2 Karten und +1 Aktion. Lege dieses Experiment in den Vorrat zurück. Wenn du es nimmst, nimm ein weiteres Experiment; jenes gibt dir kein zusätzliches Experiment."
+    },
+    "flag_bearer": {
+      "name": "Fahnenträger",
+      "text": "+2 Geld. Wenn du diese Karte nimmst oder entsorgst, erhalte die Fahne."
+    },
+    "hideout": {
+      "name": "Versteck",
+      "text": "+1 Karte und +2 Aktionen. Entsorge eine Handkarte. War sie eine Punktekarte, nimm einen Fluch."
+    },
+    "improve": {
+      "name": "Fortschritt",
+      "text": "+2 Geld. Zu Beginn deiner Aufräumphase darfst du eine Aktionskarte entsorgen, die du in diesem Zug aus dem Spiel ablegen würdest. Nimm dafür eine Karte, die genau 1 Geld mehr kostet."
+    },
+    "inventor": {
+      "name": "Erfinder",
+      "text": "Nimm eine Karte für höchstens 4 Geld. Danach kosten Karten für den Rest dieses Zuges 1 Geld weniger, jedoch mindestens 0 Geld."
+    },
+    "lackeys": {
+      "name": "Diener",
+      "text": "+2 Karten. Wenn du diese Karte nimmst, +2 Dorfbewohner."
+    },
+    "mountain_village": {
+      "name": "Bergdorf",
+      "text": "+2 Aktionen. Suche eine Karte aus deinem Ablagestapel aus und nimm sie auf die Hand. Ist das nicht möglich, +1 Karte."
+    },
+    "old_witch": {
+      "name": "Alte Hexe",
+      "text": "+3 Karten. Jeder Mitspieler nimmt einen Fluch und darf einen Fluch aus seiner Hand entsorgen."
+    },
+    "patron": {
+      "name": "Patron",
+      "text": "+1 Dorfbewohner und +2 Geld. Wird diese Karte in einer Aktionsphase durch eine Anweisung mit dem Wort „aufdecken“ aufgedeckt, +1 Taler."
+    },
+    "priest": {
+      "name": "Priester",
+      "text": "+2 Geld. Entsorge eine Handkarte. Danach erhältst du für den Rest dieses Zuges jedes Mal +2 Geld, wenn du eine Karte entsorgst."
+    },
+    "recruiter": {
+      "name": "Anwerber",
+      "text": "+2 Karten. Entsorge eine Handkarte und erhalte pro 1 Geld ihrer Kosten +1 Dorfbewohner."
+    },
+    "research": {
+      "name": "Forscherin",
+      "text": "+1 Aktion. Entsorge eine Handkarte. Lege für jedes 1 Geld ihrer Kosten eine Karte von deinem Nachziehstapel verdeckt auf dieser Karte zur Seite. Zu Beginn deines nächsten Zuges nimm jene Karten auf die Hand."
+    },
+    "scepter": {
+      "name": "Zepter",
+      "text": "Wähle eins: +2 Geld; oder spiele eine Aktionskarte ohne den Typ Befehl erneut aus, die du in diesem Zug gespielt hast und die noch im Spiel ist."
+    },
+    "scholar": {
+      "name": "Gelehrte",
+      "text": "Lege alle deine Handkarten ab und ziehe 7 Karten."
+    },
+    "sculptor": {
+      "name": "Bildhauerin",
+      "text": "Nimm eine Karte für höchstens 4 Geld direkt auf die Hand. Ist sie eine Geldkarte, +1 Dorfbewohner."
+    },
+    "seer": {
+      "name": "Seher",
+      "text": "+1 Karte und +1 Aktion. Decke die obersten 3 Karten deines Nachziehstapels auf. Nimm davon alle Karten für 2 bis 4 Geld auf die Hand und lege die übrigen in beliebiger Reihenfolge zurück."
+    },
+    "silk_merchant": {
+      "name": "Seidenhändlerin",
+      "text": "+2 Karten und +1 Kauf. Wenn du diese Karte nimmst oder entsorgst, +1 Taler und +1 Dorfbewohner."
+    },
+    "spices": {
+      "name": "Gewürze",
+      "text": "+2 Geld und +1 Kauf. Wenn du diese Karte nimmst, +2 Taler."
+    },
+    "swashbuckler": {
+      "name": "Freibeuterin",
+      "text": "+3 Karten. Liegen danach Karten in deinem Ablagestapel, +1 Taler. Hast du dann mindestens 4 Taler, erhalte die Schatzkiste."
+    },
+    "treasurer": {
+      "name": "Schatzmeisterin",
+      "text": "+3 Geld. Wähle eins: Entsorge eine Geldkarte aus deiner Hand; oder nimm eine Geldkarte aus dem Müll auf die Hand; oder erhalte den Schlüssel."
+    },
+    "villain": {
+      "name": "Schwarzer Meister",
+      "text": "+2 Taler. Jeder Mitspieler mit mindestens 5 Handkarten legt eine Handkarte für mindestens 2 Geld ab oder deckt seine Hand auf, falls er das nicht kann."
+    },
+    "cathedral": {
+      "name": "Kathedrale",
+      "text": "Entsorge zu Beginn deines Zuges eine Handkarte."
+    },
+    "city_gate": {
+      "name": "Stadttor",
+      "text": "Zu Beginn deines Zuges ziehe 1 Karte und lege danach eine Handkarte oben auf deinen Nachziehstapel."
+    },
+    "pageant": {
+      "name": "Festzug",
+      "text": "Am Ende deiner Kaufphase darfst du 1 Geld zahlen, um +1 Taler zu erhalten."
+    },
+    "sewers": {
+      "name": "Abwassertunnel",
+      "text": "Wenn du durch einen anderen Effekt eine Karte entsorgst, darfst du zusätzlich eine Handkarte entsorgen."
+    },
+    "star_chart": {
+      "name": "Sternenkarte",
+      "text": "Beim Mischen darfst du eine der gemischten Karten auswählen und nach dem Mischen oben auf den Nachziehstapel legen."
+    },
+    "exploration": {
+      "name": "Erkundung",
+      "text": "Am Ende deiner Kaufphase erhältst du +1 Taler und +1 Dorfbewohner, falls du in dieser Phase keine Karten genommen hast."
+    },
+    "fair": {
+      "name": "Kleiner Markt",
+      "text": "Zu Beginn deines Zuges erhältst du +1 Kauf."
+    },
+    "silos": {
+      "name": "Speicher",
+      "text": "Zu Beginn deines Zuges darfst du beliebig viele Kupfer aus deiner Hand vorzeigen und ablegen. Ziehe genauso viele Karten nach."
+    },
+    "sinister_plot": {
+      "name": "Finsterer Plan",
+      "text": "Zu Beginn deines Zuges lege einen Marker hierher oder entferne alle deine Marker von hier und ziehe für jeden entfernten Marker 1 Karte."
+    },
+    "academy": {
+      "name": "Akademie",
+      "text": "Wenn du eine Aktionskarte nimmst, erhältst du +1 Dorfbewohner."
+    },
+    "capitalism": {
+      "name": "Kapitalismus",
+      "text": "Während deiner Züge sind Aktionskarten, deren Text einen +Geld-Betrag enthält, zusätzlich Geldkarten."
+    },
+    "fleet": {
+      "name": "Flotte",
+      "text": "Nach dem regulären Spielende folgt eine weitere Runde, in der nur Spieler mit diesem Projekt einen Zug erhalten."
+    },
+    "guildhall": {
+      "name": "Gildenhaus",
+      "text": "Wenn du eine Geldkarte nimmst, erhältst du +1 Taler."
+    },
+    "piazza": {
+      "name": "Piazza",
+      "text": "Decke zu Beginn deines Zuges die oberste Karte deines Nachziehstapels auf. Ist sie eine Aktionskarte, spiele sie aus."
+    },
+    "road_network": {
+      "name": "Straßennetz",
+      "text": "Wenn ein Mitspieler eine Punktekarte nimmt, ziehe 1 Karte."
+    },
+    "barracks": {
+      "name": "Kaserne",
+      "text": "Zu Beginn deines Zuges erhältst du +1 Aktion."
+    },
+    "crop_rotation": {
+      "name": "Fruchtwechsel",
+      "text": "Zu Beginn deines Zuges darfst du eine Punktekarte aus deiner Hand ablegen und dafür 2 Karten ziehen."
+    },
+    "innovation": {
+      "name": "Innovation",
+      "text": "Einmal während jedes deiner Züge darfst du, wenn du eine Aktionskarte nimmst, diese ausspielen."
+    },
+    "canal": {
+      "name": "Kanal",
+      "text": "Während deiner Züge kosten Karten 1 Geld weniger, jedoch mindestens 0 Geld."
+    },
+    "citadel": {
+      "name": "Zitadelle",
+      "text": "Die erste Aktionskarte, die du in jedem deiner Züge ausspielst, spielst du zweimal statt einmal aus."
+    },
+    "flag": {
+      "name": "Fahne",
+      "text": "Wenn du deine Hand für den nächsten Zug ziehst, ziehe 1 zusätzliche Karte. Dieses Artefakt gehört nicht zum Vorrat."
+    },
+    "horn": {
+      "name": "Horn",
+      "text": "Einmal pro Zug darfst du einen Grenzposten, den du aus dem Spiel ablegst, stattdessen oben auf deinen Nachziehstapel legen. Dieses Artefakt gehört nicht zum Vorrat."
+    },
+    "key": {
+      "name": "Schlüssel",
+      "text": "Zu Beginn deines Zuges erhältst du +1 Geld. Dieses Artefakt gehört nicht zum Vorrat."
+    },
+    "lantern": {
+      "name": "Laterne",
+      "text": "Deine Grenzposten decken 3 Karten auf und legen 2 davon ab. Alle 3 müssen Aktionskarten sein, damit du das Horn erhalten kannst. Dieses Artefakt gehört nicht zum Vorrat."
+    },
+    "treasure_chest": {
+      "name": "Schatzkiste",
+      "text": "Zu Beginn deiner Kaufphase nimm ein Gold. Dieses Artefakt gehört nicht zum Vorrat."
+    },
+    "animal_fair": {
+      "name": "Viehmarkt",
+      "text": "+4 Geld und +1 Kauf pro leerem Vorratsstapel. Beim Kaufen dieser Karte darfst du statt ihrer Kosten eine Aktionskarte aus deiner Hand entsorgen."
+    },
+    "barge": {
+      "name": "Lastkahn",
+      "text": "Wähle beim Ausspielen: entweder sofort oder zu Beginn deines nächsten Zuges +3 Karten und +1 Kauf."
+    },
+    "black_cat": {
+      "name": "Schwarze Katze",
+      "text": "+2 Karten. Ist gerade ein anderer Spieler am Zug, nimmt jeder Mitspieler einen Fluch. Wenn ein Mitspieler eine Punktekarte nimmt, darfst du diese Katze aus deiner Hand ausspielen."
+    },
+    "bounty_hunter": {
+      "name": "Kopfgeldjägerin",
+      "text": "+1 Aktion. Verbanne eine Handkarte ins Exil. Hast du eine Karte verbannt und hattest vorher keine Karte gleichen Namens im Exil, +3 Geld."
+    },
+    "camel_train": {
+      "name": "Kamelzug",
+      "text": "Verbanne eine Karte ohne den Typ Punkte aus dem Vorrat ins Exil. Wenn du diesen Kamelzug nimmst, verbanne ein Gold aus dem Vorrat ins Exil."
+    },
+    "cardinal": {
+      "name": "Kardinal",
+      "text": "+2 Geld. Jeder Mitspieler deckt seine obersten 2 Karten auf, verbannt davon eine für 3 bis 6 Geld ins Exil, falls vorhanden, und legt den Rest ab."
+    },
+    "cavalry": {
+      "name": "Kavallerie",
+      "text": "Nimm 2 Pferde. Wenn du diese Karte nimmst, +2 Karten und +1 Kauf. Ist es dabei deine Kaufphase, kehre in deine Aktionsphase zurück."
+    },
+    "coven": {
+      "name": "Hexenzirkel",
+      "text": "+1 Aktion und +2 Geld. Jeder Mitspieler verbannt einen Fluch aus dem Vorrat ins Exil. Wer das nicht kann, legt alle Flüche aus seinem Exil ab."
+    },
+    "destrier": {
+      "name": "Schlachtross",
+      "text": "+2 Karten und +1 Aktion. Während deiner Züge kostet diese Karte für jede Karte, die du in diesem Zug genommen hast, 1 Geld weniger."
+    },
+    "displace": {
+      "name": "Vertreibung",
+      "text": "Verbanne eine Handkarte ins Exil. Nimm eine Karte mit anderem Namen, die höchstens 2 Geld mehr kostet als jene."
+    },
+    "falconer": {
+      "name": "Falknerin",
+      "text": "Nimm eine Karte, die weniger kostet als diese Falknerin, direkt auf die Hand. Wenn ein beliebiger Spieler eine Karte mit mindestens 2 Typen nimmt, darfst du diese Falknerin aus deiner Hand ausspielen."
+    },
+    "fisherman": {
+      "name": "Fischer",
+      "text": "+1 Karte, +1 Aktion und +1 Geld. Während deiner Züge kostet diese Karte 3 Geld weniger, falls dein Ablagestapel leer ist."
+    },
+    "gatekeeper": {
+      "name": "Wache",
+      "text": "Zu Beginn deines nächsten Zuges erhältst du +3 Geld. Bis dahin muss jeder Mitspieler eine Aktions- oder Geldkarte, die er nimmt, ins Exil verbannen, falls er dort noch keine Karte gleichen Namens hat."
+    },
+    "goatherd": {
+      "name": "Ziegenhirtin",
+      "text": "+1 Aktion. Du darfst eine Handkarte entsorgen. Ziehe danach für jede Karte, die dein rechter Mitspieler in seinem letzten Zug entsorgt hat, 1 Karte."
+    },
+    "groom": {
+      "name": "Stallbursche",
+      "text": "Nimm eine Karte für höchstens 4 Geld. Ist sie eine Aktionskarte, nimm ein Pferd. Ist sie eine Geldkarte, nimm ein Silber. Ist sie eine Punktekarte, +1 Karte und +1 Aktion."
+    },
+    "hostelry": {
+      "name": "Herberge",
+      "text": "+1 Karte und +2 Aktionen. Wenn du diese Karte nimmst, darfst du beliebig viele Geldkarten aus deiner Hand vorzeigen und ablegen. Nimm für jede davon ein Pferd."
+    },
+    "hunting_lodge": {
+      "name": "Jagdhütte",
+      "text": "+1 Karte und +2 Aktionen. Danach darfst du deine gesamte Hand ablegen und 5 Karten ziehen."
+    },
+    "kiln": {
+      "name": "Brennofen",
+      "text": "+2 Geld. Wenn du in diesem Zug die nächste Karte ausspielst, darfst du zuerst eine Karte gleichen Namens aus dem Vorrat nehmen."
+    },
+    "livery": {
+      "name": "Pferdestall",
+      "text": "+3 Geld. Für den Rest dieses Zuges nimmst du jedes Mal ein Pferd, wenn du eine Karte für mindestens 4 Geld nimmst."
+    },
+    "mastermind": {
+      "name": "Drahtzieher",
+      "text": "Zu Beginn deines nächsten Zuges darfst du eine Aktionskarte aus deiner Hand dreimal ausspielen."
+    },
+    "paddock": {
+      "name": "Koppel",
+      "text": "+2 Geld. Nimm 2 Pferde und erhalte +1 Aktion pro leerem Vorratsstapel."
+    },
+    "sanctuary": {
+      "name": "Zufluchtsort",
+      "text": "+1 Karte, +1 Aktion und +1 Kauf. Du darfst eine Handkarte ins Exil verbannen."
+    },
+    "scrap": {
+      "name": "Schrott",
+      "text": "Entsorge eine Handkarte. Wähle pro 1 Geld ihrer Kosten eine andere Möglichkeit: +1 Karte; +1 Aktion; +1 Kauf; +1 Geld; ein Silber nehmen; ein Pferd nehmen."
+    },
+    "sheepdog": {
+      "name": "Hirtenhund",
+      "text": "+2 Karten. Wenn du eine Karte nimmst, darfst du diesen Hund aus deiner Hand ausspielen."
+    },
+    "sleigh": {
+      "name": "Schlitten",
+      "text": "Nimm 2 Pferde. Wenn du eine Karte nimmst, darfst du diesen Schlitten aus deiner Hand ablegen, um jene Karte auf die Hand oder oben auf deinen Nachziehstapel zu legen."
+    },
+    "snowy_village": {
+      "name": "Verschneites Dorf",
+      "text": "+1 Karte, +4 Aktionen und +1 Kauf. Ignoriere alle weiteren +Aktionen, die du in diesem Zug erhältst."
+    },
+    "stockpile": {
+      "name": "Depot",
+      "text": "+3 Geld und +1 Kauf. Verbanne dieses Depot beim Ausspielen ins Exil."
+    },
+    "supplies": {
+      "name": "Nachschub",
+      "text": "+1 Geld. Nimm beim Ausspielen ein Pferd oben auf deinen Nachziehstapel."
+    },
+    "village_green": {
+      "name": "Dorfanger",
+      "text": "Entweder sofort oder zu Beginn deines nächsten Zuges: +1 Karte und +2 Aktionen. Wenn du diese Karte außerhalb einer Aufräumphase ablegst, darfst du sie ausspielen."
+    },
+    "wayfarer": {
+      "name": "Wanderin",
+      "text": "+3 Karten. Du darfst ein Silber nehmen. Wurde in diesem Zug eine andere Karte genommen, hat diese Wanderin die gleichen Kosten wie die zuletzt genommene andere Karte."
+    },
+    "way_of_the_butterfly": {
+      "name": "Weg des Schmetterlings",
+      "text": "Du darfst die gespielte Aktionskarte auf ihren Stapel zurücklegen. Gelingt das, nimm eine Karte, die genau 1 Geld mehr kostet als jene."
+    },
+    "way_of_the_camel": {
+      "name": "Weg des Kamels",
+      "text": "Verbanne ein Gold aus dem Vorrat ins Exil."
+    },
+    "way_of_the_chameleon": {
+      "name": "Weg des Chamäleons",
+      "text": "Führe die Anweisungen der gespielten Karte aus. Für diese Ausführung werden in diesem Zug +Karten durch ebenso viel +Geld ersetzt und umgekehrt."
+    },
+    "way_of_the_frog": {
+      "name": "Weg des Frosches",
+      "text": "+1 Aktion. Wenn du die gespielte Aktionskarte in diesem Zug aus dem Spiel ablegst, lege sie stattdessen oben auf deinen Nachziehstapel."
+    },
+    "way_of_the_goat": {
+      "name": "Weg der Ziege",
+      "text": "Entsorge eine Handkarte."
+    },
+    "way_of_the_horse": {
+      "name": "Weg des Pferdes",
+      "text": "+2 Karten und +1 Aktion. Lege die gespielte Aktionskarte auf ihren Stapel zurück."
+    },
+    "way_of_the_mole": {
+      "name": "Weg des Maulwurfs",
+      "text": "+1 Aktion. Lege deine gesamte Hand ab und ziehe danach 3 Karten."
+    },
+    "way_of_the_monkey": {
+      "name": "Weg des Affen",
+      "text": "+1 Kauf und +1 Geld."
+    },
+    "way_of_the_mouse": {
+      "name": "Weg der Maus",
+      "text": "Spiele die für diesen Weg zur Seite gelegte Karte aus, ohne sie zu bewegen. Vorbereitung: Lege eine unbenutzte Aktionskarte ohne den Typ Dauer für 2 oder 3 Geld zur Seite."
+    },
+    "way_of_the_mule": {
+      "name": "Weg des Maultiers",
+      "text": "+1 Aktion und +1 Geld."
+    },
+    "way_of_the_otter": {
+      "name": "Weg des Otters",
+      "text": "Ziehe 2 Karten."
+    },
+    "way_of_the_owl": {
+      "name": "Weg der Eule",
+      "text": "Ziehe Karten, bis du 6 Handkarten hast."
+    },
+    "way_of_the_ox": {
+      "name": "Weg des Ochsen",
+      "text": "+2 Aktionen."
+    },
+    "way_of_the_pig": {
+      "name": "Weg des Schweins",
+      "text": "+1 Karte und +1 Aktion."
+    },
+    "way_of_the_rat": {
+      "name": "Weg der Ratte",
+      "text": "Du darfst eine Geldkarte aus deiner Hand ablegen und dafür eine Karte gleichen Namens wie die gespielte Aktionskarte aus dem Vorrat nehmen."
+    },
+    "way_of_the_seal": {
+      "name": "Weg der Robbe",
+      "text": "+1 Geld. Für den Rest dieses Zuges darfst du jede Karte, die du nimmst, oben auf deinen Nachziehstapel legen."
+    },
+    "way_of_the_sheep": {
+      "name": "Weg des Schafes",
+      "text": "+2 Geld."
+    },
+    "way_of_the_squirrel": {
+      "name": "Weg des Eichhörnchens",
+      "text": "Ziehe am Ende dieses Zuges 2 zusätzliche Karten, normalerweise nachdem du deine nächste Hand gezogen hast."
+    },
+    "way_of_the_turtle": {
+      "name": "Weg der Schildkröte",
+      "text": "Lege die gespielte Aktionskarte zur Seite. Gelingt das, spiele sie zu Beginn deines nächsten Zuges aus."
+    },
+    "way_of_the_worm": {
+      "name": "Weg des Wurms",
+      "text": "Verbanne ein Anwesen aus dem Vorrat ins Exil."
+    },
+    "alliance": {
+      "name": "Bündnis",
+      "text": "Nimm in dieser Reihenfolge eine Provinz, ein Herzogtum, ein Anwesen, ein Gold, ein Silber und ein Kupfer."
+    },
+    "banish": {
+      "name": "Verbannung",
+      "text": "Verbanne beliebig viele Handkarten mit demselben Namen ins Exil."
+    },
+    "bargain": {
+      "name": "Gutes Geschäft",
+      "text": "Nimm eine Karte ohne den Typ Punkte für höchstens 5 Geld. Jeder Mitspieler nimmt ein Pferd."
+    },
+    "commerce": {
+      "name": "Kommerz",
+      "text": "Nimm für jeden unterschiedlichen Namen unter den Karten, die du in diesem Zug genommen hast, ein Gold."
+    },
+    "delay": {
+      "name": "Verzögerung",
+      "text": "Du darfst eine Aktionskarte aus deiner Hand zur Seite legen. Spiele sie zu Beginn deines nächsten Zuges aus."
+    },
+    "demand": {
+      "name": "Forderung",
+      "text": "Nimm zuerst ein Pferd und danach eine Karte für höchstens 4 Geld, beide oben auf deinen Nachziehstapel."
+    },
+    "desperation": {
+      "name": "Verzweiflung",
+      "text": "Einmal pro Zug darfst du einen Fluch nehmen. Gelingt das, +1 Kauf und +2 Geld."
+    },
+    "enclave": {
+      "name": "Enklave",
+      "text": "Nimm ein Gold. Verbanne ein Herzogtum aus dem Vorrat ins Exil."
+    },
+    "enhance": {
+      "name": "Verbesserung",
+      "text": "Du darfst eine Handkarte ohne den Typ Punkte entsorgen. Tust du das, nimm eine Karte, die höchstens 2 Geld mehr kostet als jene."
+    },
+    "gamble": {
+      "name": "Wagnis",
+      "text": "+1 Kauf. Decke die oberste Karte deines Nachziehstapels auf. Ist sie eine Aktions- oder Geldkarte, darfst du sie ausspielen. Spielst du sie nicht, lege sie ab."
+    },
+    "invest": {
+      "name": "Investition",
+      "text": "Verbanne eine Aktionskarte aus dem Vorrat ins Exil. Solange sie dort liegt, ziehe jedes Mal 2 Karten, wenn ein Mitspieler eine Karte gleichen Namens nimmt oder durch Investition verbannt."
+    },
+    "march": {
+      "name": "Fußmarsch",
+      "text": "Durchsuche deinen Ablagestapel. Du darfst eine Aktionskarte daraus ausspielen."
+    },
+    "populate": {
+      "name": "Besiedlung",
+      "text": "Nimm je eine Karte von jedem Aktionsstapel im Vorrat."
+    },
+    "pursue": {
+      "name": "Verfolgung",
+      "text": "+1 Kauf. Nenne einen Kartennamen und decke deine obersten 4 Karten auf. Lege die passenden Karten zurück auf den Nachziehstapel und die übrigen ab."
+    },
+    "reap": {
+      "name": "Reiche Ernte",
+      "text": "Nimm ein Gold und lege es zur Seite. Gelingt das, spiele es zu Beginn deines nächsten Zuges aus."
+    },
+    "ride": {
+      "name": "Ausritt",
+      "text": "Nimm ein Pferd."
+    },
+    "seize_the_day": {
+      "name": "Nutze den Tag",
+      "text": "Einmal im Spiel: Führe nach diesem Zug einen zusätzlichen Zug aus."
+    },
+    "stampede": {
+      "name": "Stampede",
+      "text": "Hast du höchstens 5 Karten im Spiel, nimm 5 Pferde oben auf deinen Nachziehstapel."
+    },
+    "toil": {
+      "name": "Plackerei",
+      "text": "+1 Kauf. Du darfst eine Aktionskarte aus deiner Hand ausspielen."
+    },
+    "transport": {
+      "name": "Transport",
+      "text": "Wähle eins: Verbanne eine Aktionskarte aus dem Vorrat ins Exil; oder lege eine Aktionskarte aus deinem Exil oben auf deinen Nachziehstapel."
+    },
+    "horse": {
+      "name": "Pferd",
+      "text": "+2 Karten und +1 Aktion. Lege dieses Pferd auf seinen Stapel zurück. Es gehört nicht zum Vorrat."
+    },
+    "bauble": {
+      "name": "Tand",
+      "text": "Wähle zwei verschiedene Möglichkeiten: +1 Kauf; +1 Geld; +1 Gefallen; oder für den Rest dieses Zuges jede genommene Karte wahlweise oben auf deinen Nachziehstapel legen."
+    },
+    "broker": {
+      "name": "Mittelsmann",
+      "text": "Entsorge eine Handkarte. Wähle eins: Ziehe pro 1 Geld ihrer Kosten 1 Karte; oder erhalte pro 1 Geld ihrer Kosten +1 Aktion; oder pro 1 Geld ihrer Kosten +1 Geld; oder pro 1 Geld ihrer Kosten +1 Gefallen."
+    },
+    "carpenter": {
+      "name": "Schreinerin",
+      "text": "Ist kein Vorratsstapel leer, +1 Aktion und nimm eine Karte für höchstens 4 Geld. Andernfalls entsorge eine Handkarte und nimm eine Karte, die höchstens 2 Geld mehr kostet als jene."
+    },
+    "contract": {
+      "name": "Vertrag",
+      "text": "+2 Geld und +1 Gefallen. Du darfst eine Aktionskarte aus deiner Hand offen zur Seite legen, um sie zu Beginn deines nächsten Zuges auszuspielen."
+    },
+    "courier": {
+      "name": "Botin",
+      "text": "+1 Geld. Lege die oberste Karte deines Nachziehstapels ab. Durchsuche deinen Ablagestapel; du darfst eine Aktions- oder Geldkarte daraus ausspielen."
+    },
+    "emissary": {
+      "name": "Unterhändlerin",
+      "text": "+3 Karten. Hast du dabei mindestens eine Karte gemischt, +1 Aktion und +2 Gefallen."
+    },
+    "galleria": {
+      "name": "Markthalle",
+      "text": "+3 Geld. Für den Rest dieses Zuges erhältst du jedes Mal +1 Kauf, wenn du eine Karte für 3 oder 4 Geld nimmst."
+    },
+    "highwayman": {
+      "name": "Wegelagerer",
+      "text": "Zu Beginn deines nächsten Zuges lege diesen Wegelagerer aus dem Spiel ab und ziehe 3 Karten. Bis dahin führt die erste Geldkarte, die jeder Mitspieler in jedem Zug ausspielt, ihre Anweisungen beim Ausspielen nicht aus."
+    },
+    "hunter": {
+      "name": "Jägerin",
+      "text": "+1 Aktion. Decke deine obersten 3 Karten auf. Nimm davon zuerst eine Aktionskarte, dann eine Geldkarte und dann eine Punktekarte auf die Hand. Lege den Rest ab."
+    },
+    "importer": {
+      "name": "Importeurin",
+      "text": "Nimm zu Beginn deines nächsten Zuges eine Karte für höchstens 5 Geld. Vorbereitung: Jeder Spieler erhält zusätzlich 4 Gefallen."
+    },
+    "innkeeper": {
+      "name": "Wirtin",
+      "text": "+1 Aktion. Wähle eins: Ziehe 1 Karte; oder ziehe 3 Karten und lege danach 3 Handkarten ab; oder ziehe 5 Karten und lege danach 6 Handkarten ab."
+    },
+    "merchant_camp": {
+      "name": "Händlerlager",
+      "text": "+2 Aktionen und +1 Geld. Wenn du diese Karte aus dem Spiel ablegst, darfst du sie stattdessen oben auf deinen Nachziehstapel legen."
+    },
+    "royal_galley": {
+      "name": "Königliche Galeere",
+      "text": "+1 Karte. Du darfst eine Aktionskarte ohne den Typ Dauer aus deiner Hand ausspielen. Lege jene Karte bis zu deinem nächsten Zug nicht in einer Aufräumphase ab. Zu Beginn deines nächsten Zuges spiele sie erneut aus, falls sie noch im Spiel ist."
+    },
+    "sentinel": {
+      "name": "Wächter",
+      "text": "Sieh deine obersten 5 Karten an. Du darfst bis zu 2 davon entsorgen. Lege die übrigen in beliebiger Reihenfolge zurück."
+    },
+    "swap": {
+      "name": "Tausch",
+      "text": "+1 Karte und +1 Aktion. Du darfst eine Aktionskarte aus deiner Hand auf ihren Stapel zurücklegen. Gelingt das, nimm eine Aktionskarte mit anderem Namen für höchstens 5 Geld direkt auf die Hand."
+    },
+    "sycophant": {
+      "name": "Schmeichler",
+      "text": "+1 Aktion. Lege 3 Handkarten ab. Hast du mindestens eine abgelegt, +3 Geld. Wenn du diesen Schmeichler nimmst oder entsorgst, +2 Gefallen."
+    },
+    "town": {
+      "name": "Ortschaft",
+      "text": "Wähle eins: +1 Karte und +2 Aktionen; oder +1 Kauf und +2 Geld."
+    },
+    "underling": {
+      "name": "Untergebener",
+      "text": "+1 Karte, +1 Aktion und +1 Gefallen."
+    },
+    "barbarian": {
+      "name": "Barbar",
+      "text": "+2 Geld. Jeder Mitspieler entsorgt seine oberste Karte. Kostet sie mindestens 3 Geld, nimmt er eine billigere Karte, die mindestens einen Typ mit ihr teilt. Andernfalls nimmt er einen Fluch."
+    },
+    "capital_city": {
+      "name": "Hauptstadt",
+      "text": "+1 Karte und +2 Aktionen. Du darfst 2 Handkarten ablegen, um +2 Geld zu erhalten. Danach darfst du 2 Geld zahlen, um 2 Karten zu ziehen."
+    },
+    "guildmaster": {
+      "name": "Gildemeisterin",
+      "text": "+3 Geld. Für den Rest dieses Zuges erhältst du jedes Mal +1 Gefallen, wenn du eine Karte nimmst."
+    },
+    "marquis": {
+      "name": "Marquis",
+      "text": "+1 Kauf. Ziehe für jede Karte auf deiner Hand 1 Karte. Lege danach Handkarten ab, bis du höchstens 10 hast."
+    },
+    "modify": {
+      "name": "Umgestaltung",
+      "text": "Entsorge eine Handkarte. Wähle eins: +1 Karte und +1 Aktion; oder nimm eine Karte, die höchstens 2 Geld mehr kostet als die entsorgte Karte."
+    },
+    "skirmisher": {
+      "name": "Aufwiegler",
+      "text": "+1 Karte, +1 Aktion und +1 Geld. Für den Rest dieses Zuges legt jeder Mitspieler seine Hand bis auf 3 Karten ab, wenn du eine Angriffskarte nimmst."
+    },
+    "specialist": {
+      "name": "Spezialistin",
+      "text": "Du darfst eine Aktions- oder Geldkarte aus deiner Hand ausspielen. Danach wähle eins: Spiele jene Karte erneut aus; oder nimm eine Karte gleichen Namens aus dem Vorrat."
+    },
+    "herb_gatherer": {
+      "name": "Kräutersammlerin",
+      "text": "+1 Kauf. Lege deinen Nachziehstapel auf deinen Ablagestapel und durchsuche ihn. Du darfst eine Geldkarte daraus ausspielen. Du darfst die Augurinnen rotieren."
+    },
+    "acolyte": {
+      "name": "Altardienerin",
+      "text": "Du darfst eine Aktions- oder Punktekarte aus deiner Hand entsorgen und dafür ein Gold nehmen. Außerdem darfst du diese Altardienerin entsorgen und dafür eine Augurinnenkarte nehmen."
+    },
+    "sorceress": {
+      "name": "Meisterhexe",
+      "text": "+1 Aktion. Nenne einen Kartennamen. Decke deine oberste Karte auf und nimm sie auf die Hand. Stimmt ihr Name mit deiner Ansage überein, nimmt jeder Mitspieler einen Fluch."
+    },
+    "sibyl": {
+      "name": "Prophetin",
+      "text": "+4 Karten und +1 Aktion. Lege eine Handkarte oben auf deinen Nachziehstapel und eine weitere darunter."
+    },
+    "battle_plan": {
+      "name": "Schlachtplan",
+      "text": "+1 Karte und +1 Aktion. Du darfst eine Angriffskarte aus deiner Hand aufdecken, um 1 weitere Karte zu ziehen. Du darfst einen beliebigen Vorratsstapel rotieren."
+    },
+    "archer": {
+      "name": "Bogenschützin",
+      "text": "+2 Geld. Jeder Mitspieler mit mindestens 5 Handkarten deckt alle bis auf eine auf. Wähle für jeden dieser Mitspieler eine aufgedeckte Karte, die er ablegt."
+    },
+    "warlord": {
+      "name": "Kriegsherr",
+      "text": "+1 Aktion. Zu Beginn deines nächsten Zuges ziehe 2 Karten. Bis dahin dürfen Mitspieler keine Aktionskarte aus ihrer Hand ausspielen, von der sie mindestens 2 Exemplare im Spiel haben."
+    },
+    "territory": {
+      "name": "Territorium",
+      "text": "Wert: 1 Siegpunkt pro unterschiedlichem Namen deiner Punktekarten. Wenn du dieses Territorium nimmst, nimm ein Gold pro leerem Vorratsstapel."
+    },
+    "tent": {
+      "name": "Zelt",
+      "text": "+2 Geld. Du darfst die Bastionen rotieren. Wenn du dieses Zelt aus dem Spiel ablegst, darfst du es stattdessen oben auf deinen Nachziehstapel legen."
+    },
+    "garrison": {
+      "name": "Garnison",
+      "text": "+2 Geld. Für den Rest dieses Zuges lege jedes Mal einen Marker auf diese Garnison, wenn du eine Karte nimmst. Zu Beginn deines nächsten Zuges entferne diese Marker und ziehe für jeden 1 Karte."
+    },
+    "hill_fort": {
+      "name": "Hügelfort",
+      "text": "Nimm eine Karte für höchstens 4 Geld. Wähle eins: Nimm jene Karte auf die Hand; oder +1 Karte und +1 Aktion."
+    },
+    "stronghold": {
+      "name": "Burg",
+      "text": "Wähle eins: +3 Geld; oder zu Beginn deines nächsten Zuges 3 Karten ziehen. Wert: 2 Siegpunkte."
+    },
+    "old_map": {
+      "name": "Alte Landkarte",
+      "text": "+1 Karte und +1 Aktion. Lege eine Handkarte ab und ziehe danach 1 Karte. Du darfst die Irrfahrten rotieren."
+    },
+    "voyage": {
+      "name": "Seereise",
+      "text": "+1 Aktion. Führe nach diesem Zug einen zusätzlichen Zug aus, jedoch keinen dritten eigenen Zug in Folge. In jenem Zug darfst du höchstens 3 Karten aus deiner Hand ausspielen."
+    },
+    "sunken_treasure": {
+      "name": "Versunkener Schatz",
+      "text": "Nimm eine Aktionskarte, von der du kein Exemplar im Spiel hast."
+    },
+    "distant_shore": {
+      "name": "Ferne Küste",
+      "text": "+2 Karten und +1 Aktion. Nimm ein Anwesen. Wert: 2 Siegpunkte."
+    },
+    "town_crier": {
+      "name": "Ausruferin",
+      "text": "Wähle eins: +2 Geld; oder ein Silber nehmen; oder +1 Karte und +1 Aktion. Danach darfst du die Bürger rotieren."
+    },
+    "blacksmith": {
+      "name": "Eisenschmied",
+      "text": "Wähle eins: Ziehe bis auf 6 Handkarten; oder ziehe 2 Karten; oder +1 Karte und +1 Aktion."
+    },
+    "miller": {
+      "name": "Müller",
+      "text": "+1 Aktion. Sieh deine obersten 4 Karten an. Nimm eine davon auf die Hand und lege die übrigen ab."
+    },
+    "elder": {
+      "name": "Älteste",
+      "text": "+2 Geld. Du darfst eine Aktionskarte aus deiner Hand ausspielen. Lässt jene Karte dich in diesem Zug zwischen Anweisungen wählen, darfst du eine zusätzliche, andere Möglichkeit wählen."
+    },
+    "student": {
+      "name": "Zauberschüler",
+      "text": "+1 Aktion. Du darfst die Zauberer rotieren. Entsorge eine Handkarte. Ist sie eine Geldkarte, +1 Gefallen und lege diesen Zauberschüler oben auf deinen Nachziehstapel."
+    },
+    "conjurer": {
+      "name": "Beschwörer",
+      "text": "Nimm eine Karte für höchstens 4 Geld. Zu Beginn deines nächsten Zuges nimm diesen Beschwörer auf die Hand."
+    },
+    "sorcerer": {
+      "name": "Hexenmeister",
+      "text": "+1 Karte und +1 Aktion. Jeder Mitspieler nennt einen Kartennamen und deckt danach seine oberste Karte auf. Ist es nicht die genannte Karte, nimmt er einen Fluch. Die aufgedeckte Karte bleibt oben auf seinem Nachziehstapel."
+    },
+    "lich": {
+      "name": "Lich",
+      "text": "+6 Karten und +2 Aktionen. Setze deinen nächsten Zug aus. Wenn du diesen Lich entsorgst, lege ihn ab und nimm eine billigere Karte aus dem Müll."
+    },
+    "architects_guild": {
+      "name": "Architektengilde",
+      "text": "Wenn du eine Karte nimmst, darfst du 2 Gefallen ausgeben, um eine billigere Karte ohne den Typ Punkte zu nehmen."
+    },
+    "band_of_nomads": {
+      "name": "Nomadenstamm",
+      "text": "Wenn du eine Karte für mindestens 3 Geld nimmst, darfst du 1 Gefallen ausgeben. Wähle dafür +1 Karte oder +1 Aktion oder +1 Kauf."
+    },
+    "cave_dwellers": {
+      "name": "Höhlenbewohner",
+      "text": "Zu Beginn deines Zuges darfst du 1 Gefallen ausgeben, eine Handkarte ablegen und danach 1 Karte ziehen. Du darfst dies beliebig oft wiederholen."
+    },
+    "circle_of_witches": {
+      "name": "Hexenbund",
+      "text": "Nachdem du eine Kontaktkarte vollständig ausgespielt hast, darfst du 3 Gefallen ausgeben. Dann nimmt jeder Mitspieler einen Fluch."
+    },
+    "city_state": {
+      "name": "Stadtstaat",
+      "text": "Wenn du in deinem Zug eine Aktionskarte nimmst, darfst du 2 Gefallen ausgeben, um jene Karte auszuspielen."
+    },
+    "coastal_haven": {
+      "name": "Höhlenhafen",
+      "text": "Wenn du deine Hand in der Aufräumphase ablegst, darfst du pro ausgegebenem Gefallen eine Karte für den nächsten Zug behalten. Ziehe deine neue Hand zusätzlich wie üblich."
+    },
+    "crafters_guild": {
+      "name": "Handwerkergilde",
+      "text": "Zu Beginn deines Zuges darfst du 2 Gefallen ausgeben, um eine Karte für höchstens 4 Geld oben auf deinen Nachziehstapel zu nehmen."
+    },
+    "desert_guides": {
+      "name": "Wüstenführer",
+      "text": "Zu Beginn deines Zuges darfst du 1 Gefallen ausgeben, deine gesamte Hand ablegen und 5 Karten ziehen. Du darfst dies beliebig oft wiederholen."
+    },
+    "family_of_inventors": {
+      "name": "Erfinderfamilie",
+      "text": "Zu Beginn deiner Kaufphase darfst du einen deiner Gefallen-Marker auf einen Vorratsstapel ohne den Typ Punkte legen. Karten kosten pro Gefallen-Marker auf ihrem Stapel 1 Geld weniger, jedoch mindestens 0 Geld."
+    },
+    "fellowship_of_scribes": {
+      "name": "Gefolgschaft der Schreiber",
+      "text": "Hast du nach dem vollständigen Ausspielen einer Aktionskarte höchstens 4 Handkarten, darfst du 1 Gefallen ausgeben, um 1 Karte zu ziehen."
+    },
+    "forest_dwellers": {
+      "name": "Waldbewohner",
+      "text": "Zu Beginn deines Zuges darfst du 1 Gefallen ausgeben und deine obersten 3 Karten ansehen. Lege beliebig viele davon ab und die übrigen in beliebiger Reihenfolge zurück."
+    },
+    "gang_of_pickpockets": {
+      "name": "Taschendiebe",
+      "text": "Zu Beginn deines Zuges lege deine Hand bis auf 4 Karten ab, es sei denn, du gibst 1 Gefallen aus."
+    },
+    "island_folk": {
+      "name": "Inselvolk",
+      "text": "Am Ende deines Zuges darfst du 5 Gefallen ausgeben, um einen zusätzlichen Zug zu erhalten, jedoch keinen dritten eigenen Zug in Folge."
+    },
+    "league_of_bankers": {
+      "name": "Bankiersverbund",
+      "text": "Zu Beginn deiner Kaufphase erhältst du pro volle 4 Gefallen, die du hast, +1 Geld. Du gibst die Gefallen dafür nicht aus."
+    },
+    "league_of_shopkeepers": {
+      "name": "Bund der Ladenbesitzer",
+      "text": "Nach dem Ausspielen einer Kontaktkarte erhältst du bei mindestens 5 Gefallen +1 Geld. Bei mindestens 10 Gefallen zusätzlich +1 Aktion und +1 Kauf. Du gibst dafür keine Gefallen aus."
+    },
+    "market_towns": {
+      "name": "Marktstädte",
+      "text": "Zu Beginn deiner Kaufphase darfst du 1 Gefallen ausgeben, um eine Aktionskarte aus deiner Hand auszuspielen. Du darfst dies beliebig oft wiederholen."
+    },
+    "mountain_folk": {
+      "name": "Bergvolk",
+      "text": "Zu Beginn deines Zuges darfst du 5 Gefallen ausgeben, um 3 Karten zu ziehen."
+    },
+    "order_of_astrologers": {
+      "name": "Sterndeuterorden",
+      "text": "Beim Mischen darfst du pro ausgegebenem Gefallen eine der zu mischenden Karten auswählen und nach dem Mischen oben auf den Nachziehstapel legen."
+    },
+    "order_of_masons": {
+      "name": "Freimaurerloge",
+      "text": "Beim Mischen darfst du pro ausgegebenem Gefallen bis zu 2 der zu mischenden Karten auswählen und stattdessen auf deinen Ablagestapel legen."
+    },
+    "peaceful_cult": {
+      "name": "Friedlicher Kult",
+      "text": "Zu Beginn deiner Kaufphase darfst du beliebig viele Gefallen ausgeben und genauso viele Handkarten entsorgen."
+    },
+    "plateau_shepherds": {
+      "name": "Schäfer der Hochebene",
+      "text": "Bei Spielende bilde Paare aus je einem deiner Gefallen und einer deiner Karten für 2 Geld. Jedes Paar ist 2 Siegpunkte wert."
+    },
+    "trappers_lodge": {
+      "name": "Hütte der Fallensteller",
+      "text": "Wenn du eine Karte nimmst, darfst du 1 Gefallen ausgeben, um jene Karte oben auf deinen Nachziehstapel zu legen."
+    },
+    "woodworkers_guild": {
+      "name": "Holzarbeitergilde",
+      "text": "Zu Beginn deiner Kaufphase darfst du 1 Gefallen ausgeben und eine Aktionskarte aus deiner Hand entsorgen. Hast du eine entsorgt, nimm eine Aktionskarte beliebiger Kosten."
+    },
+    "abundance": {
+      "name": "Überfluss",
+      "text": "Wenn du das nächste Mal eine Aktionskarte nimmst, erhältst du +1 Kauf und +3 Geld."
+    },
+    "buried_treasure": {
+      "name": "Vergrabener Schatz",
+      "text": "Zu Beginn deines nächsten Zuges erhältst du +1 Kauf und +3 Geld. Wenn du diesen Schatz nimmst, spiele ihn aus."
+    },
+    "cabin_boy": {
+      "name": "Schiffsjunge",
+      "text": "+1 Karte und +1 Aktion. Zu Beginn deines nächsten Zuges wähle eins: +2 Geld; oder entsorge diesen Schiffsjungen und nimm dafür eine Dauerkarte."
+    },
+    "cage": {
+      "name": "Käfig",
+      "text": "Lege bis zu 4 Handkarten verdeckt auf diesem Käfig zur Seite. Wenn du das nächste Mal eine Punktekarte nimmst, entsorge den Käfig. Nimm die beiseitegelegten Karten am Ende jenes Zuges auf die Hand."
+    },
+    "crew": {
+      "name": "Mannschaft",
+      "text": "+3 Karten. Lege diese Mannschaft zu Beginn deines nächsten Zuges oben auf deinen Nachziehstapel."
+    },
+    "crucible": {
+      "name": "Schmelztiegel",
+      "text": "Entsorge eine Handkarte. Erhalte für jedes 1 Geld ihrer Kosten +1 Geld."
+    },
+    "cutthroat": {
+      "name": "Meuchlerin",
+      "text": "Jeder Mitspieler legt seine Hand bis auf 3 Karten ab. Wenn ein beliebiger Spieler das nächste Mal eine Geldkarte für mindestens 5 Geld nimmt, nimm eine Kostbarkeit."
+    },
+    "enlarge": {
+      "name": "Vergrößerung",
+      "text": "Jetzt und zu Beginn deines nächsten Zuges: Entsorge eine Handkarte und nimm eine Karte, die höchstens 2 Geld mehr kostet als jene."
+    },
+    "figurine": {
+      "name": "Figurine",
+      "text": "+2 Karten. Du darfst eine Aktionskarte aus deiner Hand ablegen, um +1 Kauf und +1 Geld zu erhalten."
+    },
+    "first_mate": {
+      "name": "Erste Maatin",
+      "text": "Spiele beliebig viele Aktionskarten gleichen Namens aus deiner Hand aus. Ziehe danach Karten, bis du 6 Handkarten hast."
+    },
+    "flagship": {
+      "name": "Flaggschiff",
+      "text": "+2 Geld. Wenn du das nächste Mal eine Aktionskarte ohne den Typ Befehl ausspielst, spiele sie erneut aus."
+    },
+    "fortune_hunter": {
+      "name": "Abenteurerin",
+      "text": "+2 Geld. Sieh deine obersten 3 Karten an. Du darfst eine Geldkarte davon ausspielen. Lege die übrigen danach in beliebiger Reihenfolge zurück."
+    },
+    "frigate": {
+      "name": "Fregatte",
+      "text": "+3 Geld. Bis zum Beginn deines nächsten Zuges legt jeder Mitspieler nach dem vollständigen Ausspielen einer Aktionskarte seine Hand bis auf 4 Karten ab."
+    },
+    "gondola": {
+      "name": "Gondel",
+      "text": "Wähle beim Ausspielen: entweder sofort oder zu Beginn deines nächsten Zuges +2 Geld. Wenn du diese Gondel nimmst, darfst du eine Aktionskarte aus deiner Hand ausspielen."
+    },
+    "grotto": {
+      "name": "Grotte",
+      "text": "+1 Aktion. Lege bis zu 4 Handkarten verdeckt auf dieser Grotte zur Seite. Zu Beginn deines nächsten Zuges lege jene Karten ab und ziehe genauso viele Karten."
+    },
+    "harbor_village": {
+      "name": "Hafendorf",
+      "text": "+1 Karte und +2 Aktionen. Nachdem du in diesem Zug die nächste Aktionskarte ausgespielt hast, erhältst du +1 Geld, falls sie dir +Geld gegeben hat."
+    },
+    "jewelled_egg": {
+      "name": "Juwelen-Ei",
+      "text": "+1 Geld und +1 Kauf. Wenn du dieses Ei entsorgst, nimm eine Kostbarkeit."
+    },
+    "kings_cache": {
+      "name": "Königstruhe",
+      "text": "Du darfst eine Geldkarte aus deiner Hand dreimal ausspielen."
+    },
+    "landing_party": {
+      "name": "Landungstrupp",
+      "text": "+2 Karten und +2 Aktionen. Wenn das nächste Mal die erste Karte, die du in einem Zug ausspielst, eine Geldkarte ist, lege danach diesen Landungstrupp oben auf deinen Nachziehstapel."
+    },
+    "longship": {
+      "name": "Langschiff",
+      "text": "+2 Aktionen. Zu Beginn deines nächsten Zuges ziehe 2 Karten."
+    },
+    "mapmaker": {
+      "name": "Kartenzeichnerin",
+      "text": "Sieh deine obersten 4 Karten an. Nimm 2 davon auf die Hand und lege den Rest ab. Wenn ein beliebiger Spieler eine Punktekarte nimmt, darfst du diese Kartenzeichnerin aus deiner Hand ausspielen."
+    },
+    "maroon": {
+      "name": "Ausgesetzter",
+      "text": "Entsorge eine Handkarte. Ziehe für jeden ihrer Kartentypen 2 Karten."
+    },
+    "mining_road": {
+      "name": "Bergbaustraße",
+      "text": "+1 Aktion, +1 Kauf und +2 Geld. Einmal in diesem Zug darfst du eine Geldkarte, die du nimmst, sofort ausspielen."
+    },
+    "pendant": {
+      "name": "Anhänger",
+      "text": "Erhalte +1 Geld pro unterschiedlichem Namen unter deinen Geldkarten im Spiel."
+    },
+    "pickaxe": {
+      "name": "Spitzhacke",
+      "text": "+1 Geld. Entsorge eine Handkarte. Kostet sie mindestens 3 Geld, nimm eine Kostbarkeit direkt auf die Hand."
+    },
+    "pilgrim": {
+      "name": "Pilger",
+      "text": "+4 Karten. Lege eine Handkarte oben auf deinen Nachziehstapel."
+    },
+    "quartermaster": {
+      "name": "Quartiermeister",
+      "text": "Zu Beginn jedes deiner weiteren Züge wähle eins: Nimm eine Karte für höchstens 4 Geld und lege sie auf diesem Quartiermeister zur Seite; oder nimm eine Karte von diesem Quartiermeister auf die Hand."
+    },
+    "rope": {
+      "name": "Seil",
+      "text": "+1 Geld und +1 Kauf. Zu Beginn deines nächsten Zuges ziehe 1 Karte. Danach darfst du eine Handkarte entsorgen."
+    },
+    "sack_of_loot": {
+      "name": "Sack voll Kostbarkeiten",
+      "text": "+1 Geld und +1 Kauf. Nimm eine Kostbarkeit."
+    },
+    "search": {
+      "name": "Suche",
+      "text": "+2 Geld. Wenn das nächste Mal ein Vorratsstapel leer wird, entsorge diese Suche und nimm eine Kostbarkeit."
+    },
+    "secluded_shrine": {
+      "name": "Einsamer Schrein",
+      "text": "+1 Geld. Wenn du das nächste Mal eine Geldkarte nimmst, entsorge bis zu 2 Handkarten."
+    },
+    "shaman": {
+      "name": "Schamanin",
+      "text": "+1 Aktion und +1 Geld. Du darfst eine Handkarte entsorgen. In Spielen mit dieser Schamanin muss jeder Spieler zu Beginn seines Zuges eine Karte für höchstens 6 Geld aus dem Müll nehmen, falls möglich."
+    },
+    "silver_mine": {
+      "name": "Silbermine",
+      "text": "Nimm eine Geldkarte direkt auf die Hand, die weniger kostet als diese Silbermine."
+    },
+    "siren": {
+      "name": "Sirene",
+      "text": "Jeder Mitspieler nimmt einen Fluch. Zu Beginn deines nächsten Zuges ziehe bis auf 8 Handkarten. Wenn du diese Sirene nimmst, entsorge sie, es sei denn, du entsorgst eine Aktionskarte aus deiner Hand."
+    },
+    "stowaway": {
+      "name": "Blinder Passagier",
+      "text": "Zu Beginn deines nächsten Zuges ziehe 2 Karten. Wenn ein beliebiger Spieler eine Dauerkarte nimmt, darfst du diesen Passagier aus deiner Hand ausspielen."
+    },
+    "swamp_shacks": {
+      "name": "Sumpfhütten",
+      "text": "+2 Aktionen. Ziehe für je volle 3 Karten, die du im Spiel hast, 1 Karte."
+    },
+    "taskmaster": {
+      "name": "Vorarbeiter",
+      "text": "+1 Aktion und +1 Geld. Nimmst du später in diesem Zug eine Karte für genau 5 Geld, wiederhole diese gesamte Fähigkeit zu Beginn deines nächsten Zuges."
+    },
+    "tools": {
+      "name": "Werkzeug",
+      "text": "Nimm aus dem Vorrat eine Karte gleichen Namens wie eine Karte, die ein beliebiger Spieler im Spiel hat."
+    },
+    "trickster": {
+      "name": "Gauner",
+      "text": "Jeder Mitspieler nimmt einen Fluch. Einmal in diesem Zug darfst du eine Geldkarte, die du aus dem Spiel ablegst, zur Seite legen. Nimm sie am Ende dieses Zuges auf die Hand, nachdem du deine nächste Hand gezogen hast."
+    },
+    "wealthy_village": {
+      "name": "Wohlhabendes Dorf",
+      "text": "+1 Karte und +2 Aktionen. Wenn du dieses Dorf nimmst und mindestens 3 Geldkarten mit unterschiedlichen Namen im Spiel hast, nimm eine Kostbarkeit."
+    },
+    "avoid": {
+      "name": "Ausweichen",
+      "text": "+1 Kauf. Wenn du in diesem Zug das nächste Mal mischst, wähle bis zu 3 der zu mischenden Karten aus und lege sie stattdessen auf deinen Ablagestapel."
+    },
+    "bury": {
+      "name": "Vergraben",
+      "text": "+1 Kauf. Lege eine Karte deiner Wahl aus deinem Ablagestapel unter deinen Nachziehstapel."
+    },
+    "deliver": {
+      "name": "Zustellung",
+      "text": "+1 Kauf. Für den Rest dieses Zuges lege jede Karte, die du nimmst, zur Seite und nimm sie am Zugende auf die Hand."
+    },
+    "foray": {
+      "name": "Brandschatzung",
+      "text": "Lege 3 Handkarten ab und zeige sie vor. Haben sie 3 unterschiedliche Namen, nimm eine Kostbarkeit."
+    },
+    "invasion": {
+      "name": "Invasion",
+      "text": "Du darfst eine Angriffskarte aus deiner Hand ausspielen. Nimm danach ein Herzogtum, dann eine Aktionskarte oben auf deinen Nachziehstapel und schließlich eine Kostbarkeit, die du ausspielst."
+    },
+    "journey_plunder": {
+      "name": "Reise",
+      "text": "Lege in der Aufräumphase dieses Zuges keine Karten aus dem Spiel ab. Führe danach einen zusätzlichen Zug aus, jedoch keinen dritten eigenen Zug in Folge."
+    },
+    "launch": {
+      "name": "In See stechen",
+      "text": "Einmal pro Zug: Kehre in deine Aktionsphase zurück. +1 Karte, +1 Aktion und +1 Kauf."
+    },
+    "looting": {
+      "name": "Plünderung",
+      "text": "Nimm eine Kostbarkeit."
+    },
+    "maelstrom": {
+      "name": "Mahlstrom",
+      "text": "Entsorge 3 Handkarten. Jeder Mitspieler mit mindestens 5 Handkarten entsorgt eine davon."
+    },
+    "mirror": {
+      "name": "Spiegeln",
+      "text": "+1 Kauf. Wenn du in diesem Zug das nächste Mal eine Aktionskarte nimmst, nimm eine weitere Karte gleichen Namens."
+    },
+    "peril": {
+      "name": "Riskieren",
+      "text": "Du darfst eine Aktionskarte aus deiner Hand entsorgen und dafür eine Kostbarkeit nehmen."
+    },
+    "prepare": {
+      "name": "Vorbereitung",
+      "text": "Lege deine gesamte Hand offen zur Seite. Zu Beginn deines nächsten Zuges spiele die Aktions- und Geldkarten davon in beliebiger Reihenfolge aus und lege die übrigen ab."
+    },
+    "prosper_event": {
+      "name": "Aufblühen",
+      "text": "Nimm zuerst eine Kostbarkeit. Danach darfst du beliebig viele Geldkarten mit unterschiedlichen Namen aus dem Vorrat nehmen."
+    },
+    "rush": {
+      "name": "Beeilung",
+      "text": "+1 Kauf. Wenn du in diesem Zug das nächste Mal eine Aktionskarte nimmst, spiele sie aus."
+    },
+    "scrounge": {
+      "name": "Herumsuchen",
+      "text": "Wähle eins: Entsorge eine Handkarte; oder nimm ein Anwesen aus dem Müll. Hast du das Anwesen genommen, nimm zusätzlich eine Karte für höchstens 5 Geld."
+    },
+    "cheap": {
+      "name": "Billig",
+      "text": "Karten des zugeordneten Stapels kosten 1 Geld weniger, jedoch mindestens 0 Geld."
+    },
+    "cursed": {
+      "name": "Verflucht",
+      "text": "Wenn du eine Karte des zugeordneten Stapels nimmst, nimm zusätzlich eine Kostbarkeit und einen Fluch."
+    },
+    "fated": {
+      "name": "Vorherbestimmt",
+      "text": "Beim Mischen darfst du die zu mischenden Karten durchsehen und Karten des zugeordneten Stapels aufdecken, um sie oben oder unten auf den Nachziehstapel zu legen."
+    },
+    "fawning": {
+      "name": "Aufdringlich",
+      "text": "Wenn du eine Provinz nimmst, nimm eine Karte des zugeordneten Stapels."
+    },
+    "friendly": {
+      "name": "Freundlich",
+      "text": "Zu Beginn deiner Aufräumphase darfst du eine Handkarte des zugeordneten Stapels ablegen, um eine Karte dieses Stapels zu nehmen."
+    },
+    "hasty": {
+      "name": "Eilig",
+      "text": "Wenn du eine Karte des zugeordneten Stapels nimmst, lege sie zur Seite und spiele sie zu Beginn deines nächsten Zuges aus."
+    },
+    "inherited": {
+      "name": "Geerbt",
+      "text": "Vorbereitung: Jeder Spieler ersetzt eine Startkarte seiner Wahl durch eine Karte des zugeordneten Stapels."
+    },
+    "inspiring": {
+      "name": "Inspirierend",
+      "text": "Nach dem Ausspielen einer Karte des zugeordneten Stapels in deinem Zug darfst du eine Aktionskarte aus deiner Hand ausspielen, von der du kein Exemplar im Spiel hast."
+    },
+    "nearby": {
+      "name": "Benachbart",
+      "text": "Wenn du eine Karte des zugeordneten Stapels nimmst, erhältst du +1 Kauf."
+    },
+    "patient": {
+      "name": "Geduldig",
+      "text": "Zu Beginn deiner Aufräumphase darfst du Handkarten des zugeordneten Stapels zur Seite legen und sie zu Beginn deines nächsten Zuges ausspielen."
+    },
+    "pious": {
+      "name": "Fromm",
+      "text": "Wenn du eine Karte des zugeordneten Stapels nimmst, darfst du eine Handkarte entsorgen."
+    },
+    "reckless": {
+      "name": "Waghalsig",
+      "text": "Führe die Anweisungen beim Ausspielen einer Karte des zugeordneten Stapels zweimal aus. Wenn du eine solche Karte aus dem Spiel ablegst, lege sie auf ihren Stapel zurück."
+    },
+    "rich": {
+      "name": "Reich",
+      "text": "Wenn du eine Karte des zugeordneten Stapels nimmst, nimm zusätzlich ein Silber."
+    },
+    "shy": {
+      "name": "Scheu",
+      "text": "Zu Beginn deines Zuges darfst du eine Handkarte des zugeordneten Stapels ablegen und dafür 2 Karten ziehen."
+    },
+    "tireless": {
+      "name": "Unermüdlich",
+      "text": "Wenn du eine Karte des zugeordneten Stapels aus dem Spiel ablegst, lege sie zur Seite. Lege sie am Ende des Zuges oben auf deinen Nachziehstapel, nachdem du deine nächste Hand gezogen hast."
+    },
+    "amphora": {
+      "name": "Amphore",
+      "text": "Wähle beim Ausspielen: entweder sofort oder zu Beginn deines nächsten Zuges +1 Kauf und +3 Geld."
+    },
+    "doubloons": {
+      "name": "Dublonen",
+      "text": "+3 Geld. Wenn du diese Dublonen nimmst, nimm zusätzlich ein Gold."
+    },
+    "endless_chalice": {
+      "name": "Endloser Kelch",
+      "text": "Jetzt und zu Beginn jedes deiner weiteren Züge erhältst du +1 Geld und +1 Kauf."
+    },
+    "figurehead": {
+      "name": "Galionsfigur",
+      "text": "+3 Geld. Zu Beginn deines nächsten Zuges ziehe 2 Karten."
+    },
+    "hammer": {
+      "name": "Hammer",
+      "text": "+3 Geld. Nimm eine Karte für höchstens 4 Geld."
+    },
+    "insignia": {
+      "name": "Insignien",
+      "text": "+3 Geld. Für den Rest dieses Zuges darfst du jede Karte, die du nimmst, oben auf deinen Nachziehstapel legen."
+    },
+    "jewels": {
+      "name": "Juwelen",
+      "text": "+3 Geld und +1 Kauf. Lege diese Juwelen zu Beginn deines nächsten Zuges unter deinen Nachziehstapel."
+    },
+    "orb": {
+      "name": "Kugel",
+      "text": "Durchsuche deinen Ablagestapel. Wähle danach eins: Spiele eine Aktions- oder Geldkarte daraus aus; oder +1 Kauf und +3 Geld."
+    },
+    "prize_goat": {
+      "name": "Zuchtziege",
+      "text": "+3 Geld und +1 Kauf. Du darfst eine Handkarte entsorgen."
+    },
+    "puzzle_box": {
+      "name": "Rätselschatulle",
+      "text": "+3 Geld und +1 Kauf. Du darfst eine Handkarte verdeckt zur Seite legen. Nimm sie am Ende des Zuges auf die Hand, nachdem du deine nächste Hand gezogen hast."
+    },
+    "sextant": {
+      "name": "Sextant",
+      "text": "+3 Geld und +1 Kauf. Sieh deine obersten 5 Karten an. Lege beliebig viele davon ab und die übrigen in beliebiger Reihenfolge zurück."
+    },
+    "shield": {
+      "name": "Schild",
+      "text": "+3 Geld und +1 Kauf. Spielt ein Mitspieler eine Angriffskarte, darfst du vorher diesen Schild aus deiner Hand aufdecken, um von jenem Angriff nicht betroffen zu sein."
+    },
+    "spell_scroll": {
+      "name": "Zauberrolle",
+      "text": "Entsorge diese Zauberrolle und nimm dafür eine billigere Karte. Ist die genommene Karte eine Aktions- oder Geldkarte, darfst du sie ausspielen."
+    },
+    "staff": {
+      "name": "Stab",
+      "text": "+3 Geld und +1 Kauf. Du darfst eine Aktionskarte aus deiner Hand ausspielen."
+    },
+    "sword": {
+      "name": "Schwert",
+      "text": "+3 Geld und +1 Kauf. Jeder Mitspieler legt seine Hand bis auf 4 Karten ab."
+    },
+    "alley": {
+      "name": "Gasse",
+      "text": "+1 Karte und +1 Aktion. Lege eine Handkarte ab. Du darfst diese Gasse aus deinem Nachziehstapel ausspielen, als wäre sie auf deiner Hand."
+    },
+    "aristocrat": {
+      "name": "Aristokratin",
+      "text": "Zähle deine Aristokratinnen im Spiel. Bei 1 oder 5 erhältst du +3 Aktionen; bei 2 oder 6 +3 Karten; bei 3 oder 7 +3 Geld; bei 4 oder 8 +3 Käufe. Bei jeder anderen Anzahl geschieht nichts."
+    },
+    "artist": {
+      "name": "Künstlerin",
+      "text": "+1 Aktion. Ziehe für jeden Kartennamen, von dem du genau ein Exemplar im Spiel hast, 1 Karte."
+    },
+    "change": {
+      "name": "Wandel",
+      "text": "Hast du Schulden, +3 Geld. Andernfalls entsorge eine Handkarte und nimm eine Karte mit höheren Geldkosten. Erhalte Schulden in Höhe der Differenz der Geldkosten."
+    },
+    "craftsman": {
+      "name": "Handwerker",
+      "text": "Erhalte 2 Schulden. Nimm eine Karte für höchstens 5 Geld."
+    },
+    "daimyo": {
+      "name": "Daimyo",
+      "text": "+1 Karte und +1 Aktion. Wenn du in diesem Zug das nächste Mal eine Aktionskarte ohne den Typ Befehl ausspielst, spiele sie danach erneut aus."
+    },
+    "fishmonger": {
+      "name": "Fischhändlerin",
+      "text": "+1 Kauf und +1 Geld. Du darfst diese Fischhändlerin aus deinem Nachziehstapel ausspielen, als wäre sie auf deiner Hand."
+    },
+    "gold_mine": {
+      "name": "Goldmine",
+      "text": "+1 Karte, +1 Aktion und +1 Kauf. Du darfst ein Gold nehmen und zugleich 4 Schulden erhalten."
+    },
+    "imperial_envoy": {
+      "name": "Kaiserlicher Gesandter",
+      "text": "+5 Karten und +1 Kauf. Erhalte 2 Schulden."
+    },
+    "kitsune": {
+      "name": "Kitsune",
+      "text": "+1 Sonne. Wähle zwei verschiedene Möglichkeiten: +2 Aktionen; +2 Geld; jeder Mitspieler nimmt einen Fluch; ein Silber nehmen."
+    },
+    "litter": {
+      "name": "Sänfte",
+      "text": "+2 Karten und +2 Aktionen. Erhalte 1 Schuld."
+    },
+    "mountain_shrine": {
+      "name": "Bergschrein",
+      "text": "+1 Sonne und +2 Geld. Du darfst eine Handkarte entsorgen. Liegt danach mindestens eine Aktionskarte im Müll, ziehe 2 Karten."
+    },
+    "ninja": {
+      "name": "Ninja",
+      "text": "+1 Karte. Jeder Mitspieler legt seine Hand bis auf 3 Karten ab. Du darfst diesen Ninja aus deinem Nachziehstapel ausspielen, als wäre er auf deiner Hand."
+    },
+    "poet": {
+      "name": "Dichterin",
+      "text": "+1 Sonne, +1 Karte und +1 Aktion. Decke deine oberste Karte auf. Kostet sie höchstens 3 Geld, nimm sie auf die Hand; andernfalls bleibt sie oben auf dem Nachziehstapel."
+    },
+    "rice": {
+      "name": "Reis",
+      "text": "+1 Kauf. Erhalte +1 Geld für jeden unterschiedlichen Kartentyp unter deinen Karten im Spiel."
+    },
+    "rice_broker": {
+      "name": "Reismakler",
+      "text": "+1 Aktion. Entsorge eine Handkarte. Ist sie eine Geldkarte, ziehe 2 Karten. Ist sie eine Aktionskarte, ziehe 5 Karten. Treffen beide Typen zu, erhältst du beide Boni."
+    },
+    "river_shrine": {
+      "name": "Flussschrein",
+      "text": "+1 Sonne. Entsorge bis zu 2 Handkarten. Zu Beginn der Aufräumphase nimm eine Karte für höchstens 4 Geld, falls du in keiner deiner Kaufphasen dieses Zuges eine Karte genommen hast."
+    },
+    "riverboat": {
+      "name": "Flussboot",
+      "text": "Zu Beginn deines nächsten Zuges spiele die beiseitegelegte Karte aus, ohne sie zu bewegen. Vorbereitung: Lege eine unbenutzte Aktionskarte ohne den Typ Dauer für genau 5 Geld zur Seite."
+    },
+    "ronin": {
+      "name": "Ronin",
+      "text": "Ziehe Karten, bis du 7 Handkarten hast. Du darfst diesen Ronin aus deinem Nachziehstapel ausspielen, als wäre er auf deiner Hand."
+    },
+    "root_cellar": {
+      "name": "Erdkeller",
+      "text": "+3 Karten und +1 Aktion. Erhalte 3 Schulden."
+    },
+    "rustic_village": {
+      "name": "Rustikales Dorf",
+      "text": "+1 Sonne, +1 Karte und +2 Aktionen. Du darfst 2 Handkarten ablegen und dafür 1 Karte ziehen."
+    },
+    "samurai": {
+      "name": "Samurai",
+      "text": "Jeder Mitspieler legt einmal seine Hand bis auf 3 Karten ab. Zu Beginn jedes deiner weiteren Züge erhältst du +1 Geld. Dieser Samurai bleibt im Spiel."
+    },
+    "snake_witch": {
+      "name": "Schlangenhexe",
+      "text": "+1 Karte und +1 Aktion. Haben alle deine Handkarten unterschiedliche Namen, darfst du sie aufdecken und diese Hexe auf ihren Stapel zurücklegen. Gelingt das, nimmt jeder Mitspieler einen Fluch."
+    },
+    "tanuki": {
+      "name": "Tanuki",
+      "text": "Entsorge eine Handkarte und nimm eine Karte, die höchstens 2 Geld mehr kostet als jene. Du darfst diesen Tanuki aus deinem Nachziehstapel ausspielen, als wäre er auf deiner Hand."
+    },
+    "tea_house": {
+      "name": "Teehaus",
+      "text": "+1 Sonne, +1 Karte, +1 Aktion und +2 Geld."
+    },
+    "amass": {
+      "name": "Anhäufen",
+      "text": "Hast du keine Aktionskarte im Spiel, nimm eine Aktionskarte für höchstens 5 Geld."
+    },
+    "asceticism": {
+      "name": "Askese",
+      "text": "Zahle zusätzlich beliebig viel Geld und entsorge genauso viele Handkarten."
+    },
+    "continue_event": {
+      "name": "Fortsetzen",
+      "text": "Einmal pro Zug: Nimm eine Aktionskarte ohne den Typ Angriff für höchstens 4 Geld. Kehre in deine Aktionsphase zurück und spiele jene Karte aus. +1 Aktion und +1 Kauf."
+    },
+    "credit": {
+      "name": "Kredit",
+      "text": "Nimm eine Aktions- oder Geldkarte für höchstens 8 Geld. Erhalte Schulden in Höhe ihrer Geldkosten."
+    },
+    "foresight": {
+      "name": "Voraussicht",
+      "text": "Decke Karten von deinem Nachziehstapel auf, bis eine Aktionskarte erscheint. Lege jene zur Seite und die übrigen ab. Nimm die Aktionskarte am Ende dieses Zuges auf die Hand, nachdem du deine nächste Hand gezogen hast."
+    },
+    "gather": {
+      "name": "Sammeln",
+      "text": "Nimm in dieser Reihenfolge eine Karte für genau 3 Geld, eine für genau 4 Geld und eine für genau 5 Geld."
+    },
+    "kintsugi": {
+      "name": "Kintsugi",
+      "text": "Entsorge eine Handkarte. Hast du irgendwann in diesem Spiel ein Gold genommen, nimm eine Karte, die höchstens 2 Geld mehr kostet als die entsorgte Karte."
+    },
+    "practice": {
+      "name": "Kampfübung",
+      "text": "Du darfst eine Aktionskarte aus deiner Hand zweimal ausspielen."
+    },
+    "receive_tribute": {
+      "name": "Tribut empfangen",
+      "text": "Hast du in diesem Zug mindestens 3 Karten genommen, nimm bis zu 3 Aktionskarten mit unterschiedlichen Namen, von denen du kein Exemplar im Spiel hast."
+    },
+    "sea_trade": {
+      "name": "Seehandel",
+      "text": "Ziehe für jede Aktionskarte, die du im Spiel hast, 1 Karte. Danach darfst du höchstens ebenso viele Handkarten entsorgen."
+    },
+    "approaching_army": {
+      "name": "Herannahende Armee",
+      "text": "Nach dem Ausspielen einer Angriffskarte erhältst du +1 Geld. Vorbereitung: Füge einen zusätzlichen Angriffs-Königreichstapel zum Vorrat hinzu."
+    },
+    "biding_time": {
+      "name": "Wartezeit",
+      "text": "Lege zu Beginn deiner Aufräumphase deine gesamte Hand verdeckt zur Seite. Nimm jene Karten zu Beginn deines nächsten Zuges auf die Hand."
+    },
+    "bureaucracy": {
+      "name": "Bürokratie",
+      "text": "Wenn du eine Karte nimmst, deren Kosten nicht genau 0 Geld sind, nimm zusätzlich ein Kupfer. Das gilt auch bei Kosten mit Schulden oder Trank."
+    },
+    "divine_wind": {
+      "name": "Göttlicher Wind",
+      "text": "Wenn du den letzten Sonnenmarker entfernst, entfernt alle Königreichstapel aus dem Vorrat und legt 10 neue, zufällig ausgewählte Königreichstapel bereit."
+    },
+    "enlightenment": {
+      "name": "Erleuchtung",
+      "text": "Geldkarten sind zusätzlich Aktionskarten. Spielst du eine Geldkarte in einer Aktionsphase, erhältst du statt ihrer normalen Anweisungen +1 Karte und +1 Aktion."
+    },
+    "flourishing_trade": {
+      "name": "Florierender Handel",
+      "text": "Karten kosten 1 Geld weniger, jedoch mindestens 0 Geld. Du darfst nicht verbrauchte Aktionen als Käufe verwenden."
+    },
+    "good_harvest": {
+      "name": "Gute Ernte",
+      "text": "Wenn du in einem Zug erstmals eine Geldkarte eines bestimmten Namens ausspielst, erhältst du zuerst +1 Kauf und +1 Geld."
+    },
+    "great_leader": {
+      "name": "Großer Anführer",
+      "text": "Nach jeder Aktionskarte, die du ausspielst, erhältst du +1 Aktion."
+    },
+    "growth": {
+      "name": "Wachstum",
+      "text": "Wenn du eine Geldkarte nimmst, nimm zusätzlich eine billigere Karte."
+    },
+    "harsh_winter": {
+      "name": "Strenger Winter",
+      "text": "Wenn du in deinem Zug eine Karte nimmst, übernimm alle Schuldenmarker von ihrem Stapel. Liegen dort keine, lege stattdessen 2 Schuldenmarker auf ihren Stapel."
+    },
+    "kind_emperor": {
+      "name": "Gütiger Kaiser",
+      "text": "Zu Beginn deines Zuges und wenn du den letzten Sonnenmarker entfernst, nimm eine Aktionskarte direkt auf die Hand."
+    },
+    "panic": {
+      "name": "Panik",
+      "text": "Wenn du eine Geldkarte ausspielst, erhältst du +2 Käufe. Geldkarten, die du aus dem Spiel ablegst, legst du auf ihren Stapel zurück."
+    },
+    "progress": {
+      "name": "Entwicklung",
+      "text": "Wenn du eine Karte nimmst, lege sie oben auf deinen Nachziehstapel."
+    },
+    "rapid_expansion": {
+      "name": "Schnelle Expansion",
+      "text": "Wenn du eine Aktions- oder Geldkarte nimmst, lege sie zur Seite und spiele sie zu Beginn deines nächsten Zuges aus."
+    },
+    "sickness": {
+      "name": "Krankheit",
+      "text": "Zu Beginn deines Zuges wähle eins: Nimm einen Fluch oben auf deinen Nachziehstapel; oder lege 3 Handkarten ab."
+    },
+    "envoy": {
+      "name": "Gesandter",
+      "text": "Decke die obersten 5 Karten deines Nachziehstapels auf. Der Spieler links von dir wählt eine davon. Lege diese ab und nimm die übrigen auf die Hand."
+    },
+    "black_market": {
+      "name": "Schwarzmarkt",
+      "text": "+2 Geld. Decke die obersten 3 Karten des Schwarzmarktstapels auf. Spiele beliebig viele Geldkarten aus deiner Hand aus. Du darfst eine der aufgedeckten Karten kaufen. Lege die übrigen in beliebiger Reihenfolge unter den Schwarzmarktstapel."
+    },
+    "stash": {
+      "name": "Geldversteck",
+      "text": "+2 Geld. Wenn du diese Karte mischst, darfst du deinen übrigen Nachziehstapel durchsehen und diese Karte an eine beliebige Stelle der gemischten Karten legen."
+    },
+    "walled_village": {
+      "name": "Befestigtes Dorf",
+      "text": "+1 Karte. +2 Aktionen. Liegen zu Beginn deiner Aufräumphase diese und höchstens eine weitere Aktionskarte im Spiel, darfst du dieses Dorf oben auf deinen Nachziehstapel legen."
+    },
+    "governor": {
+      "name": "Gouverneur",
+      "text": "+1 Aktion. Wähle eins; für dich gilt jeweils die Angabe in Klammern: Jeder Spieler erhält +1 (+3) Karten; oder jeder Spieler nimmt ein Silber (Gold); oder jeder Spieler darf eine Handkarte entsorgen und eine Karte nehmen, die genau 1 (2) Geld mehr kostet."
+    },
+    "prince": {
+      "name": "Prinz",
+      "text": "Du darfst eine Aktionskarte aus deiner Hand, die weder den Typ Dauer noch den Typ Befehl hat und bis zu 4 Geld kostet, auf diesem Prinzen zur Seite legen. Zu Beginn jedes deiner Züge spiele jene Karte aus; sie bleibt dabei zur Seite gelegt."
+    },
+    "summon": {
+      "name": "Einladung",
+      "text": "Nimm eine Aktionskarte, die bis zu 4 Geld kostet. Lege sie zur Seite. Wenn du das getan hast, spiele sie zu Beginn deines nächsten Zuges aus."
+    },
+    "sauna": {
+      "name": "Sauna",
+      "text": "+1 Karte. +1 Aktion. Du darfst ein Eisloch aus deiner Hand ausspielen. Wenn du in diesem Zug ein Silber ausspielst, darfst du eine Handkarte entsorgen."
+    },
+    "avanto": {
+      "name": "Eisloch",
+      "text": "+3 Karten. Du darfst eine Sauna aus deiner Hand ausspielen."
+    },
+    "dismantle": {
+      "name": "Abbruch",
+      "text": "Entsorge eine Handkarte. Kostet sie mindestens 1 Geld, nimm eine billigere Karte und danach ein Gold."
+    },
+    "church": {
+      "name": "Schweriner Dom",
+      "text": "+1 Aktion. Lege bis zu 3 Handkarten verdeckt zur Seite. Zu Beginn deines nächsten Zuges nimm sie auf die Hand; danach darfst du eine Handkarte entsorgen."
+    },
+    "captain": {
+      "name": "Kapitän Tobias",
+      "text": "Jetzt und zu Beginn deines nächsten Zuges: Spiele eine Aktionskarte aus dem Vorrat aus, die weder den Typ Dauer noch den Typ Befehl hat und bis zu 4 Geld kostet. Lass sie dabei im Vorrat."
+    },
+    "marchland": {
+      "name": "Grenzregion",
+      "text": "Wert: 1 Siegpunkt pro 3 Punktekarten in deinem gesamten Kartensatz (abrunden). Wenn du diese Karte nimmst: +1 Kauf. Lege beliebig viele Handkarten ab; +1 Geld pro abgelegter Karte."
+    },
+    "coppersmith": {
+      "name": "Kupferschmied",
+      "text": "In diesem Zug produziert jedes Kupfer, das du ausspielst, 1 Geld mehr."
+    },
+    "great_hall": {
+      "name": "Große Halle",
+      "text": "+1 Karte. +1 Aktion. Bei Spielende ist diese Karte 1 Siegpunkt wert."
+    },
+    "saboteur": {
+      "name": "Saboteur",
+      "text": "Jeder Mitspieler deckt Karten seines Nachziehstapels auf, bis er eine Karte aufdeckt, die mindestens 3 Geld kostet. Er entsorgt diese Karte und darf eine Karte nehmen, die mindestens 2 Geld weniger kostet. Die übrigen aufgedeckten Karten legt er ab."
+    },
+    "scout": {
+      "name": "Späher",
+      "text": "+1 Aktion. Decke die obersten 4 Karten deines Nachziehstapels auf. Nimm alle aufgedeckten Punktekarten auf die Hand und lege die übrigen in beliebiger Reihenfolge oben auf deinen Nachziehstapel zurück."
+    },
+    "secret_chamber": {
+      "name": "Geheimkammer",
+      "text": "Lege beliebig viele Handkarten ab; +1 Geld pro abgelegter Karte. Wenn ein Mitspieler eine Angriffskarte ausspielt, darfst du vor deren Ausführung diese Karte aus deiner Hand aufdecken. Ziehe dann 2 Karten und lege danach 2 Handkarten in beliebiger Reihenfolge oben auf deinen Nachziehstapel."
+    },
+    "tribute": {
+      "name": "Tribut",
+      "text": "Dein linker Nachbar deckt die obersten 2 Karten seines Nachziehstapels auf und legt sie ab. Für jeden unterschiedlichen aufgedeckten Kartennamen erhältst du alle zutreffenden Boni: +2 Aktionen bei einer Aktionskarte, +2 Geld bei einer Geldkarte und +2 Karten bei einer Punktekarte."
+    },
+    "ambassador": {
+      "name": "Botschafter",
+      "text": "Decke eine Handkarte auf. Du darfst bis zu 2 gleichnamige Karten aus deiner Hand auf ihren Vorratsstapel zurücklegen. Jeder Mitspieler nimmt eine Karte mit dem aufgedeckten Namen."
+    },
+    "embargo": {
+      "name": "Embargo",
+      "text": "+2 Geld. Entsorge diese Karte. Wenn du das getan hast, lege einen Embargomarker auf einen beliebigen Vorratsstapel. Wenn ein Spieler eine Karte von diesem Stapel kauft, nimmt er pro dort liegendem Embargomarker einen Fluch."
+    },
+    "explorer": {
+      "name": "Entdecker",
+      "text": "Du darfst eine Provinz aus deiner Hand aufdecken. Wenn du eine aufgedeckt hast, nimm ein Gold; andernfalls nimm ein Silber. Nimm die Geldkarte direkt auf die Hand."
+    },
+    "ghost_ship": {
+      "name": "Geisterschiff",
+      "text": "+2 Karten. Jeder Mitspieler mit mindestens 4 Handkarten legt Handkarten oben auf seinen Nachziehstapel, bis er nur noch 3 Handkarten hat."
+    },
+    "navigator": {
+      "name": "Navigator",
+      "text": "+2 Geld. Sieh dir die obersten 5 Karten deines Nachziehstapels an. Lege entweder alle ab oder alle in beliebiger Reihenfolge zurück auf deinen Nachziehstapel."
+    },
+    "pearl_diver": {
+      "name": "Perlentaucher",
+      "text": "+1 Karte. +1 Aktion. Sieh dir die unterste Karte deines Nachziehstapels an. Du darfst sie oben auf deinen Nachziehstapel legen."
+    },
+    "pirate_ship": {
+      "name": "Piratenschiff",
+      "text": "Wähle eins: +1 Geld pro Geldmarker auf deinem Piratenschiff-Tableau; oder jeder Mitspieler deckt die obersten 2 Karten seines Nachziehstapels auf und entsorgt eine von dir gewählte aufgedeckte Geldkarte, falls vorhanden. Die übrigen Karten legt er ab. Hat dabei mindestens ein Mitspieler eine Geldkarte entsorgt, lege einen Geldmarker auf dein Tableau."
+    },
+    "sea_hag": {
+      "name": "Seehexe",
+      "text": "Jeder Mitspieler legt die oberste Karte seines Nachziehstapels ab und nimmt danach einen Fluch oben auf seinen Nachziehstapel."
+    },
+    "contraband": {
+      "name": "Schmuggelware",
+      "text": "+3 Geld. +1 Kauf. Dein linker Mitspieler nennt eine Karte, die du in diesem Zug nicht kaufen darfst."
+    },
+    "counting_house": {
+      "name": "Leihhaus",
+      "text": "Sieh deinen Ablagestapel durch. Decke beliebig viele Kupfer daraus auf und nimm sie auf die Hand."
+    },
+    "goons": {
+      "name": "Halsabschneider",
+      "text": "+1 Kauf. +2 Geld. Jeder Mitspieler legt Handkarten ab, bis er nur noch 3 hat. Solange diese Karte im Spiel ist, erhältst du für jede Karte, die du kaufst, 1 Siegpunktmarker."
+    },
+    "loan": {
+      "name": "Lohn",
+      "text": "+1 Geld. Decke Karten deines Nachziehstapels auf, bis du eine Geldkarte aufdeckst. Entsorge diese Geldkarte oder lege sie ab. Lege danach die übrigen aufgedeckten Karten ab."
+    },
+    "mountebank": {
+      "name": "Quacksalber",
+      "text": "+2 Geld. Jeder Mitspieler darf einen Fluch aus seiner Hand ablegen. Wer das nicht tut, nimmt einen Fluch und ein Kupfer."
+    },
+    "royal_seal": {
+      "name": "Königliches Siegel",
+      "text": "+2 Geld. Wenn du eine Karte nimmst, solange dieses Siegel im Spiel ist, darfst du die genommene Karte oben auf deinen Nachziehstapel legen."
+    },
+    "talisman": {
+      "name": "Talisman",
+      "text": "+1 Geld. Solange diese Karte im Spiel ist: Wenn du eine Karte ohne den Typ Punkte kaufst, die bis zu 4 Geld kostet, nimm eine weitere Karte mit demselben Namen."
+    },
+    "trade_route": {
+      "name": "Handelsroute",
+      "text": "+1 Kauf. Entsorge eine Handkarte. Danach +1 Geld pro Geldmarker auf dem Handelsrouten-Tableau. Spielvorbereitung: Lege einen Geldmarker auf jeden Punktekartenstapel im Vorrat. Wenn zum ersten Mal eine Karte von einem solchen Stapel genommen wird, lege dessen Marker auf das Tableau."
+    },
+    "venture": {
+      "name": "Abenteuer",
+      "text": "+1 Geld. Decke Karten deines Nachziehstapels auf, bis du eine Geldkarte aufdeckst. Lege die übrigen aufgedeckten Karten ab und spiele dann die aufgedeckte Geldkarte aus."
+    },
+    "cache": {
+      "name": "Schatztruhe",
+      "text": "+3 Geld. Wenn du diese Karte nimmst, nimm zusätzlich 2 Kupfer."
+    },
+    "duchess": {
+      "name": "Herzogin",
+      "text": "+2 Geld. Jeder Spieler sieht sich die oberste Karte seines eigenen Nachziehstapels an und darf sie ablegen. In Spielen mit dem Herzogin-Stapel: Wenn du ein Herzogtum nimmst, darfst du eine Herzogin nehmen."
+    },
+    "embassy": {
+      "name": "Botschaft",
+      "text": "+5 Karten. Lege danach 3 Handkarten ab. Wenn du diese Karte nimmst, nimmt jeder Mitspieler ein Silber."
+    },
+    "ill_gotten_gains": {
+      "name": "Blutzoll",
+      "text": "+1 Geld. Du darfst ein Kupfer direkt auf die Hand nehmen. Wenn du diese Karte nimmst, nimmt jeder Mitspieler einen Fluch."
+    },
+    "mandarin": {
+      "name": "Mandarin",
+      "text": "+3 Geld. Lege eine Handkarte oben auf deinen Nachziehstapel. Wenn du diese Karte nimmst, lege alle Geldkarten, die du im Spiel hast, in beliebiger Reihenfolge oben auf deinen Nachziehstapel."
+    },
+    "noble_brigand": {
+      "name": "Edler Räuber",
+      "text": "+1 Geld beim Ausspielen. Wenn du diese Karte ausspielst oder kaufst, deckt jeder Mitspieler die obersten 2 Karten seines Nachziehstapels auf. Er entsorgt ein von dir gewähltes aufgedecktes Silber oder Gold, falls vorhanden, und legt die übrigen Karten ab. Hat er keine Geldkarte aufgedeckt, nimmt er ein Kupfer. Du nimmst alle dabei entsorgten Geldkarten."
+    },
+    "nomad_camp": {
+      "name": "Nomadencamp",
+      "text": "+1 Kauf. +2 Geld. Wenn du diese Karte nimmst, lege sie oben auf deinen Nachziehstapel."
+    },
+    "oracle": {
+      "name": "Orakel",
+      "text": "Jeder Spieler deckt die obersten 2 Karten seines Nachziehstapels auf. Du entscheidest für jeden Spieler, ob er diese Karten ablegt oder beide in einer von ihm gewählten Reihenfolge zurück auf seinen Nachziehstapel legt. Ziehe danach 2 Karten."
+    },
+    "silk_road": {
+      "name": "Seidenstraße",
+      "text": "Bei Spielende ist diese Karte 1 Siegpunkt pro 4 Punktekarten in deinem gesamten Kartensatz wert (abrunden). Diese Seidenstraße zählt dabei mit."
+    },
+    "advisor": {
+      "name": "Berater",
+      "text": "+1 Aktion. Decke die obersten 3 Karten deines Nachziehstapels auf. Dein linker Mitspieler wählt eine davon. Lege diese ab und nimm die übrigen auf die Hand."
+    },
+    "baker": {
+      "name": "Bäcker",
+      "text": "+1 Karte. +1 Aktion. +1 Taler. Spielvorbereitung: Jeder Spieler erhält +1 Taler."
+    },
+    "butcher": {
+      "name": "Metzger",
+      "text": "+2 Taler. Du darfst eine Handkarte entsorgen. Wenn du das tust, gib beliebig viele Taler aus und nimm eine Karte, die höchstens so viel kostet wie die entsorgte Karte plus 1 Geld pro dafür ausgegebenem Taler."
+    },
+    "candlestick_maker": {
+      "name": "Leuchtenmacher",
+      "text": "+1 Aktion. +1 Kauf. +1 Taler."
+    },
+    "carnival": {
+      "name": "Karneval",
+      "text": "Decke die obersten 4 Karten deines Nachziehstapels auf. Nimm von jedem aufgedeckten Kartennamen eine Karte auf die Hand und lege die übrigen ab."
+    },
+    "fairgrounds": {
+      "name": "Festplatz",
+      "text": "Bei Spielende ist diese Karte 2 Siegpunkte pro 5 verschiedene Kartennamen in deinem gesamten Kartensatz wert (abrunden)."
+    },
+    "farmhands": {
+      "name": "Landarbeiterinnen",
+      "text": "+1 Karte. +2 Aktionen. Wenn du diese Karte nimmst, darfst du eine Aktions- oder Geldkarte aus deiner Hand zur Seite legen und zu Beginn deines nächsten Zuges ausspielen."
+    },
+    "farrier": {
+      "name": "Hufschmied",
+      "text": "+1 Karte. +1 Aktion. +1 Kauf. Überzahlen beim Kauf: Pro zusätzlich gezahltem Geld erhältst du am Ende dieses Zuges +1 Karte."
+    },
+    "ferryman": {
+      "name": "Fährmann",
+      "text": "+2 Karten. +1 Aktion. Lege eine Handkarte ab. Spielvorbereitung: Wähle einen unbenutzten Königreichkartenstapel, der 3 oder 4 Geld kostet. Wenn du diesen Fährmann nimmst, nimm eine Karte jenes Stapels."
+    },
+    "footpad": {
+      "name": "Straßenräuber",
+      "text": "+2 Taler. Jeder Mitspieler legt Handkarten ab, bis er nur noch 3 hat. In Spielen mit dieser Karte gilt für alle Spieler: Wenn du in einer Aktionsphase eine Karte nimmst, +1 Karte."
+    },
+    "hamlet": {
+      "name": "Weiler",
+      "text": "+1 Karte. +1 Aktion. Du darfst eine Handkarte für +1 Aktion ablegen. Du darfst eine Handkarte für +1 Kauf ablegen."
+    },
+    "herald": {
+      "name": "Herold",
+      "text": "+1 Karte. +1 Aktion. Decke die oberste Karte deines Nachziehstapels auf. Ist es eine Aktionskarte, spiele sie aus. Überzahlen beim Kauf: Pro zusätzlich gezahltem Geld lege eine beliebige Karte deines Ablagestapels oben auf deinen Nachziehstapel."
+    },
+    "horn_of_plenty": {
+      "name": "Füllhorn",
+      "text": "Nimm eine Karte, die bis zu 1 Geld pro unterschiedlichem Kartennamen im Spiel bei dir kostet (dieses Füllhorn zählt mit). Hat die genommene Karte den Typ Punkte, entsorge dieses Füllhorn."
+    },
+    "hunting_party": {
+      "name": "Treibjagd",
+      "text": "+1 Karte. +1 Aktion. Decke deine Handkarten auf. Decke Karten deines Nachziehstapels auf, bis du eine Karte aufdeckst, deren Namen du nicht auf der Hand hast. Nimm diese Karte auf die Hand und lege die übrigen aufgedeckten Karten ab."
+    },
+    "infirmary": {
+      "name": "Krankenhaus",
+      "text": "+1 Karte. Du darfst eine Handkarte entsorgen. Überzahlen beim Kauf: Spiele dieses Krankenhaus einmal pro zusätzlich gezahltem Geld aus."
+    },
+    "jester": {
+      "name": "Harlekin",
+      "text": "+2 Geld. Jeder Mitspieler legt die oberste Karte seines Nachziehstapels ab. Ist es eine Punktekarte, nimmt er einen Fluch. Andernfalls entscheidest du, ob er oder du eine Karte mit dem Namen der abgelegten Karte nimmt."
+    },
+    "journeyman": {
+      "name": "Wandergeselle",
+      "text": "Nenne eine Karte. Decke Karten deines Nachziehstapels auf, bis du 3 Karten aufgedeckt hast, die nicht den genannten Namen haben. Nimm diese 3 Karten auf die Hand und lege die übrigen aufgedeckten Karten ab."
+    },
+    "joust": {
+      "name": "Ritterkampf",
+      "text": "+1 Karte. +1 Aktion. +2 Geld. Du darfst eine Provinz aus deiner Hand zur Seite legen, um eine beliebige Belohnung auf die Hand zu nehmen. Lege die Provinz in der Aufräumphase ab."
+    },
+    "menagerie": {
+      "name": "Menagerie",
+      "text": "+1 Aktion. Decke deine Handkarten auf. Haben sie alle unterschiedliche Namen, +3 Karten; andernfalls +1 Karte."
+    },
+    "merchant_guild": {
+      "name": "Kaufmannsgilde",
+      "text": "+1 Kauf. +1 Geld. Am Ende deiner Kaufphase in diesem Zug erhältst du +1 Taler pro Karte, die du in dieser Kaufphase genommen hast."
+    },
+    "plaza": {
+      "name": "Platz",
+      "text": "+1 Karte. +2 Aktionen. Du darfst eine Geldkarte aus deiner Hand für +1 Taler ablegen."
+    },
+    "remake": {
+      "name": "Nachbau",
+      "text": "Führe dies zweimal aus: Entsorge eine Handkarte und nimm danach eine Karte, die genau 1 Geld mehr kostet als die entsorgte Karte."
+    },
+    "shop": {
+      "name": "Geschäft",
+      "text": "+1 Karte. +1 Geld. Du darfst eine Aktionskarte aus deiner Hand ausspielen, von der du keine Karte mit demselben Namen im Spiel hast."
+    },
+    "soothsayer": {
+      "name": "Hellseherin",
+      "text": "Nimm ein Gold. Jeder Mitspieler nimmt einen Fluch und zieht eine Karte, wenn er einen Fluch genommen hat."
+    },
+    "stonemason": {
+      "name": "Steinmetz",
+      "text": "Entsorge eine Handkarte. Nimm 2 Karten, die jeweils weniger kosten als die entsorgte Karte. Überzahlen beim Kauf: Nimm 2 Aktionskarten, die jeweils genau so viel kosten wie der zusätzlich gezahlte Betrag."
+    },
+    "young_witch": {
+      "name": "Junge Hexe",
+      "text": "+2 Karten. Lege 2 Handkarten ab. Jeder Mitspieler nimmt einen Fluch, außer er deckt einen Bann aus seiner Hand auf. Spielvorbereitung: Lege einen zusätzlichen Königreichkartenstapel, der 2 oder 3 Geld kostet, in den Vorrat. Seine Karten sind der Bann."
+    },
+    "coronet": {
+      "name": "Adelskrone",
+      "text": "Du darfst eine Aktionskarte ohne den Typ Belohnung aus deiner Hand zweimal ausspielen. Du darfst eine Geldkarte ohne den Typ Belohnung aus deiner Hand zweimal ausspielen. Diese Karte gehört nicht zum Vorrat."
+    },
+    "courser": {
+      "name": "Rennpferd",
+      "text": "Wähle zwei verschiedene Möglichkeiten: +2 Karten; +2 Aktionen; +2 Geld; oder nimm 4 Silber. Diese Karte gehört nicht zum Vorrat."
+    },
+    "demesne": {
+      "name": "Landsitz",
+      "text": "+2 Aktionen. +2 Käufe. Nimm ein Gold. Bei Spielende ist diese Karte 1 Siegpunkt pro Gold in deinem Kartensatz wert. Diese Karte gehört nicht zum Vorrat."
+    },
+    "housecarl": {
+      "name": "Leibgardist",
+      "text": "+1 Karte pro unterschiedlichem Namen deiner Aktionskarten im Spiel. Diese Karte gehört nicht zum Vorrat."
+    },
+    "huge_turnip": {
+      "name": "Riesenrübe",
+      "text": "+2 Taler. +1 Geld pro Taler, den du hast. Diese Karte gehört nicht zum Vorrat."
+    },
+    "renown": {
+      "name": "Ruhm",
+      "text": "+1 Kauf. In diesem Zug kosten Karten 2 Geld weniger. Diese Karte gehört nicht zum Vorrat."
+    },
+    "farming_village": {
+      "name": "Bauerndorf",
+      "text": "+2 Aktionen. Decke Karten deines Nachziehstapels auf, bis du eine Aktions- oder Geldkarte aufdeckst. Nimm diese Karte auf die Hand und lege die übrigen aufgedeckten Karten ab."
+    },
+    "fortune_teller": {
+      "name": "Wahrsagerin",
+      "text": "+2 Geld. Jeder Mitspieler deckt Karten seines Nachziehstapels auf, bis er eine Punktekarte oder einen Fluch aufdeckt. Er legt diese Karte oben auf seinen Nachziehstapel zurück und die übrigen aufgedeckten Karten ab."
+    },
+    "harvest": {
+      "name": "Ernte",
+      "text": "Decke die obersten 4 Karten deines Nachziehstapels auf und lege sie ab. +1 Geld pro unterschiedlichem aufgedecktem Kartennamen."
+    },
+    "horse_traders": {
+      "name": "Pferdehändler",
+      "text": "+1 Kauf. +3 Geld. Lege 2 Handkarten ab. Wenn ein Mitspieler eine Angriffskarte ausspielt, darfst du diesen Pferdehändler aus deiner Hand zur Seite legen. Zu Beginn deines nächsten Zuges: +1 Karte und nimm diesen Pferdehändler wieder auf die Hand."
+    },
+    "tournament": {
+      "name": "Turnier",
+      "text": "+1 Aktion. Jeder Spieler darf eine Provinz aus seiner Hand aufdecken. Wenn du eine aufdeckst, lege sie ab und nimm eine Preiskarte oder ein Herzogtum oben auf deinen Nachziehstapel. Deckt kein Mitspieler eine Provinz auf, +1 Karte und +1 Geld."
+    },
+    "doctor": {
+      "name": "Arzt",
+      "text": "Nenne eine Karte und decke die obersten 3 Karten deines Nachziehstapels auf. Entsorge alle Karten mit dem genannten Namen und lege die übrigen in beliebiger Reihenfolge zurück. Du darfst beim Kauf überzahlen. Pro zusätzlich gezahltem Geld sieh dir deine oberste Karte an und entsorge sie, lege sie ab oder lege sie zurück."
+    },
+    "masterpiece": {
+      "name": "Meisterstück",
+      "text": "+1 Geld. Du darfst beim Kauf überzahlen. Nimm ein Silber pro zusätzlich gezahltem Geld."
+    },
+    "taxman": {
+      "name": "Steuereintreiber",
+      "text": "Du darfst eine Geldkarte aus deiner Hand entsorgen. Wenn du das tust, legt jeder Mitspieler mit mindestens 5 Handkarten eine Karte mit demselben Namen ab (oder zeigt seine Hand ohne eine solche Karte vor), und du nimmst eine Geldkarte, die bis zu 3 Geld mehr als die entsorgte Karte kostet, oben auf deinen Nachziehstapel."
+    },
+    "bag_of_gold": {
+      "name": "Ein Sack voll Gold",
+      "text": "+1 Aktion. Nimm ein Gold oben auf deinen Nachziehstapel."
+    },
+    "diadem": {
+      "name": "Diadem",
+      "text": "+2 Geld. +1 Geld pro Aktion, die du noch zur Verfügung hast."
+    },
+    "followers": {
+      "name": "Gefolge",
+      "text": "+2 Karten. Nimm ein Anwesen. Jeder Mitspieler nimmt einen Fluch und legt danach Handkarten ab, bis er nur noch 3 hat."
+    },
+    "princess": {
+      "name": "Prinzessin",
+      "text": "+1 Kauf. In diesem Zug kosten alle Karten 2 Geld weniger, jedoch nie weniger als 0 Geld."
+    },
+    "trusty_steed": {
+      "name": "Streitross",
+      "text": "Wähle zwei verschiedene Möglichkeiten und führe sie in dieser Reihenfolge aus: +2 Karten; +2 Aktionen; +2 Geld; oder nimm 4 Silber und lege deinen Nachziehstapel auf deinen Ablagestapel."
     }
   }
 }

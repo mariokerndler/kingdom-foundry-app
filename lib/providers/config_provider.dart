@@ -1,10 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/collection_profile.dart';
 import '../models/expansion.dart';
 import '../models/game_vibe_preset.dart';
+import '../models/kingdom_card.dart';
 import '../models/setup_rules.dart';
 import '../services/config_persistence_service.dart';
+
+final storageNoticeProvider =
+    StateProvider<({String message, void Function()? retry})?>((ref) => null);
 
 // ── State ──────────────────────────────────────────────────────────────────
 
@@ -16,6 +21,10 @@ class ConfigState {
   final bool useDarkMode;
   final String selectedPresetId;
   final String selectedLanguageCode;
+  final bool preferFreshPiles;
+  final Map<String, CollectionProfile> collections;
+  final String activeCollection;
+  final Set<Expansion>? quickSetupExpansions;
 
   const ConfigState({
     required this.ownedExpansions,
@@ -25,10 +34,25 @@ class ConfigState {
     this.useDarkMode = false,
     this.selectedPresetId = GameVibePresets.noneId,
     this.selectedLanguageCode = 'en',
+    this.preferFreshPiles = false,
+    this.collections = const {},
+    this.activeCollection = '',
+    this.quickSetupExpansions,
   });
 
   bool isExpansionOwned(Expansion e) => ownedExpansions.contains(e);
   bool isCardDisabled(String id) => disabledCardIds.contains(id);
+  CollectionProfile? get collection => collections[activeCollection];
+  bool ownsCard(KingdomCard card) =>
+      collection?.owns(card) ?? !card.firstEditionOnly;
+  bool usesCard(KingdomCard card) =>
+      isExpansionOwned(card.expansion) && ownsCard(card);
+
+  Set<String> excludedCardIds(List<KingdomCard> cards) => {
+        ...disabledCardIds,
+        for (final card in cards)
+          if (!ownsCard(card)) card.id,
+      };
 
   ConfigState copyWith({
     Set<Expansion>? ownedExpansions,
@@ -38,6 +62,10 @@ class ConfigState {
     bool? useDarkMode,
     String? selectedPresetId,
     String? selectedLanguageCode,
+    bool? preferFreshPiles,
+    Map<String, CollectionProfile>? collections,
+    String? activeCollection,
+    Set<Expansion>? quickSetupExpansions,
   }) {
     return ConfigState(
       ownedExpansions: ownedExpansions ?? this.ownedExpansions,
@@ -47,6 +75,10 @@ class ConfigState {
       useDarkMode: useDarkMode ?? this.useDarkMode,
       selectedPresetId: selectedPresetId ?? this.selectedPresetId,
       selectedLanguageCode: selectedLanguageCode ?? this.selectedLanguageCode,
+      preferFreshPiles: preferFreshPiles ?? this.preferFreshPiles,
+      collections: collections ?? this.collections,
+      activeCollection: activeCollection ?? this.activeCollection,
+      quickSetupExpansions: quickSetupExpansions ?? this.quickSetupExpansions,
     );
   }
 }
@@ -55,13 +87,27 @@ class ConfigState {
 
 class ConfigNotifier extends StateNotifier<ConfigState> {
   final ConfigPersistenceService _persistence;
+  final void Function(void Function() retry)? onSaveFailure;
 
-  ConfigNotifier(this._persistence) : super(_persistence.load());
+  ConfigNotifier(this._persistence, {this.onSaveFailure})
+      : super(_persistence.load());
 
   @override
   set state(ConfigState value) {
     super.state = value;
-    _persistence.save(value);
+    _save(value);
+  }
+
+  Future<void> _save(ConfigState value) async {
+    try {
+      await _persistence.save(value);
+    } catch (_) {
+      if (mounted && identical(state, value)) {
+        onSaveFailure?.call(() {
+          if (mounted) _save(state);
+        });
+      }
+    }
   }
 
   // ── Expansions ────────────────────────────────────────────────────────────
@@ -73,13 +119,62 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
     } else {
       current.add(expansion);
     }
-    state = state.copyWith(ownedExpansions: current);
+    _useExpansions(current);
   }
 
   void selectAllExpansions(Set<Expansion> available) =>
-      state = state.copyWith(ownedExpansions: Set.from(available));
+      _useExpansions(available);
 
-  void clearExpansions() => state = state.copyWith(ownedExpansions: {});
+  void clearExpansions() => _useExpansions({});
+
+  void _useExpansions(Set<Expansion> expansions) {
+    final profile = state.collection;
+    if (profile == null) {
+      state = state.copyWith(ownedExpansions: Set.of(expansions));
+      return;
+    }
+    final updated = profile.withSelection(expansions);
+    state = state.copyWith(
+        ownedExpansions: updated.selected,
+        collections: {...state.collections, state.activeCollection: updated});
+  }
+
+  void saveCollection(String name, CollectionProfile profile,
+      {String? previousName}) {
+    name = name.trim();
+    if (name.isEmpty ||
+        name.toLowerCase() == 'quick setup' ||
+        state.collections.keys.any((key) =>
+            key != previousName && key.toLowerCase() == name.toLowerCase())) {
+      return;
+    }
+    final collections = {...state.collections};
+    if (previousName != null && previousName != name) {
+      collections.remove(previousName);
+    }
+    profile = profile.withSelection(profile.selected);
+    collections[name] = profile;
+    state = state.copyWith(
+        collections: collections,
+        activeCollection: name,
+        ownedExpansions: profile.selected,
+        quickSetupExpansions:
+            state.collection == null ? state.ownedExpansions : null);
+  }
+
+  void selectCollection(String name) {
+    if (name == state.activeCollection ||
+        (name.isNotEmpty && !state.collections.containsKey(name))) {
+      return;
+    }
+    state = state.copyWith(
+        activeCollection: name,
+        ownedExpansions: state.collections[name]?.selected ??
+            state.quickSetupExpansions ??
+            state.ownedExpansions,
+        quickSetupExpansions:
+            state.collection == null ? state.ownedExpansions : null);
+  }
 
   // ── Rules ─────────────────────────────────────────────────────────────────
 
@@ -201,44 +296,62 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
         ),
       );
 
-  void resetRules() => state = state.copyWith(rules: const SetupRules());
+  void resetRules() => state = state.copyWith(
+        rules: const SetupRules(),
+        selectedPresetId: GameVibePresets.noneId,
+      );
 
   void setSelectedPresetId(String presetId) {
     final preset = GameVibePresets.byId(presetId);
     if (preset.id == GameVibePresets.noneId) {
       state = state.copyWith(
         selectedPresetId: preset.id,
-        rules: const SetupRules(),
       );
       return;
     }
     state = state.copyWith(
       selectedPresetId: preset.id,
-      rules: preset.defaultRules.copyWith(
-        showStrategyTips: state.rules.showStrategyTips,
-        includeLandscape: state.rules.includeLandscape,
-      ),
+      rules: preset.rulesAppliedTo(state.rules),
     );
   }
+
+  void restoreRules(SetupRules rules, String presetId) =>
+      state = state.copyWith(rules: rules, selectedPresetId: presetId);
 
   // ── Player count ──────────────────────────────────────────────────────────
 
   void setPlayerCount(int count) =>
       state = state.copyWith(playerCount: count.clamp(2, 6));
 
+  void useSetupSettings(
+      {required SetupRules rules, required int playerCount, String? presetId}) {
+    state = state.copyWith(
+      rules: rules,
+      playerCount: playerCount.clamp(2, 6),
+      selectedPresetId: GameVibePresets.byId(presetId).id,
+    );
+  }
+
   void setUseDarkMode(bool v) => state = state.copyWith(useDarkMode: v);
 
   void setSelectedLanguageCode(String code) =>
       state = state.copyWith(selectedLanguageCode: code);
 
+  void setPreferFreshPiles(bool value) =>
+      state = state.copyWith(preferFreshPiles: value);
+
   // ── Card ban list ─────────────────────────────────────────────────────────
 
   void toggleCard(String cardId) {
+    togglePileBan([cardId]);
+  }
+
+  void togglePileBan(Iterable<String> memberIds) {
     final current = Set<String>.from(state.disabledCardIds);
-    if (current.contains(cardId)) {
-      current.remove(cardId);
+    if (memberIds.any(current.contains)) {
+      current.removeAll(memberIds);
     } else {
-      current.add(cardId);
+      current.addAll(memberIds);
     }
     state = state.copyWith(disabledCardIds: current);
   }
@@ -257,7 +370,13 @@ final configPersistenceProvider = Provider<ConfigPersistenceService>(
 );
 
 final configProvider = StateNotifierProvider<ConfigNotifier, ConfigState>(
-  (ref) => ConfigNotifier(ref.watch(configPersistenceProvider)),
+  (ref) => ConfigNotifier(ref.watch(configPersistenceProvider),
+      onSaveFailure: (retry) {
+    ref.read(storageNoticeProvider.notifier).state = (
+      message: 'Settings changed for this session. They could not be saved.',
+      retry: retry,
+    );
+  }),
 );
 
 // Convenience: player count extracted so widgets don't rebuild on other changes.

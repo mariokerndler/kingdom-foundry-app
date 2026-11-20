@@ -86,6 +86,128 @@ Map<String, int> _bucketCounts(List<KingdomCard> kingdom) {
 // ── Tests ──────────────────────────────────────────────────────────────────
 
 void main() {
+  group('Review regressions', () {
+    test('reaction swaps retain complete split piles', () {
+      final cards = [
+        ..._pool(8),
+        _card(id: 'attack', types: [CardType.action, CardType.attack]),
+        _card(id: 'a', splitPileId: 'pair'),
+        _card(id: 'b', splitPileId: 'pair'),
+        _card(id: 'reaction', types: [CardType.action, CardType.reaction]),
+      ];
+      for (var seed = 0; seed < 50; seed++) {
+        final result = _seededEngine(seed).generate(
+            allCards: cards,
+            ownedExpansions: {Expansion.baseSecondEdition},
+            rules: const SetupRules(requireReactionIfAttacks: true));
+        expect(result.kingdomSlotIds.length, 10, reason: 'seed $seed');
+        expect(
+            result.kingdomCards
+                .where((card) => card.splitPileId == 'pair')
+                .length,
+            anyOf(0, 2),
+            reason: 'seed $seed');
+      }
+    });
+    test('excluding any split member excludes the whole pile', () {
+      final a = _card(id: 'a', splitPileId: 'pair');
+      final b = _card(id: 'b', splitPileId: 'pair', cost: 5);
+      final engine = _seededEngine();
+      expect(
+          engine.eligibleKingdomPool([a, b], {Expansion.baseSecondEdition},
+              const SetupRules(maxCost: 4)),
+          isEmpty);
+      expect(
+          engine.eligibleKingdomPool([a, b.copyWith(isDisabled: true)],
+              {Expansion.baseSecondEdition}, const SetupRules()),
+          isEmpty);
+    });
+
+    test('a required attack cannot bypass the attack cap', () {
+      expect(
+          () => _seededEngine().generate(
+                allCards: [
+                  ..._pool(12),
+                  _card(
+                      id: 'draw',
+                      types: [CardType.action, CardType.attack],
+                      tags: [CardTag.plusCard])
+                ],
+                ownedExpansions: {Expansion.baseSecondEdition},
+                rules: const SetupRules(requireDraw: true, maxAttacks: 0),
+              ),
+          throwsA(isA<SetupException>()));
+    });
+
+    test('locked required landscapes survive rerolls and bans cause conflicts',
+        () {
+      final liaison =
+          _card(id: 'liaison', types: [CardType.action, CardType.liaison]);
+      final ally = _card(id: 'ally', types: [CardType.ally]);
+      final other = _card(id: 'other', types: [CardType.ally]);
+      for (var seed = 0; seed < 10; seed++) {
+        final result = _seededEngine(seed).generate(
+          allCards: [..._pool(9), liaison, ally, other],
+          ownedExpansions: {Expansion.baseSecondEdition},
+          rules: const SetupRules(),
+          lockedLandscapeCards: [ally],
+        );
+        expect(result.landscapeCards, [ally]);
+      }
+      expect(
+          () => _seededEngine().generate(
+                allCards: [
+                  ..._pool(9),
+                  liaison,
+                  ally.copyWith(isDisabled: true)
+                ],
+                ownedExpansions: {Expansion.baseSecondEdition},
+                rules: const SetupRules(),
+              ),
+          throwsA(isA<SetupException>()));
+    });
+    test('banned landscapes are excluded', () {
+      final result = _seededEngine().generate(
+        allCards: [
+          ..._pool(10),
+          _card(id: 'event', types: [CardType.event], isDisabled: true)
+        ],
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: const SetupRules(),
+      );
+      expect(result.landscapeCards, isEmpty);
+    });
+
+    test('ten locked piles cannot grow to satisfy a missing requirement', () {
+      final locked = _pool(10);
+      expect(
+          () => _seededEngine().generate(
+                allCards: [
+                  ...locked,
+                  _card(id: 'village', tags: [CardTag.villageEffect])
+                ],
+                ownedExpansions: {Expansion.baseSecondEdition},
+                rules: const SetupRules(requireVillage: true),
+                lockedKingdomCards: locked,
+              ),
+          throwsA(isA<SetupException>()));
+    });
+
+    test('a locked pile already satisfying a requirement needs no extra slot',
+        () {
+      final locked = [
+        ..._pool(9),
+        _card(id: 'village', tags: [CardTag.villageEffect])
+      ];
+      final result = _seededEngine().generate(
+        allCards: locked,
+        ownedExpansions: {Expansion.baseSecondEdition},
+        rules: const SetupRules(requireVillage: true),
+        lockedKingdomCards: locked,
+      );
+      expect(result.kingdomSlotIds.length, 10);
+    });
+  });
   group('SetupEngine — basic generation', () {
     test('produces exactly 10 kingdom cards', () {
       final result = _seededEngine().generate(
@@ -793,8 +915,10 @@ void main() {
       );
 
       expect(result.landscapeCards.where((c) => c.isTrait), hasLength(1));
+      expect(result.kingdomCards.map((card) => card.id),
+          contains(result.setupChoices['rich']));
       expect(
-        result.setupNotes.any((note) => note.contains('Trait setup')),
+        result.setupNotes.any((note) => note.contains('Trait: place it on')),
         isTrue,
       );
     });
@@ -854,8 +978,8 @@ void main() {
         isTrue,
       );
       expect(
-        result.setupNotes
-            .any((note) => note.contains('Approaching Army setup')),
+        result.setupNotes.any((note) =>
+            note.contains('Approaching Army: choose an unused Attack')),
         isTrue,
       );
     });

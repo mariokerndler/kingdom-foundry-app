@@ -30,10 +30,12 @@ final activeTranslationPackProvider =
 class LocalizedCardView {
   final String name;
   final String text;
+  final bool textUsesEnglishFallback;
 
   const LocalizedCardView({
     required this.name,
     required this.text,
+    required this.textUsesEnglishFallback,
   });
 }
 
@@ -41,10 +43,13 @@ final localizedCardProvider =
     Provider.family<LocalizedCardView, KingdomCard>((ref, card) {
   final pack = ref.watch(activeTranslationPackProvider).valueOrNull;
   final translation = pack?.lookup(card.id);
+  final translatedText = translation?.text.trim().isNotEmpty ?? false;
   return LocalizedCardView(
-    name:
-        (translation?.name.isNotEmpty ?? false) ? translation!.name : card.name,
-    text:
-        (translation?.text.isNotEmpty ?? false) ? translation!.text : card.text,
+    name: (translation?.name.trim().isNotEmpty ?? false)
+        ? translation!.name
+        : card.name,
+    text: translatedText ? translation!.text : card.text,
+    textUsesEnglishFallback:
+        pack != null && pack.languageCode != 'en' && !translatedText,
   );
 });

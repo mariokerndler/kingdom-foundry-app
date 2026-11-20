@@ -16,6 +16,7 @@ class KingdomCardWidget extends ConsumerWidget {
   final bool locked;
   final VoidCallback? onToggleLock;
   final bool canToggleLock;
+  final bool compact;
 
   const KingdomCardWidget({
     super.key,
@@ -25,6 +26,7 @@ class KingdomCardWidget extends ConsumerWidget {
     this.locked = false,
     this.onToggleLock,
     this.canToggleLock = true,
+    this.compact = false,
   });
 
   @override
@@ -35,8 +37,35 @@ class KingdomCardWidget extends ConsumerWidget {
     final splitLabel = splitPileCards
         .map((c) => ref.watch(localizedCardProvider(c)).name)
         .join(' / ');
+    final pileName = '${localized.name}${isSplit ? ' / $splitLabel' : ''}';
+    final lockLabel = '${locked ? 'Unlock' : 'Lock'} $pileName';
     final detailLabel =
-        '${localized.name}${isSplit ? ' / $splitLabel' : ''}, ${card.typeString}. Cost: ${card.costString}.';
+        'Slot $index: $pileName, ${card.typeString}. Cost: ${card.costString}. '
+        '${card.printedExpansionName}. ${localized.text}';
+
+    if (compact) {
+      return Material(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(10),
+        child: ListTile(
+          onTap: () =>
+              showDetails(context, card, splitPileCards: splitPileCards),
+          leading:
+              SizedBox(width: 64, child: _CostBadge(cost: card.costString)),
+          title: Text(pileName, maxLines: 2, overflow: TextOverflow.ellipsis),
+          subtitle: Text('${card.printedExpansionName} · ${card.typeString}',
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+          trailing: onToggleLock == null
+              ? null
+              : IconButton(
+                  tooltip: lockLabel,
+                  onPressed: canToggleLock ? onToggleLock : null,
+                  icon: Icon(
+                      locked ? Icons.lock_rounded : Icons.lock_open_rounded),
+                ),
+        ),
+      );
+    }
 
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainer,
@@ -75,9 +104,11 @@ class KingdomCardWidget extends ConsumerWidget {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () => _showDetail(context, accent),
+                        onTap: () => showDetails(context, card,
+                            splitPileCards: splitPileCards),
                         borderRadius: BorderRadius.circular(10),
-                        child: Padding(
+                        child: ExcludeSemantics(
+                            child: Padding(
                           padding: const EdgeInsets.fromLTRB(
                             12,
                             12,
@@ -175,10 +206,11 @@ class KingdomCardWidget extends ConsumerWidget {
                               ],
                               const SizedBox(height: AppSpacing.sm),
                               ExpansionBadge(
-                                  expansion: card.expansion, fontSize: 12),
+                                  expansion: card.printedExpansion,
+                                  fontSize: 12),
                             ],
                           ),
-                        ),
+                        )),
                       ),
                     ),
                   );
@@ -195,44 +227,32 @@ class KingdomCardWidget extends ConsumerWidget {
                         Positioned(
                           top: 6,
                           right: 6,
-                          child: Semantics(
-                            label: locked
-                                ? 'Unlock card $index'
-                                : 'Lock card $index',
-                            hint: locked
-                                ? 'Double tap to unlock this card for rerolls'
-                                : 'Double tap to keep this card locked during rerolls',
-                            checked: locked,
-                            button: true,
-                            child: Tooltip(
-                              message: locked ? 'Unlock card' : 'Lock card',
-                              child: IconButton(
-                                onPressed: canToggleLock ? onToggleLock : null,
-                                icon: Icon(
-                                  locked
-                                      ? Icons.lock_rounded
-                                      : Icons.lock_open_rounded,
-                                  color: locked
-                                      ? accent
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                ),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: locked
-                                      ? accent.withValues(alpha: 0.12)
-                                      : Theme.of(context).colorScheme.surface,
-                                  side: BorderSide(
-                                    color: locked
-                                        ? accent
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .outlineVariant,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                ),
+                          child: IconButton(
+                            tooltip: lockLabel,
+                            onPressed: canToggleLock ? onToggleLock : null,
+                            icon: Icon(
+                              locked
+                                  ? Icons.lock_rounded
+                                  : Icons.lock_open_rounded,
+                              color: locked
+                                  ? accent
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                            ),
+                            style: IconButton.styleFrom(
+                              backgroundColor: locked
+                                  ? accent.withValues(alpha: 0.12)
+                                  : Theme.of(context).colorScheme.surface,
+                              side: BorderSide(
+                                color: locked
+                                    ? accent
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .outlineVariant,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(999),
                               ),
                             ),
                           ),
@@ -248,7 +268,8 @@ class KingdomCardWidget extends ConsumerWidget {
     );
   }
 
-  void _showDetail(BuildContext context, Color accent) {
+  static void showDetails(BuildContext context, KingdomCard card,
+      {List<KingdomCard> splitPileCards = const []}) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -258,7 +279,7 @@ class KingdomCardWidget extends ConsumerWidget {
       builder: (_) => _CardDetailSheet(
         card: card,
         splitPileCards: splitPileCards,
-        accent: accent,
+        accent: _accentColor(card.types),
       ),
     );
   }
@@ -604,13 +625,16 @@ class _CardDetailSheet extends ConsumerWidget {
                     children: [
                       _TypePills(types: card.types),
                       const Spacer(),
-                      ExpansionBadge(expansion: card.expansion, fontSize: 11),
+                      ExpansionBadge(
+                          expansion: card.printedExpansion, fontSize: 11),
                     ],
                   ),
 
                   const Divider(height: 24),
 
                   // Rules text
+                  if (localized.textUsesEnglishFallback)
+                    const Text('Rules text in English'),
                   Text(
                     localized.text,
                     style: TextStyle(
@@ -649,7 +673,8 @@ class _CardDetailSheet extends ConsumerWidget {
                   ],
 
                   // Mixed piles such as Dark Ages Knights
-                  if (card.pileCards.isNotEmpty) ...[
+                  if (card.pileCardIds.isNotEmpty ||
+                      card.pileCards.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     Text(
                       'PILE CARDS',
@@ -663,11 +688,11 @@ class _CardDetailSheet extends ConsumerWidget {
                           fontSize: 12),
                     ),
                     const SizedBox(height: 10),
-                    _PileCards(names: card.pileCards),
+                    _PileCards(ids: card.pileCardIds, names: card.pileCards),
                   ],
 
                   // Traveller/exchange chain
-                  if (card.travellerChain.isNotEmpty) ...[
+                  if (card.hasExchangeChain) ...[
                     const SizedBox(height: 20),
                     Text(
                       'EXCHANGE CHAIN',
@@ -682,7 +707,7 @@ class _CardDetailSheet extends ConsumerWidget {
                     ),
                     const SizedBox(height: 10),
                     _TravellerChain(
-                      base: card,
+                      ids: card.travellerChainIds,
                       chain: card.travellerChain,
                     ),
                   ],
@@ -769,6 +794,8 @@ class _SplitPileCard extends ConsumerWidget {
           const SizedBox(height: 6),
           _TypePills(types: card.types),
           const SizedBox(height: 8),
+          if (localized.textUsesEnglishFallback)
+            const Text('Rules text in English'),
           Text(
             localized.text,
             style: TextStyle(
@@ -784,13 +811,24 @@ class _SplitPileCard extends ConsumerWidget {
 }
 
 class _PileCards extends ConsumerWidget {
+  final List<String> ids;
   final List<String> names;
 
-  const _PileCards({required this.names});
+  const _PileCards({required this.ids, required this.names});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allAsync = ref.watch(allCardsProvider);
+    if (ids.isNotEmpty) {
+      final byId = {
+        for (final card in allAsync.valueOrNull ?? const <KingdomCard>[])
+          card.id: card
+      };
+      return Column(children: [
+        for (final id in ids)
+          _PileCardRow(name: byId[id]?.name ?? id, card: byId[id]),
+      ]);
+    }
     final cardByName = allAsync.whenData((all) {
       return {for (final c in all) c.name.toLowerCase(): c};
     });
@@ -900,38 +938,37 @@ class _PileCardRow extends ConsumerWidget {
 
 // ── Traveller/exchange chain ───────────────────────────────────────────────
 
-/// Displays the full set-aside chain for [base], each step tappable to reveal
+/// Displays the full set-aside chain, each step tappable to reveal
 /// the chained card's rules text. Uses [allCardsProvider] to look up text for
 /// intermediate cards when they are present in the data file.
 class _TravellerChain extends ConsumerWidget {
-  final KingdomCard base;
+  final List<String> ids;
   final List<String> chain;
 
-  const _TravellerChain({required this.base, required this.chain});
+  const _TravellerChain({required this.ids, required this.chain});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final allAsync = ref.watch(allCardsProvider);
 
-    // Build lookup map: lowercase name → card.
-    final cardByName = allAsync.whenData((all) {
-      return {for (final c in all) c.name.toLowerCase(): c};
-    });
+    final all = allAsync.valueOrNull ?? const <KingdomCard>[];
+    final byKey = {
+      for (final card in all)
+        (ids.isNotEmpty ? card.id : card.name.toLowerCase()): card,
+    };
+    final keys = ids.isNotEmpty ? ids : chain;
 
     return Column(
       children: [
-        for (var i = 0; i < chain.length; i++) ...[
+        for (var i = 0; i < keys.length; i++) ...[
           _ChainStep(
-            name: chain[i],
-            // Resolve the card object so we can show its text.
-            card: cardByName.whenOrNull(
-              data: (m) => m[chain[i].toLowerCase()],
-            ),
+            name: i < chain.length ? chain[i] : keys[i],
+            card: byKey[ids.isNotEmpty ? keys[i] : keys[i].toLowerCase()],
             isBase: false,
-            isFinal: i == chain.length - 1,
-            accent: _accentColor(i + 1, chain.length + 1),
+            isFinal: i == keys.length - 1,
+            accent: _accentColor(i + 1, keys.length + 1),
           ),
-          if (i < chain.length - 1)
+          if (i < keys.length - 1)
             Builder(builder: (ctx) {
               final cs = Theme.of(ctx).colorScheme;
               return Padding(
@@ -1024,7 +1061,7 @@ class _ChainStep extends ConsumerWidget {
                       if (card != null) ...[
                         const SizedBox(height: 2),
                         Text(
-                          card!.text,
+                          localized?.text ?? card!.text,
                           style: TextStyle(
                             color: accent.withValues(alpha: 0.65),
                             fontSize: 11,

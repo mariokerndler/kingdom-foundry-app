@@ -18,13 +18,16 @@ class ShareCodebook {
   static const _base58Alphabet =
       '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
+  // KF2 ranks depend on the exact order and size of both lists. New entries
+  // require a new format with its own mapping.
   static final List<String> kingdomSlotCodebook =
-      _kingdomSlotData.trim().split('\n');
+      List.unmodifiable(_kingdomSlotData.trim().split('\n'));
   static final List<String> landscapeCodebook =
-      _landscapeData.trim().split('\n');
+      List.unmodifiable(_landscapeData.trim().split('\n'));
 
   static final Map<String, int> _kingdomIndexByKey = {
-    for (var i = 0; i < kingdomSlotCodebook.length; i++) kingdomSlotCodebook[i]: i,
+    for (var i = 0; i < kingdomSlotCodebook.length; i++)
+      kingdomSlotCodebook[i]: i,
   };
   static final Map<String, int> _landscapeIndexById = {
     for (var i = 0; i < landscapeCodebook.length; i++) landscapeCodebook[i]: i,
@@ -56,10 +59,9 @@ class ShareCodebook {
     final kingdomRank = _rankCombination(normalizedKingdom);
     final landscapeSpace = _choose(landscapeCodebook.length, landscapeCount);
     final landscapeRank = _rankCombination(normalizedLandscapes);
-    final payload =
-        (((kingdomRank * landscapeSpace) + landscapeRank) *
-                BigInt.from(_landscapeCountRadix)) +
-            BigInt.from(landscapeCount);
+    final payload = (((kingdomRank * landscapeSpace) + landscapeRank) *
+            BigInt.from(_landscapeCountRadix)) +
+        BigInt.from(landscapeCount);
 
     final payloadBody = _encodeBase58(payload);
     final checksum = _checksumFor(payload);
@@ -111,21 +113,11 @@ class ShareCodebook {
     );
   }
 
-  static List<String> extractKingdomSlotKeys(Iterable<KingdomCard> cards) {
-    final unique = <String>{};
-    for (final card in cards) {
-      unique.add(card.splitPileId ?? card.id);
-    }
-    final slotKeys = unique.toList();
-    slotKeys.sort((a, b) => _kingdomIndexByKey[a]!.compareTo(_kingdomIndexByKey[b]!));
-    return slotKeys;
-  }
+  static List<String> extractKingdomSlotKeys(Iterable<KingdomCard> cards) =>
+      cards.map((card) => card.pileId).toSet().toList();
 
-  static List<String> extractLandscapeIds(Iterable<KingdomCard> cards) {
-    final unique = cards.map((card) => card.id).toSet().toList();
-    unique.sort((a, b) => _landscapeIndexById[a]!.compareTo(_landscapeIndexById[b]!));
-    return unique;
-  }
+  static List<String> extractLandscapeIds(Iterable<KingdomCard> cards) =>
+      cards.map((card) => card.id).toSet().toList();
 
   static List<KingdomCard>? expandKingdomSlots(
     Iterable<String> kingdomSlotKeys,
@@ -133,7 +125,7 @@ class ShareCodebook {
   ) {
     final bySlot = <String, List<KingdomCard>>{};
     for (final card in allCards.where((card) => card.isKingdomCard)) {
-      final slotKey = card.splitPileId ?? card.id;
+      final slotKey = card.pileId;
       (bySlot[slotKey] ??= []).add(card);
     }
 
