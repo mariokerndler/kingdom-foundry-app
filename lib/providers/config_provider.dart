@@ -211,6 +211,9 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
   void setNoTravellers(bool v) =>
       state = state.copyWith(rules: state.rules.copyWith(noTravellers: v));
 
+  void setNoHighSetup(bool v) =>
+      state = state.copyWith(rules: state.rules.copyWith(noHighSetup: v));
+
   void setRequireDraw(bool v) =>
       state = state.copyWith(rules: state.rules.copyWith(requireDraw: v));
 
@@ -303,12 +306,6 @@ class ConfigNotifier extends StateNotifier<ConfigState> {
 
   void setSelectedPresetId(String presetId) {
     final preset = GameVibePresets.byId(presetId);
-    if (preset.id == GameVibePresets.noneId) {
-      state = state.copyWith(
-        selectedPresetId: preset.id,
-      );
-      return;
-    }
     state = state.copyWith(
       selectedPresetId: preset.id,
       rules: preset.rulesAppliedTo(state.rules),

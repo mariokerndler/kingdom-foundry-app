@@ -187,7 +187,8 @@ void main() {
           tester.getTopLeft(actions.at(1)).dy);
     });
 
-    testWidgets('removing a vibe keeps its rules and Undo restores the vibe',
+    testWidgets(
+        'removing a vibe resets rules and Undo restores the vibe and rules',
         (tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -224,19 +225,18 @@ void main() {
       expect(find.text('Preset active - tap again to remove vibe'),
           findsOneWidget);
 
+      final originalRules = container.read(configProvider).rules;
       await tester.tap(find.text('Engine Builder'));
       await tester.pumpAndSettle();
 
       final updated = container.read(configProvider);
       expect(updated.selectedPresetId, GameVibePresets.noneId);
-      expect(updated.rules.requireVillage, isTrue);
-      expect(updated.rules.requireDraw, isTrue);
-      expect(updated.rules.requireTrashing, isTrue);
-      expect(updated.rules.maxAttacks, 1);
+      expect(updated.rules.toJson(), const SetupRules().toJson());
+      expect(find.text('Vibe removed. Rules reset.'), findsOneWidget);
       await tester.tap(find.text('Undo'));
       await tester.pumpAndSettle();
       expect(container.read(configProvider).selectedPresetId, 'engine_builder');
-      expect(container.read(configProvider).rules, same(updated.rules));
+      expect(container.read(configProvider).rules, same(originalRules));
     });
   });
 

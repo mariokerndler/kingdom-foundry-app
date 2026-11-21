@@ -144,7 +144,7 @@ class GameVibePresets {
       description: 'Reduce side piles, complicated effects, and setup burden.',
       rationale:
           'This preset prioritizes low-complexity cards and lower setup overhead.',
-      defaultRules: SetupRules(noTravellers: true),
+      defaultRules: SetupRules(noTravellers: true, noHighSetup: true),
       simplicityWeight: 1.0,
       setupWeightPreference: 1.4,
     ),

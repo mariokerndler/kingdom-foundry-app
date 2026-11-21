@@ -23,6 +23,9 @@ class SetupRules {
   /// from the pool to avoid the extra setup of setting aside chained cards.
   final bool noTravellers;
 
+  /// Exclude piles requiring extra cards, mixed piles, or special setup components.
+  final bool noHighSetup;
+
   /// Require at least one +Buy card in the kingdom.
   final bool requirePlusBuy;
 
@@ -74,6 +77,7 @@ class SetupRules {
     this.noDebt = false,
     this.noCursers = false,
     this.noTravellers = false,
+    this.noHighSetup = false,
     this.requirePlusBuy = false,
     this.requireTrashing = false,
     this.requireVillage = false,
@@ -107,6 +111,7 @@ class SetupRules {
       noDebt: read<bool>('noDebt') ?? false,
       noCursers: read<bool>('noCursers') ?? false,
       noTravellers: read<bool>('noTravellers') ?? false,
+      noHighSetup: read<bool>('noHighSetup') ?? false,
       requirePlusBuy: read<bool>('requirePlusBuy') ?? false,
       requireTrashing: read<bool>('requireTrashing') ?? false,
       requireVillage: read<bool>('requireVillage') ?? false,
@@ -136,6 +141,7 @@ class SetupRules {
     bool? noDebt,
     bool? noCursers,
     bool? noTravellers,
+    bool? noHighSetup,
     bool? requirePlusBuy,
     bool? requireTrashing,
     bool? requireVillage,
@@ -163,6 +169,7 @@ class SetupRules {
       noDebt: noDebt ?? this.noDebt,
       noCursers: noCursers ?? this.noCursers,
       noTravellers: noTravellers ?? this.noTravellers,
+      noHighSetup: noHighSetup ?? this.noHighSetup,
       requirePlusBuy: requirePlusBuy ?? this.requirePlusBuy,
       requireTrashing: requireTrashing ?? this.requireTrashing,
       requireVillage: requireVillage ?? this.requireVillage,
@@ -193,6 +200,7 @@ class SetupRules {
     if (noPotions) rules.add('No Potion-cost cards');
     if (noDebt) rules.add('No Debt cards');
     if (noTravellers) rules.add('No exchange chains');
+    if (noHighSetup) rules.add('No high-setup piles');
     if (requirePlusBuy) rules.add('Must include +Buy');
     if (requireTrashing) rules.add('Must include Trasher');
     if (requireVillage) rules.add('Must include Village');
@@ -226,6 +234,7 @@ class SetupRules {
         'noDebt': noDebt,
         'noCursers': noCursers,
         'noTravellers': noTravellers,
+        'noHighSetup': noHighSetup,
         'requirePlusBuy': requirePlusBuy,
         'requireTrashing': requireTrashing,
         'requireVillage': requireVillage,

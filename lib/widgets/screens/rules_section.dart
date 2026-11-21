@@ -132,7 +132,7 @@ class _RulesTabState extends ConsumerState<RulesTab>
               onChanged: (id) => changeSettings(
                   () => notifier.setSelectedPresetId(id),
                   id == GameVibePresets.noneId
-                      ? 'Vibe removed. Your rules were kept.'
+                      ? 'Vibe removed. Rules reset.'
                       : 'Preset rules applied.'),
             ),
             _RuleTile(
@@ -205,6 +205,14 @@ class _RulesTabState extends ConsumerState<RulesTab>
                     'Removes Traveller and exchange-chain piles, including Page, Peasant, Hermit, Urchin, and Vampire.',
                 value: rules.noTravellers,
                 onChange: notifier.setNoTravellers,
+              ),
+              _RuleTile(
+                icon: Icons.inventory_2_outlined,
+                label: 'No high-setup piles',
+                detail:
+                    'Removes mixed piles, extra decks and cards, exchange chains, and special setup components.',
+                value: rules.noHighSetup,
+                onChange: notifier.setNoHighSetup,
               ),
             ],
           ),

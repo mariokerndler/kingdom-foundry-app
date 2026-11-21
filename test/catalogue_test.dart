@@ -8,6 +8,7 @@ import 'package:kingdom_foundry/models/card_metadata.dart';
 import 'package:kingdom_foundry/models/card_tag.dart';
 import 'package:kingdom_foundry/models/card_type.dart';
 import 'package:kingdom_foundry/models/expansion.dart';
+import 'package:kingdom_foundry/models/game_vibe_preset.dart';
 import 'package:kingdom_foundry/models/kingdom_card.dart';
 import 'package:kingdom_foundry/models/share_payload.dart';
 import 'package:kingdom_foundry/models/setup_rules.dart';
@@ -21,6 +22,74 @@ void main() {
   final cards =
       (jsonDecode(File('assets/data/cards.json').readAsStringSync()) as List)
           .cast<Map<String, dynamic>>();
+
+  test('low setup vibe excludes rotating piles and extra setup components', () {
+    final catalogue = cards.map(KingdomCard.fromJson).toList();
+    final byId = {for (final card in catalogue) card.id: card};
+    final preset = GameVibePresets.byId('low_setup_overhead');
+    final rules = preset.rulesAppliedTo(const SetupRules());
+    final restoredRules =
+        SetupRules.fromJson(rules.toJson()).copyWith(maxCost: 8);
+    expect(restoredRules.noHighSetup, isTrue);
+    expect(SetupRules.fromJson({}).noHighSetup, isFalse);
+    final engine = SetupEngine();
+    final owned = Expansion.values.toSet();
+    final pool = engine.eligibleKingdomPool(catalogue, owned, restoredRules);
+    final unrestricted =
+        engine.eligibleKingdomPool(catalogue, owned, const SetupRules());
+    for (final id in [
+      'student',
+      'herb_gatherer',
+      'battle_plan',
+      'tent',
+      'old_map',
+      'town_crier',
+      'knights',
+      'castles',
+      'page',
+      'peasant',
+      'hermit',
+      'urchin',
+      'vampire',
+      'young_witch',
+      'ferryman',
+      'riverboat',
+      'black_market',
+      'tournament',
+      'joust',
+      'cultist',
+      'bandit_camp',
+      'groom',
+      'sack_of_loot',
+      'bard',
+      'skulk',
+      'necromancer',
+      'exorcist',
+      'pooka',
+      'flag_bearer',
+      'poet',
+      'island',
+      'native_village',
+      'coin_of_the_realm',
+      'bounty_hunter',
+    ]) {
+      expect(byId[id]!.metadata.setupWeight, SetupWeight.high, reason: id);
+      expect(pool, isNot(contains(byId[id])), reason: id);
+      expect(unrestricted, contains(byId[id]), reason: id);
+    }
+    for (final id in ['village', 'smithy', 'market', 'chapel']) {
+      expect(pool, contains(byId[id]), reason: id);
+    }
+    final result = engine.generate(
+        allCards: catalogue,
+        ownedExpansions: owned,
+        rules: rules,
+        preset: preset);
+    expect(
+        [...result.kingdomCards, ...result.landscapeCards]
+            .any((card) => card.metadata.setupWeight == SetupWeight.high),
+        isFalse);
+  });
 
   test(
       'reviewed capabilities distinguish cycling, draw, defense and own-deck trashing',
@@ -50,7 +119,7 @@ void main() {
     expect(parsed['guardian']!.isReaction, isFalse);
     expect(parsed['ferryman']!.capabilities.dependencies,
         contains(SetupDependency.ferrymanPile));
-    expect(parsed['ferryman']!.metadata.setupWeight, SetupWeight.medium);
+    expect(parsed['ferryman']!.metadata.setupWeight, SetupWeight.high);
 
     final kingdom = [
       'market',

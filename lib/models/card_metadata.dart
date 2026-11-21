@@ -215,6 +215,7 @@ class CardMetadata {
     bool isLandscape = false,
     bool isSplitPile = false,
     bool isTraveller = false,
+    bool hasExtraCards = false,
     CardCapabilities? capabilities,
   }) {
     capabilities ??= CardCapabilities.fromTags(tags, types);
@@ -254,7 +255,13 @@ class CardMetadata {
             ? CardComplexity.medium
             : CardComplexity.low;
 
-    final setupWeight = setupScore >= 3
+    final setupWeight = isSplitPile ||
+            isTraveller ||
+            hasExtraCards ||
+            capabilities.dependencies.isNotEmpty ||
+            types.contains(CardType.reserve) ||
+            tags.contains(CardTag.exile) ||
+            setupScore >= 3
         ? SetupWeight.high
         : setupScore >= 1
             ? SetupWeight.medium

@@ -221,6 +221,9 @@ class KingdomCard {
               debtCost: json['debtCost'] as int?,
               isLandscape: role == CardRole.landscape,
               isSplitPile: json['splitPileId'] != null,
+              hasExtraCards: id == 'black_market' ||
+                  ((json['pileCardIds'] as List?)?.isNotEmpty ?? false) ||
+                  ((json['pileCards'] as List?)?.isNotEmpty ?? false),
               isTraveller: types.contains(CardType.traveller) ||
                   ((json['travellerChainIds'] as List?)?.isNotEmpty ?? false) ||
                   ((json['travellerChain'] as List<dynamic>?)?.isNotEmpty ??

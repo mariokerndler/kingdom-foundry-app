@@ -102,7 +102,7 @@ void main() {
     expect(notifier.state.rules.hasActiveRules, isFalse);
   });
 
-  test('removing a vibe keeps custom rules and its defaults can be reapplied',
+  test('removing a vibe resets rules while keeping display preferences',
       () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
@@ -111,10 +111,15 @@ void main() {
 
     notifier.setSelectedPresetId('engine_builder');
     notifier.setMaxAttacks(0);
+    notifier.setIncludeLandscape(false);
+    notifier.setShowStrategyTips(false);
     final customRules = notifier.state.rules;
     notifier.setSelectedPresetId('none');
     expect(notifier.state.selectedPresetId, 'none');
-    expect(notifier.state.rules, same(customRules));
+    expect(
+        notifier.state.rules.toJson(),
+        const SetupRules(includeLandscape: false, showStrategyTips: false)
+            .toJson());
 
     notifier.setSelectedPresetId('engine_builder');
     expect(notifier.state.rules.maxAttacks, isNull);
@@ -131,6 +136,7 @@ void main() {
       const state = ConfigState(
         ownedExpansions: {Expansion.baseSecondEdition, Expansion.intrigue},
         rules: SetupRules(
+          noHighSetup: true,
           costCurve: CostCurveRule(
             enabled: true,
             cheapCount: 2,
@@ -149,6 +155,7 @@ void main() {
       final loaded = service.load();
 
       expect(loaded.rules.costCurve.enabled, isTrue);
+      expect(loaded.rules.noHighSetup, isTrue);
       expect(loaded.rules.showStrategyTips, isTrue);
       expect(loaded.rules.costCurve.bucketCounts, {
         '<=2': 2,

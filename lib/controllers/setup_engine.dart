@@ -76,7 +76,7 @@ class SetupEngine {
     // ── Step A ── Expansion filter ──────────────────────────────────────────
     final pool = eligibleKingdomPool(allCards, ownedExpansions, rules,
         excludedCardIds: excludedCardIds);
-    final landscape = _stepALandscapePool(allCards, ownedExpansions);
+    final landscape = _stepALandscapePool(allCards, ownedExpansions, rules);
 
     // ── Step B ── Manual exclusions ─────────────────────────────────────────
     landscape.removeWhere((card) => excludedCardIds.contains(card.id));
@@ -718,7 +718,7 @@ class SetupEngine {
       }
       retained.add(eligible);
     }
-    final landscapePool = _stepALandscapePool(allCards, ownedExpansions);
+    final landscapePool = _stepALandscapePool(allCards, ownedExpansions, rules);
     landscapePool.removeWhere((card) => excludedCardIds.contains(card.id));
     final landscapesById = {for (final card in landscapePool) card.id: card};
     final keep = <KingdomCard>[];
@@ -891,8 +891,15 @@ class SetupEngine {
   List<KingdomCard> _stepALandscapePool(
     List<KingdomCard> all,
     Set<Expansion> owned,
+    SetupRules rules,
   ) =>
-      all.where((c) => owned.contains(c.expansion) && c.isLandscape).toList();
+      all
+          .where((c) =>
+              owned.contains(c.expansion) &&
+              c.isLandscape &&
+              (!rules.noHighSetup ||
+                  c.metadata.setupWeight != SetupWeight.high))
+          .toList();
 
   // ===========================================================================
   // Step B — Manual exclusions
@@ -909,6 +916,9 @@ class SetupEngine {
       if (rules.noPotions && c.potionCost) return true;
       if (rules.noDebt && c.debtCost != null) return true;
       if (rules.noCursers && c.hasTag(CardTag.curse)) return true;
+      if (rules.noHighSetup && c.metadata.setupWeight == SetupWeight.high) {
+        return true;
+      }
       if (rules.noTravellers && (c.isTraveller || c.hasExchangeChain)) {
         return true;
       }
